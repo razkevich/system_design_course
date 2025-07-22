@@ -13,7 +13,6 @@
 - Что такое архитектура и системный дизайн
 - Архитектурные виды (Architectural views)
 - Модели для документирования
-- Архитектурные стили, паттерны и тактики
 
 ### Сбор требований
 
@@ -24,6 +23,13 @@
 - Сбор нефункциональных требований
 - Architectural constraints
 
+### Архитектурные стили, паттерны и тактики
+* Что такое архитектурные стили, паттерны и тактики
+* Обзор архитектурных стилей (layered, pipes and filters, pipeline, microkernel, service based, event driven, spaced based, orchestration driven, microservices)
+* подробно про layered architecture
+* подробно про event driven 
+* подробно про микросервисы
+* тактики для масштабирования: outbox pattern, rate limiting, distributed locks etc.
 ### Высокоуровневый дизайн
 
 ### Дизайн API
