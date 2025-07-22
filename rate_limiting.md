@@ -2,7 +2,7 @@
 
 How should we design a SaaS application to deal with a rise in incoming traffic? Of course, the answer is to design it for scalability to handle increased load, be it sudden burst of traffic or steady usage growth.
 
-But what is the degree to which our system is scalable? What kind of sudden usage spikes can it safely handle? The problem with horizontal scaling might be that it would take time to spin up new instances to handle increased load. Plus, it might be too expensive to provision more resources to handle it (especially given that some traffic might be not worth handling for different reasons). That's an important consideration, and the architect should be able to answer these questions. An architectural tactic to enforce such constraints is called Rate Limiting.
+But what is the degree to which our system is scalable? What kind of sudden usage spikes can it safely handle? The problem with horizontal scaling might be that it would take time to spin up new instances to handle increased load. Plus, it might be too expensive to provision more resources to handle it (especially given that some traffic might be not worth handling for different reasons). That's an important consideration, and the architect should be able to answer these questions. An architectural tactic to enforce such constraints is called Rate Limiting (sometimes called throttling).
 
 There are many situations that could cause dangerous traffic spikes:
 
@@ -20,6 +20,7 @@ In this article we'll review common approaches and architectures for designing r
 - **We often can relax consistency requirements:** it's not a big deal if we let through some requests. We need design for strict guarantees (e.g. if every request is very expensive), but this comes with increased cost and complexity.
 - **Rate limits should be communicated clearly to clients** through standard headers (RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset) to prevent retry storms.
 - **Different endpoints may need different rate limits** based on their computational cost and business importance.
+- When a user hits the rate limit, the server will return the `429` error code indicating that too many requests have been issued. Another approach is to refuse to return any response to potentially malicious requests (or even confuse them with a 200) in order to obfuscate internal state to the attacker.
 
 ## Designing rate limiting system
 
@@ -44,12 +45,6 @@ There are several approaches to building rate limiting systems. We can check and
 - **Pros:** Very low latency, no external dependencies
 - **Cons:** Requires sticky sessions, complex rebalancing, potential data loss
 - **Complexities:** State synchronization, handling node failures, hot shard management
-
-### Service vs. Library
-
-**Rate limiting as a service** provides centralized control and is easier to manage across multiple applications, but adds network latency and creates a dependency. 
-
-**Rate limiting as a library** offers better performance and no network overhead, but requires updates across all services and can lead to inconsistent implementations. 
 
 ### Hybrid approach
 
@@ -151,17 +146,14 @@ Combines counts from current and previous fixed windows using weighted average b
 
 # Rate Limiting Solutions Comparison
 
-| Name                           | Type                 | Purpose                                               | Benefits                                                                                           |
-| ------------------------------ | -------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| **Nginx rate limiting module** | Open Source          | Built-in rate limiting for nginx web server           | • Supports multiple algorithms<br>• Good for simple use cases<br>• No additional components needed |
-| **Envoy Proxy**                | Open Source          | Advanced rate limiting for service mesh architectures | • Global and local rate limiting modes<br>• Integrates with service mesh<br>• Highly performant    |
-| **Redis-cell**                 | Open Source          | Redis module for distributed rate limiting            | • Implements GCRA algorithm<br>• Atomic operations<br>• Enables distributed rate limiting          |
-| **Bucket4j**                   | Open Source (Java)   | In-memory rate limiting library for Java applications | • Multiple algorithm support<br>• Spring Boot integration<br>• Simple implementation               |
-| **Go-rate**                    | Open Source (Golang) | Rate limiting library for Go applications             | • Token bucket implementation<br>• Simple and efficient<br>• Lightweight                           |
-| **AWS API Gateway**            | Managed Service      | Cloud-based API management with rate limiting         | • Built-in rate limiting<br>• Usage plans and API keys<br>• Auto-scaling capabilities              |
-| **Cloudflare Rate Limiting**   | Managed Service      | Edge-based rate limiting and DDoS protection          | • Global distribution<br>• DDoS protection<br>• Minimal latency at edge                            |
-| **Kong API Gateway**           | Managed Service      | API gateway with plugin-based rate limiting           | • Plugin-based architecture<br>• Multiple algorithm support<br>• Enterprise features available     |
-| **Azure API Management**       | Managed Service      | Cloud-based API management for Azure ecosystem        | • Policy-based rate limiting<br>• Integration with Azure services<br>• Developer portal included   |
+| Name                           | Type            | Purpose                                        | Benefits                                                                                           |
+| ------------------------------ | --------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Nginx rate limiting module** | Open Source     | Built-in rate limiting for nginx web server    | • Supports multiple algorithms<br>• Good for simple use cases<br>• No additional components needed |
+| **Redis-cell**                 | Open Source     | Redis module for distributed rate limiting     | • Implements GCRA algorithm<br>• Atomic operations<br>• Enables distributed rate limiting          |
+| **AWS API Gateway**            | Managed Service | Cloud-based API management with rate limiting  | • Built-in rate limiting<br>• Usage plans and API keys<br>• Auto-scaling capabilities              |
+| **Azure API Management**       | Managed Service | Cloud-based API management for Azure ecosystem | • Policy-based rate limiting<br>• Integration with Azure services<br>• Developer portal included   |
+| **Cloudflare Rate Limiting**   | Managed Service | Edge-based rate limiting and DDoS protection   | • Global distribution<br>• DDoS protection<br>• Minimal latency at edge                            |
+| **Kong API Gateway**           | Managed Service | API gateway with plugin-based rate limiting    | • Plugin-based architecture<br>• Multiple algorithm support<br>• Enterprise features available     |
 
 ## Conclusion and takeaways
 
