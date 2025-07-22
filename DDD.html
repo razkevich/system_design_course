@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDD Strategic and Tactical Design</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8fafc;
+            color: #334155;
+            line-height: 1.4;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #1e293b;
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 1.6em;
+            font-weight: 600;
+        }
+        
+        .header p {
+            margin: 6px 0 0 0;
+            opacity: 0.8;
+            font-size: 0.95em;
+        }
+        
+        .diagram-container {
+            padding: 32px;
+        }
+        
+        .space {
+            margin-bottom: 32px;
+        }
+        
+        .space-header {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 16px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-align: center;
+            color: white;
+        }
+        
+        .problem-space .space-header {
+            background: #3b82f6;
+        }
+        
+        .solution-space .space-header {
+            background: #8b5cf6;
+        }
+        
+        .space-content {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .card {
+            flex: 1;
+            min-width: 200px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.2s ease;
+        }
+        
+        .card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #1e293b;
+        }
+        
+        .card-subtitle {
+            font-size: 0.8em;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+        
+        .card-example {
+            color: #475569;
+            font-size: 0.85em;
+            margin-bottom: 12px;
+            font-style: italic;
+        }
+        
+        .domain-model {
+            background: #f1f5f9;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 0.8em;
+            color: #64748b;
+        }
+        
+        .tactical-patterns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 8px;
+        }
+        
+        .pattern {
+            background: #e2e8f0;
+            color: #475569;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: 500;
+        }
+        
+        .core-subdomain {
+            border-left: 3px solid #ef4444;
+        }
+        
+        .supporting-subdomain {
+            border-left: 3px solid #f59e0b;
+        }
+        
+        .generic-subdomain {
+            border-left: 3px solid #10b981;
+        }
+        
+        .bounded-context {
+            border-left: 3px solid #8b5cf6;
+        }
+        
+        .bridge {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 24px 0;
+            text-align: center;
+        }
+        
+        .bridge h3 {
+            margin: 0 0 12px 0;
+            color: #1e293b;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        
+        .bridge-items {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .bridge-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 500;
+            color: #475569;
+        }
+        
+        .arrow {
+            text-align: center;
+            margin: 12px 0;
+            font-size: 1.2em;
+            color: #94a3b8;
+        }
+        
+        @media (max-width: 768px) {
+            .space-content {
+                flex-direction: column;
+            }
+            
+            .card {
+                min-width: auto;
+            }
+            
+            .bridge-items {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            body {
+                padding: 10px;
+            }
+            
+            .diagram-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Domain-Driven Design</h1>
+            <p>Strategic and Tactical Design</p>
+        </div>
+        
+        <div class="diagram-container">
+            <!-- Problem Space -->
+            <div class="space problem-space">
+                <div class="space-header">Problem Space</div>
+                
+                <div class="space-content">
+                    <div class="card core-subdomain">
+                        <div class="card-title">Core Subdomain</div>
+                        <div class="card-subtitle">Your competitive advantage</div>
+                        <div class="card-example">Product Recommendations</div>
+                        <div class="domain-model">
+                            Business concepts unique to your success
+                        </div>
+                    </div>
+                    
+                    <div class="card supporting-subdomain">
+                        <div class="card-title">Supporting Subdomain</div>
+                        <div class="card-subtitle">Necessary but not differentiating</div>
+                        <div class="card-example">Order Processing</div>
+                        <div class="domain-model">
+                            Standard business processes
+                        </div>
+                    </div>
+                    
+                    <div class="card generic-subdomain">
+                        <div class="card-title">Generic Subdomain</div>
+                        <div class="card-subtitle">Cross-cutting concerns</div>
+                        <div class="card-example">User Authentication</div>
+                        <div class="domain-model">
+                            Common solutions
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bridge -->
+            <div class="bridge">
+                <h3>Shared Concepts</h3>
+                <div class="bridge-items">
+                    <div class="bridge-item">Ubiquitous Language</div>
+                    <div class="bridge-item">Domain Model</div>
+                    <div class="bridge-item">Business Rules</div>
+                </div>
+            </div>
+            
+            <div class="arrow">↓</div>
+            
+            <!-- Solution Space -->
+            <div class="space solution-space">
+                <div class="space-header">Solution Space</div>
+                
+                <div class="space-content">
+                    <div class="card bounded-context">
+                        <div class="card-title">Bounded Context</div>
+                        <div class="card-subtitle">Product Catalog</div>
+                        <div class="card-example">Recommendation engine</div>
+                        <div class="domain-model">
+                            <div style="margin-bottom: 6px; font-weight: 500; color: #475569;">Tactical Patterns:</div>
+                            <div class="tactical-patterns">
+                                <span class="pattern">Entities</span>
+                                <span class="pattern">Value Objects</span>
+                                <span class="pattern">Aggregates</span>
+                                <span class="pattern">Services</span>
+                                <span class="pattern">Repositories</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card bounded-context">
+                        <div class="card-title">Bounded Context</div>
+                        <div class="card-subtitle">Order Management</div>
+                        <div class="card-example">Order lifecycle</div>
+                        <div class="domain-model">
+                            <div style="margin-bottom: 6px; font-weight: 500; color: #475569;">Tactical Patterns:</div>
+                            <div class="tactical-patterns">
+                                <span class="pattern">Entities</span>
+                                <span class="pattern">Value Objects</span>
+                                <span class="pattern">Aggregates</span>
+                                <span class="pattern">Services</span>
+                                <span class="pattern">Repositories</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card bounded-context">
+                        <div class="card-title">Bounded Context</div>
+                        <div class="card-subtitle">User Management</div>
+                        <div class="card-example">Authentication</div>
+                        <div class="domain-model">
+                            <div style="margin-bottom: 6px; font-weight: 500; color: #475569;">Tactical Patterns:</div>
+                            <div class="tactical-patterns">
+                                <span class="pattern">Entities</span>
+                                <span class="pattern">Value Objects</span>
+                                <span class="pattern">Aggregates</span>
+                                <span class="pattern">Services</span>
+                                <span class="pattern">Repositories</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
