@@ -70,6 +70,13 @@ _For Mid-Level to Staff Engineers_
 - **Message patterns**: Request-response, pub-sub, streaming
 - **Load balancing**: L4 vs L7, algorithms, health checks
 
+### 2.6 Security and data protection
+
+- Authentication and authorization
+- Zero-trust architecture principles
+- Encryption at rest and in transit
+- Multi-tenancy isolation strategies
+
 ## Module 3: Scalability & Performance Patterns
 
 ### 3.1 Caching Strategies
@@ -92,34 +99,18 @@ _For Mid-Level to Staff Engineers_
 - **Bulkheads**: Isolating failures
 - **Retry strategies**: Exponential backoff, jitter
 - [**Distributed locks**: Coordination patterns and pitfalls](Locks.md)
-## Module 6: Cloud-Native & DevOps
+## Module 4: Cloud-Native & DevOps
 
-### 6.1 Cloud Patterns
+### 4.1 Cloud Patterns
 
 - Containerization and orchestration essentials
 - Serverless architecture trade-offs
 - Multi-cloud considerations
 - Cost optimization strategies
-- Kubernetes
+### 4.2 Kubernetes
 
-### 6.2 Observability
+### 4.3 Observability
 
 - Metrics, logs, and traces
 - SRE: SLIs, SLOs, and error budgets
 - Alerting strategies
-
-## Module 7: Security & Compliance
-
-### 7.1 Security Architecture
-
-- Authentication patterns: OAuth 2.0, JWT, SSO
-- Authorization: RBAC, ABAC
-- Zero-trust architecture principles
-- API security best practices
-
-### 7.2 Data Protection
-
-- Encryption at rest and in transit
-- Key management basics
-- Multi-tenancy isolation strategies
-- Compliance considerations (GDPR, PCI)
