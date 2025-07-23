@@ -54,6 +54,7 @@
 - [ACID vs BASE trade-offs](acid_base.md)
 - [Transaction isolation levels: Understanding anomalies and guarantees](isolation_levels.md)
 - Enabling distributed search
+- Message Queue systems
 - Batch vs Stream Processing
 - Big Data and MapReduce
 - Data pipelines and ETL architectures
