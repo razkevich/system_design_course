@@ -69,18 +69,12 @@
 
 ## Module 3: Scalability & Performance Patterns
 
-### 3.1 Caching Strategies
+### 3.1 Scaling
 
+- Horizontal vs vertical scaling decision points
 - Cache levels: Browser, CDN, reverse proxy, application, database
 - Cache patterns: Cache-aside, write-through, write-behind
 - Distributed caching
-
-### 3.2 Scaling Patterns
-
-- Horizontal vs vertical scaling decision points
-- Auto-scaling strategies and metrics
-- Database scaling: Read replicas, sharding, federation
-- Stateless design principles
 ### 3.3 Fault Tolerance Patterns
 
 - **Redundancy**: Active-active vs active-passive
