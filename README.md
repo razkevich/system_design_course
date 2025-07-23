@@ -49,22 +49,22 @@
 
 - Relational databases
 - NoSQL databases
-- **Data modeling**
+- Data modeling
 - Partitioning and replication
 - [ACID vs BASE trade-offs](acid_base.md)
-- [**Transaction isolation levels**: Understanding anomalies and guarantees](isolation_levels.md)
+- [Transaction isolation levels: Understanding anomalies and guarantees](isolation_levels.md)
 - Enabling distributed search
 - Batch vs Stream Processing
 - Big Data and MapReduce
-- **Data pipelines** and ETL architectures
+- Data pipelines and ETL architectures
 
 ### 2.5 Networking & Communication
 
 - Key network components
-- **Protocols**: HTTP/2, WebSockets, gRPC
-- **API paradigms**: REST, GraphQL, RPC
-- **Message patterns**: Request-response, pub-sub, streaming
-- **Load balancing**: L4 vs L7, algorithms, health checks
+- Protocols: HTTP/2, WebSockets, gRPC
+- API paradigms: REST, GraphQL, RPC
+- Message patterns: Request-response, pub-sub, streaming
+- Load balancing: L4 vs L7, algorithms, health checks
 
 ### 2.6 Security and data protection
 
@@ -83,12 +83,12 @@
 - Distributed caching
 ### 3.3 Fault Tolerance Patterns
 
-- **Redundancy**: Active-active vs active-passive
-- [**Rate limiting](rate_limiting.md)
-- **Circuit breakers**: Implementation and tuning
-- **Bulkheads**: Isolating failures
-- **Retry strategies**: Exponential backoff, jitter
-- [**Distributed locks**: Coordination patterns and pitfalls](Locks.md)
+- Redundancy: Active-active vs active-passive
+- [Rate limiting](rate_limiting.md)
+- Circuit breakers: Implementation and tuning
+- Bulkheads: Isolating failures
+- Retry strategies: Exponential backoff, jitter
+- [Distributed locks: Coordination patterns and pitfalls](Locks.md)
 ## Module 4: Cloud-Native & DevOps
 
 ### 4.1 Cloud Patterns
