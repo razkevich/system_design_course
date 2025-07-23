@@ -20,176 +20,163 @@ In this article we'll review common approaches and architectures for designing r
 - **We often can relax consistency requirements:** it's not a big deal if we let through some requests. We need design for strict guarantees (e.g. if every request is very expensive), but this comes with increased cost and complexity.
 - **Rate limits should be communicated clearly to clients** through standard headers (RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset) to prevent retry storms.
 - **Different endpoints may need different rate limits** based on their computational cost and business importance.
-- When a user hits the rate limit, the server will return the `429` error code indicating that too many requests have been issued. Another approach is to refuse to return any response to potentially malicious requests (or even confuse them with a 200) in order to obfuscate internal state to the attacker.
+- When a user hits the rate limit, the server will return the `429` error code indicating that too many requests have been issued.
+
+## Rate limiting dimensions
+
+There are different dimensions by which you can limit requests:
+
+**Identity-based limiting:**
+
+- IP Address: Simple but can be bypassed; problematic with shared NAT
+- User ID: Requires authentication; most accurate for logged-in users
+- API Key: Good for B2B APIs; allows different service tiers
+- Tenant/Organization: Essential for multi-tenant SaaS
+
+**Resource-based limiting:**
+
+- Endpoint-specific limits based on computational cost
+- Operation cost where complex queries consume more "quota points"
+- Hierarchical limits (e.g., user limits within tenant limits)
 
 ## Designing rate limiting system
 
-There are several approaches to building rate limiting systems. We can check and enforce limits at different levels:
+There are several approaches to building rate limiting systems:
 
-| Place to check and enforce limits                                                | Pros                                                                                                                 | Cons                                                                                                    | Complexities                                                                              |
-| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| API gateway level (e.g. a standalone service that gets called for every request) | • Centralized control: easy to configure and manage<br>• Protects backend services                                   | • Added network hop for all calls<br>• May become bottleneck<br>• Less flexibility for custom logic     | • Need high availability<br>• Requires distributed state management                       |
-| Standalone service that offers rate limiting API to other backend services       | • Reusable across services<br>• Centralized configuration<br>• Can implement complex algorithms<br>• Easy to monitor | • Network latency for each check<br>• Dependency for all services<br>• Potential bottleneck             | • Service discovery<br>• Circuit breaker patterns<br>• Caching strategies needed          |
-| Inside the service itself                                                        | • No network overhead<br>• Custom business logic<br>• Service-specific limits<br>• No external dependencies          | • Code duplication<br>• Harder to manage globally<br>• Inconsistent implementation<br>• No shared state | • Coordination between instances<br>• State synchronization<br>• Configuration management |
-For cloud-based SaaS applications, most often it makes sense to implement a **hybrid approach**: enforce basic rate limits at the API gateway level, and implement more sophisticated business logic rate limiting within services or through a dedicated rate limiting service - where needed.
+|Implementation Level|Best For|Key Trade-offs|
+|---|---|---|
+|**API Gateway**|Simple protection, DDoS defense|Centralized but less flexible; added latency|
+|**Standalone Service**|Complex rules, shared across services|Reusable but introduces dependency; potential bottleneck|
+|**Within Service**|Custom business logic, service-specific needs|No network overhead but harder to manage globally|
+
+For cloud-based SaaS applications, a **hybrid approach** often makes sense: basic rate limits at the API gateway level, with sophisticated business logic rate limiting within services where needed.
+
 ### Stateful vs. stateless approaches
 
-**Stateless approaches** store rate limiting data in external storage (like Redis):
+**Stateless** (using external storage like Redis):
 
-- **Pros:** Horizontally scalable, simple deployment, no sticky sessions needed
-- **Cons:** Network latency, external dependency
-- **Complexities:** Handling storage failures, atomic operations, cache invalidation
+- Horizontally scalable, simple deployment
+- Network latency and external dependency
+- Better for distributed systems
 
-**Stateful approaches** store rate limiting data in service memory:
+**Stateful** (in-memory storage):
 
-- **Pros:** Very low latency, no external dependencies
-- **Cons:** Requires sticky sessions, complex rebalancing, potential data loss
-- **Complexities:** State synchronization, handling node failures, hot shard management
+- Very low latency, no external dependencies
+- Requires sticky sessions, complex rebalancing
+- Better for single-instance or small deployments
+
+### Distributed systems challenges
+
+**Clock Skew**: Servers may have different times. Solutions include NTP synchronization and tolerance windows.
+
+**Network Partitions**: During splits, rate limiting state may diverge. Choose between accepting temporary inconsistency or implementing quorum-based decisions.
+
+**Consistency Guarantees**:
+
+- Eventually Consistent: Acceptable for most APIs
+- Strongly Consistent: Required for billing-critical operations
+- Best Effort: Lowest latency but least accurate
 
 ## Rate limiting algorithms
 
-How does a distributed rate-limiting service determine the requestor's current request rate and compare it with the desired limit? There are common algorithms to do that, each with different trade-offs between accuracy, memory usage, and implementation complexity.
-
 ### Token Bucket
 
-**Main idea:** A bucket holds tokens that are consumed by requests and refilled at a constant rate.
+A bucket holds tokens consumed by requests and refilled at a constant rate. Allows burst traffic up to bucket capacity while maintaining long-term rate limits. Uses lazy evaluation — no background process needed — "virtual" tokens usage/refill are calculated at request time.
 
-Each request consumes a token. If no tokens are available, the request is rejected. The bucket refills at a configured rate (e.g., 10 tokens per second) up to a maximum capacity. This maximum capacity allows the algorithm to handle burst traffic - if a user hasn't made requests for a while, tokens accumulate up to the bucket capacity, allowing them to make multiple rapid requests.
+**Best for:** General API rate limiting where some burstiness is acceptable 
 
-A key implementation detail is that **no background process actively fills the bucket**. Instead, the system uses lazy evaluation: when a request arrives, it calculates how many tokens should have been added since the last request based on the elapsed time and refill rate. This approach is more efficient and works well in distributed systems since it doesn't require background threads or timers.
-
-**Benefits:**
-
-- Memory efficient (only stores token count and last update timestamp)
-- Handles burst traffic well while maintaining long-term rate limits
-- Simple to implement and understand
-- Works well for most API rate limiting scenarios
-
-**Complexities:**
-
-- Requires atomic operations in distributed systems to prevent race conditions
-- Clock synchronization between servers becomes important
-- Determining optimal bucket capacity and refill rate requires understanding traffic patterns
+**Trade-off:** Simple and efficient but requires careful capacity planning
 
 ### Leaky Bucket
 
-**Main idea:** Requests fill a bucket that "leaks" at a constant rate, simulating a queue with fixed processing rate.
+Requests fill a bucket that "leaks" at a constant rate, enforcing smooth output. Can be implemented with an actual queue or virtually with counters.
 
-Unlike token bucket, which allows bursts, the leaky bucket enforces a smooth, constant output rate. There are two ways to implement this:
+**Best for:** Protecting backend systems that cannot handle bursts 
 
-**Traditional implementation:** Maintains an actual queue where incoming requests are stored. A separate process or thread continuously removes and processes requests from this queue at a fixed rate. If the queue is full, new requests are rejected.
-
-**Virtual/lazy implementation:** Instead of a real queue, the system calculates when each request would be processed based on the current virtual queue state. When a request arrives, it calculates the earliest time it could be processed (based on when previous requests would finish). If this time is too far in the future (queue too long), the request is rejected. This approach, like token bucket, requires no background processes.
-
-This algorithm is particularly useful when the backend system cannot handle any burst traffic and requires a predictable, constant request rate. For example, if interfacing with a legacy system that can only process exactly 10 requests per second, a leaky bucket ensures this limit is never exceeded.
-
-**Benefits:**
-
-- Provides perfectly smooth output rate
-- Protects rate-sensitive backend systems
-- Predictable behavior and resource usage
-
-**Complexities:**
-
-- Requires maintaining a queue, using more memory than token bucket
-- Can introduce latency even for legitimate traffic during busy periods
-- More complex to implement in distributed systems due to queue management
-- May not be suitable for APIs where some burstiness is acceptable
+**Trade-off:** Smooth rate but may delay legitimate traffic
 
 ### Fixed Window Counter
 
-**Main idea:** Count requests in fixed time windows (e.g., 0-60 seconds of each minute).
+Count requests in fixed time windows (e.g., each minute). Simple but suffers from boundary spikes where users can make double the limit by timing requests around window boundaries.
 
-The algorithm divides time into fixed windows and maintains a counter for each window. When the window expires, the counter resets to zero. For example, with 1-minute windows, requests from 12:00:00 to 12:00:59 are counted together, then the counter resets at 12:01:00.
+**Best for:** Internal metrics, non-critical limiting 
 
-The main challenge with this approach is the **boundary spike problem**: a user could potentially make double the allowed requests by timing them around the window boundary. For instance, if the limit is 100 requests per minute, a user could make 100 requests at 12:00:59 and another 100 at 12:01:00, effectively making 200 requests in 2 seconds while staying within the per-window limit.
-
-**Benefits:**
-
-- Very simple to implement and understand
-- Minimal memory usage (one counter per active window)
-- Easy to debug and monitor
-- Good for internal metrics and non-critical rate limiting
-
-**Complexities:**
-
-- The boundary spike issue can allow significant over-limit traffic
-- Less accurate than sliding window approaches
-- Can cause thundering herd problems when many clients synchronize to window boundaries
-- Not suitable when strict rate limiting is required
+**Trade-off:** Very simple but least accurate
 
 ### Sliding Window Log
 
-**Main idea:** Store timestamp of each request and count requests within the sliding time window.
+Stores timestamps of all requests and counts those within the sliding window. Most accurate but memory-intensive.
 
-This algorithm maintains a complete log of all request timestamps within the time window. When checking rate limits, it counts all requests that fall within the sliding window (current time minus window size). Old entries outside the window are removed periodically or on-demand.
+**Best for:** When accuracy is critical and request volume is manageable 
 
-This provides the most accurate rate limiting because it uses the exact sliding window rather than approximations. Every request is evaluated against the precise count of requests in the past time period. However, this accuracy comes at the cost of storing every individual request timestamp.
-
-**Benefits:**
-
-- Most accurate algorithm with true sliding window behavior
-- No boundary spike issues
-- Provides detailed usage data for analytics and debugging
-- Can support complex rate limiting rules based on request patterns
-
-**Complexities:**
-
-- High memory usage proportional to request volume
-- Counting operations can be expensive with many requests
-- Requires efficient garbage collection of expired entries
-- More complex to scale in distributed systems
+**Trade-off:** Perfect accuracy but high memory usage
 
 ### Sliding Window Counter
 
-**Main idea:** Hybrid approach using multiple fixed windows to approximate a sliding window.
+Hybrid approach using weighted averages of current and previous fixed windows. Approximates sliding window behavior efficiently.
 
-This algorithm combines the simplicity of fixed windows with better accuracy approaching that of a sliding window. It maintains counters for the current and previous fixed windows, then calculates a weighted average based on the current position within the window.
+**Best for:** Production systems needing good accuracy with reasonable resource usage 
 
-For example, if 30 seconds have passed in the current minute-long window, the algorithm weights the current window's count by 50% (30/60) and the previous window's count by 50% (30/60). This approximation significantly reduces the boundary spike problem while maintaining the efficiency of counter-based approaches.
+**Trade-off:** Good balance but still an approximation
 
-**Benefits:**
+### GCRA (Generic Cell Rate Algorithm)
 
-- Good balance between accuracy and resource usage
-- Constant-time operations regardless of request volume
-- Significantly reduces boundary spike issues
-- Easier to implement in distributed systems than sliding log
+Used by Redis-cell, tracks when the next request should be allowed based on emission intervals. Provides smooth limiting with exact wait times.
 
-**Complexities:**
+**Best for:** When you need very smooth rate limiting with minimal memory 
 
-- Still an approximation, not perfectly accurate
-- Requires maintaining multiple window counters
-- The weighting calculation adds some complexity
-- Accuracy depends on window size selection
+**Trade-off:** More complex to understand but very efficient
 
-# Rate Limiting Solutions Comparison
+## Determining appropriate rate limits
 
-| Name                                                  | Purpose                                        | Benefits                                                                                           |
-| ----------------------------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| **Nginx rate limiting module** (Open Source)          | Built-in rate limiting for nginx web server    | • Supports multiple algorithms<br>• Good for simple use cases<br>• No additional components needed |
-| **Redis-cell** (Open Source)                          | Redis module for distributed rate limiting     | • Implements GCRA algorithm<br>• Atomic operations<br>• Enables distributed rate limiting          |
-| **AWS API Gateway** (Managed Service)                 | Cloud-based API management with rate limiting  | • Built-in rate limiting<br>• Usage plans and API keys<br>• Auto-scaling capabilities              |
-| **Azure API Management** (Managed Service)            | Cloud-based API management for Azure ecosystem | • Policy-based rate limiting<br>• Integration with Azure services<br>• Developer portal included   |
-| **Cloudflare Rate Limiting** (Managed Service)        | Edge-based rate limiting and DDoS protection   | • Global distribution<br>• DDoS protection<br>• Minimal latency at edge                            |
-| **Kong API Gateway** (Managed Service or Self-hosted) | API gateway with plugin-based rate limiting    | • Plugin-based architecture<br>• Multiple algorithm support<br>• Enterprise features available     |
+**Capacity-based approach:**
 
-## Conclusion and takeaways
+1. Load test endpoints to find breaking points
+2. Apply safety margins (typically 70-80% of maximum)
+3. Consider downstream dependencies
 
-Rate limiting is a critical component of modern SaaS applications, protecting systems from abuse while ensuring fair resource usage. Key takeaways:
+**Business-driven approach:**
 
-1. **Start simple, evolve as needed:** Begin with basic rate limiting at the API gateway and add sophistication as your system grows
-    
-2. **Choose algorithms wisely:** Token bucket for general use, sliding window for accuracy-critical applications
-    
-3. **Layer your defenses:** Implement rate limiting at multiple levels for comprehensive protection
-    
-4. **Consider the trade-offs:** Balance between accuracy, performance, and complexity based on your requirements
-    
-5. **Communicate clearly:** Use standard headers and provide good error messages to help clients handle rate limits
-    
-6. **Monitor and adapt:** Track rate limiting metrics and adjust limits based on actual usage patterns
-    
-7. **Plan for scale:** Design your rate limiting system to grow with your application
-    
+1. Analyze legitimate usage patterns
+2. Set limits above 99th percentile of normal usage
+3. Create different tiers for customer segments
 
-Remember, rate limiting is not just about preventing abuse—it's about ensuring a quality experience for all users while protecting your infrastructure. The best rate limiting system is one that users rarely notice but that saves your service during critical moments.
+**Key metrics to monitor:**
+
+- Hit rate: What percentage of users hit limits?
+- Denial patterns: Are denials clustered or distributed?
+- Customer impact: Are paying customers affected?
+- Recovery time: How long do users stay limited?
+
+## Client-side best practices
+
+Clients should implement:
+
+- **Exponential backoff with jitter** to prevent thundering herd
+- **Respect Retry-After headers** when provided
+- **Proactive client-side limiting** to avoid hitting server limits
+- **Circuit breakers** to fail fast when consistently rate limited
+
+## Rate Limiting Solutions Comparison
+
+|Solution|Best For|Key Consideration|
+|---|---|---|
+|**Nginx rate limiting**|Simple protection at web server level|Limited to basic request/connection rates|
+|**Redis-cell**|Distributed systems needing consistency|Requires Redis infrastructure|
+|**AWS API Gateway**|AWS-based serverless applications|Vendor lock-in, cost at scale|
+|**Kong Gateway**|Complex microservice architectures|Steeper learning curve|
+|**Cloudflare**|Global, public-facing APIs|Limited customization options|
+|**Custom Implementation**|Specific business requirements|Development and maintenance burden|
+
+## Key takeaways
+
+1. **Start simple, evolve as needed** - Don't over-engineer initially
+2. **Choose algorithms based on requirements** - Token bucket for most cases, GCRA for smooth limiting
+3. **Layer your defenses** - Multiple levels provide better protection
+4. **Monitor and adapt** - Rate limits should evolve with usage patterns
+5. **Design for failure** - Plan for when rate limiting itself fails
+6. **Communicate clearly** - Good error messages and headers help clients adapt
+7. **Test thoroughly** - Especially distributed behavior and edge cases
+8. **Balance protection with user experience** - Limits should be rarely noticed by legitimate users
+
+Rate limiting is not just about preventing abuse—it's about ensuring quality service for all users while protecting your infrastructure. The best rate limiting system is invisible to good actors while effectively stopping bad ones.
