@@ -26,12 +26,12 @@ In this article we'll review common approaches and architectures for designing r
 
 There are several approaches to building rate limiting systems. We can check and enforce limits at different levels:
 
-|Place to check and enforce limits|Pros|Cons|Complexities|
-|---|---|---|---|
-|API gateway level (e.g. a standalone service that gets called for every request)|• Centralized control: easy to configure and manage<br>• Protects backend services|• Added network hop for all calls<br>• May become bottleneck<br>• Less flexibility for custom logic|• Need high availability<br>• Requires distributed state management|
-|Standalone service that offers rate limiting API to other backend services|• Reusable across services<br>• Centralized configuration<br>• Can implement complex algorithms<br>• Easy to monitor|• Network latency for each check<br>• Dependency for all services<br>• Potential bottleneck|• Service discovery<br>• Circuit breaker patterns<br>• Caching strategies needed|
-|Inside the service itself|• No network overhead<br>• Custom business logic<br>• Service-specific limits<br>• No external dependencies|• Code duplication<br>• Harder to manage globally<br>• Inconsistent implementation<br>• No shared state|• Coordination between instances<br>• State synchronization<br>• Configuration management|
-
+| Place to check and enforce limits                                                | Pros                                                                                                                 | Cons                                                                                                    | Complexities                                                                              |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| API gateway level (e.g. a standalone service that gets called for every request) | • Centralized control: easy to configure and manage<br>• Protects backend services                                   | • Added network hop for all calls<br>• May become bottleneck<br>• Less flexibility for custom logic     | • Need high availability<br>• Requires distributed state management                       |
+| Standalone service that offers rate limiting API to other backend services       | • Reusable across services<br>• Centralized configuration<br>• Can implement complex algorithms<br>• Easy to monitor | • Network latency for each check<br>• Dependency for all services<br>• Potential bottleneck             | • Service discovery<br>• Circuit breaker patterns<br>• Caching strategies needed          |
+| Inside the service itself                                                        | • No network overhead<br>• Custom business logic<br>• Service-specific limits<br>• No external dependencies          | • Code duplication<br>• Harder to manage globally<br>• Inconsistent implementation<br>• No shared state | • Coordination between instances<br>• State synchronization<br>• Configuration management |
+For cloud-based SaaS applications, most often it makes sense to implement a **hybrid approach**: enforce basic rate limits at the API gateway level, and implement more sophisticated business logic rate limiting within services or through a dedicated rate limiting service - where needed.
 ### Stateful vs. stateless approaches
 
 **Stateless approaches** store rate limiting data in external storage (like Redis):
@@ -45,10 +45,6 @@ There are several approaches to building rate limiting systems. We can check and
 - **Pros:** Very low latency, no external dependencies
 - **Cons:** Requires sticky sessions, complex rebalancing, potential data loss
 - **Complexities:** State synchronization, handling node failures, hot shard management
-
-### Hybrid approach
-
-For cloud-based SaaS applications, most often it makes sense to implement a **hybrid approach**: enforce basic rate limits at the API gateway level, and implement more sophisticated business logic rate limiting within services or through a dedicated rate limiting service - where needed.
 
 ## Rate limiting algorithms
 
@@ -168,14 +164,14 @@ For example, if 30 seconds have passed in the current minute-long window, the al
 
 # Rate Limiting Solutions Comparison
 
-|Name|Type|Purpose|Benefits|
-|---|---|---|---|
-|**Nginx rate limiting module**|Open Source|Built-in rate limiting for nginx web server|• Supports multiple algorithms<br>• Good for simple use cases<br>• No additional components needed|
-|**Redis-cell**|Open Source|Redis module for distributed rate limiting|• Implements GCRA algorithm<br>• Atomic operations<br>• Enables distributed rate limiting|
-|**AWS API Gateway**|Managed Service|Cloud-based API management with rate limiting|• Built-in rate limiting<br>• Usage plans and API keys<br>• Auto-scaling capabilities|
-|**Azure API Management**|Managed Service|Cloud-based API management for Azure ecosystem|• Policy-based rate limiting<br>• Integration with Azure services<br>• Developer portal included|
-|**Cloudflare Rate Limiting**|Managed Service|Edge-based rate limiting and DDoS protection|• Global distribution<br>• DDoS protection<br>• Minimal latency at edge|
-|**Kong API Gateway**|Managed Service|API gateway with plugin-based rate limiting|• Plugin-based architecture<br>• Multiple algorithm support<br>• Enterprise features available|
+| Name                                                  | Purpose                                        | Benefits                                                                                           |
+| ----------------------------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Nginx rate limiting module** (Open Source)          | Built-in rate limiting for nginx web server    | • Supports multiple algorithms<br>• Good for simple use cases<br>• No additional components needed |
+| **Redis-cell** (Open Source)                          | Redis module for distributed rate limiting     | • Implements GCRA algorithm<br>• Atomic operations<br>• Enables distributed rate limiting          |
+| **AWS API Gateway** (Managed Service)                 | Cloud-based API management with rate limiting  | • Built-in rate limiting<br>• Usage plans and API keys<br>• Auto-scaling capabilities              |
+| **Azure API Management** (Managed Service)            | Cloud-based API management for Azure ecosystem | • Policy-based rate limiting<br>• Integration with Azure services<br>• Developer portal included   |
+| **Cloudflare Rate Limiting** (Managed Service)        | Edge-based rate limiting and DDoS protection   | • Global distribution<br>• DDoS protection<br>• Minimal latency at edge                            |
+| **Kong API Gateway** (Managed Service or Self-hosted) | API gateway with plugin-based rate limiting    | • Plugin-based architecture<br>• Multiple algorithm support<br>• Enterprise features available     |
 
 ## Conclusion and takeaways
 
