@@ -1,25 +1,14 @@
 # System Design Interview Curriculum
 
-_For Mid-Level to Staff Engineers_
-
 ## Module 1: Interview Foundation & Framework
 
 ### 1.1 Interview Reality Check
 
-- System design interview expectations by level (L4/SDE2 to L6/Staff)
-- Company-specific patterns: Meta (speed), Amazon (business impact), Google (scale)
-- Evaluation criteria breakdown: problem-solving (40%), trade-offs (25%), communication (20%), fundamentals (15%)
+- System design interview expectations by level
+- Company-specific patterns
+- Evaluation criteria breakdown
 - Common failure points and how to avoid them
-
-### 1.2 The 7-Step Interview Framework
-
-- **Step 1**: Clarify requirements and constraints (5 min)
-- **Step 2**: Estimate scale and define SLAs (5 min)
-- **Step 3**: Define APIs and interfaces (5 min)
-- **Step 4**: Create high-level design (10 min)
-- **Step 5**: Deep dive into components (15 min)
-- **Step 6**: Scale the design (10 min)
-- **Step 7**: Address bottlenecks and trade-offs (10 min)
+- The 7-Step Interview Framework
 
 ### 1.3 Communication Excellence
 
@@ -27,7 +16,6 @@ _For Mid-Level to Staff Engineers_
 - Collaborative design techniques
 - Handling ambiguity and pushback
 - Time management strategies
-- **Practice**: Record yourself solving a problem
 
 ## Module 2: Core System Design Fundamentals
 
@@ -36,18 +24,20 @@ _For Mid-Level to Staff Engineers_
 - What is architecture and system design
 - Architectural views
 - Models for documentation
-- **Trade-off analysis and decision-making frameworks**
+- Trade-off analysis and decision-making frameworks
 
 ### 2.2 Modern architectural styles, patterns and design
+
 * [Domain Driven Design](DDD.md)
 * Modern architectural styles
+* Modular monoliths
 * Microservices architecture deep dive
-* Event driven architecture
+* Event driven architectures
 * Real time systems
-
 ### 2.3 Distributed Systems Essentials
 
-- CAP theorem and its practical implications
+- Distributed systems overview
+- [CAP theorem and its practical implications](cap.md)
 - Consistency models: strong, eventual, causal
 - [Partitioning and replication strategies](DBs.md)
 - Consensus basics (Raft for interviews, not Paxos depth)
