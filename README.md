@@ -45,16 +45,22 @@
 - [Distributed coordination and locking](Locks.md)
 - Clock synchronization and ordering
 
-### 2.4 Data Storage Foundations
+### 2.4 Data Storage and Processing
 
-- RDBMS overview
-- **Data modeling**: Normalization vs denormalization trade-offs
+- Relational databases
+- NoSQL databases
+- **Data modeling**
+- Partitioning and replication
 - [ACID vs BASE trade-offs](acid_base.md)
 - [**Transaction isolation levels**: Understanding anomalies and guarantees](isolation_levels.md)
 - Enabling distributed search
+- Batch vs Stream Processing
+- Big Data and MapReduce
+- **Data pipelines** and ETL architectures
 
 ### 2.5 Networking & Communication
 
+- Key network components
 - **Protocols**: HTTP/2, WebSockets, gRPC
 - **API paradigms**: REST, GraphQL, RPC
 - **Message patterns**: Request-response, pub-sub, streaming
