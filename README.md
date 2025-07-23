@@ -37,20 +37,20 @@
 ### 2.3 Distributed Systems Essentials
 
 - Distributed systems overview
+- Sharding and replication
 - [CAP theorem and its practical implications](cap.md)
 - Consistency models: strong, eventual, causal
 - [Partitioning and replication strategies](DBs.md)
-- Consensus basics (Raft for interviews, not Paxos depth)
+- Consensus basics
 - [Distributed coordination and locking](Locks.md)
 - Clock synchronization and ordering
 
 ### 2.4 Data Storage Foundations
 
-- **Storage engines**: B-trees vs LSM-trees (when each matters)
-* [ACID vs BASE trade-offs](acid_base.md)
-- [**Transaction isolation levels**: Understanding anomalies and guarantees](isolation_levels.md)
+- RDBMS overview
 - **Data modeling**: Normalization vs denormalization trade-offs
-- **Sharding strategies**: Range, hash, geographic
+- [ACID vs BASE trade-offs](acid_base.md)
+- [**Transaction isolation levels**: Understanding anomalies and guarantees](isolation_levels.md)
 - Enabling distributed search
 
 ### 2.5 Networking & Communication
