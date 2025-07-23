@@ -1,132 +1,125 @@
-## Introduction
+# System Design Interview Curriculum
 
-- Who needs system design. Roles in modern development. What is expected from a Senior/Staff position candidate.
-- Standard interview flow
-- Interview specifics at FAANG
-- Framework for successful completion
-- **Communication strategies for system design discussions**
-- **How to effectively present and defend design decisions**
+_For Mid-Level to Staff Engineers_
 
-### Architecture and System Design
+## Module 1: Interview Foundation & Framework
+
+### 1.1 Interview Reality Check
+
+- System design interview expectations by level (L4/SDE2 to L6/Staff)
+- Company-specific patterns: Meta (speed), Amazon (business impact), Google (scale)
+- Evaluation criteria breakdown: problem-solving (40%), trade-offs (25%), communication (20%), fundamentals (15%)
+- Common failure points and how to avoid them
+
+### 1.2 The 7-Step Interview Framework
+
+- **Step 1**: Clarify requirements and constraints (5 min)
+- **Step 2**: Estimate scale and define SLAs (5 min)
+- **Step 3**: Define APIs and interfaces (5 min)
+- **Step 4**: Create high-level design (10 min)
+- **Step 5**: Deep dive into components (15 min)
+- **Step 6**: Scale the design (10 min)
+- **Step 7**: Address bottlenecks and trade-offs (10 min)
+
+### 1.3 Communication Excellence
+
+- Structured problem-solving approach
+- Collaborative design techniques
+- Handling ambiguity and pushback
+- Time management strategies
+- **Practice**: Record yourself solving a problem
+
+## Module 2: Core System Design Fundamentals
+
+### 2.1 Architecture and System Design basics
 
 - What is architecture and system design
 - Architectural views
 - Models for documentation
 - **Trade-off analysis and decision-making frameworks**
 
-### Requirements Gathering
+### 2.2 Modern architectural styles, patterns and design
+* [Domain Driven Design](DDD.md)
+* Modern architectural styles
+* Microservices architecture deep dive
+* Event driven architecture
+* Real time systems
 
-- Types of requirements
-- Functional requirements
-- Effective techniques for gathering functional requirements
-- Non-functional requirements
-- Gathering non-functional requirements
-- Architectural constraints
-- **Security requirements and compliance considerations**
+### 2.3 Distributed Systems Essentials
 
-### Architectural Styles, Patterns, and Tactics
+- CAP theorem and its practical implications
+- Consistency models: strong, eventual, causal
+- [Partitioning and replication strategies](DBs.md)
+- Consensus basics (Raft for interviews, not Paxos depth)
+- [Distributed coordination and locking](Locks.md)
+- Clock synchronization and ordering
 
-- What are architectural styles, patterns, and tactics
-- Overview of architectural styles (layered, pipes and filters, pipeline, microkernel, service based, event driven, space based, orchestration driven, microservices)
-- Detailed on layered architecture
-- Detailed on event driven
-- Detailed on microservices
-- Tactics for scaling:
-  - Outbox pattern
-  - [Rate limiting](rate_limiting.md)
-  - [Distributed locks](Locks.md)
-  - Circuit breaker pattern
-  - Bulkhead pattern
-  - Throttling and backpressure
-  - Connection pooling
-  - Database connection management
-  - Graceful degradation
-  - Retry patterns with exponential backoff
-  - Dead letter queues
-  - Health checks and heartbeats
-- **Caching strategies and CDN architecture**
-- **Load balancing patterns and techniques**
+### 2.4 Data Storage Foundations
 
-### High-Level Design
+- **Storage engines**: B-trees vs LSM-trees (when each matters)
+* [ACID vs BASE trade-offs](acid_base.md)
+- [**Transaction isolation levels**: Understanding anomalies and guarantees](isolation_levels.md)
+- **Data modeling**: Normalization vs denormalization trade-offs
+- **Sharding strategies**: Range, hash, geographic
+- Enabling distributed search
 
-- **Component identification and responsibility assignment**
--  [**Domain Driven Design**](DDD.md)
-- **System boundaries and interfaces**
-- **Practice exercise: Design a URL shortener**
+### 2.5 Networking & Communication
 
-### API Design
+- **Protocols**: HTTP/2, WebSockets, gRPC
+- **API paradigms**: REST, GraphQL, RPC
+- **Message patterns**: Request-response, pub-sub, streaming
+- **Load balancing**: L4 vs L7, algorithms, health checks
 
-- **RESTful principles and best practices**
-- **GraphQL vs REST trade-offs**
-- **API versioning and evolution**
-- **Practice exercise: Design API for a social media platform**
+## Module 3: Scalability & Performance Patterns
 
-### Data Design and Storage
+### 3.1 Caching Strategies
 
-- **Data modeling fundamentals**
-- **SQL vs NoSQL decision criteria**
-- **Schema design patterns**
-- **Data consistency patterns: CAP theorem, eventual consistency, strong consistency**
-- **Sharding strategies and partitioning**
-- **Practice exercise: Design data model for an e-commerce platform**
+- Cache levels: Browser, CDN, reverse proxy, application, database
+- Cache patterns: Cache-aside, write-through, write-behind
+- Distributed caching
 
-### Databases and Messaging Systems
+### 3.2 Scaling Patterns
 
-- [**ACID properties and BASE**](acid_base.md)
-- [**Database isolation levels**](isolation_levels.md)
-- [**Database fundamentals**](DBs.md)
-- **Message queues vs event streaming**
-- **Kafka, RabbitMQ, and other messaging patterns**
-- **Database replication and failover**
+- Horizontal vs vertical scaling decision points
+- Auto-scaling strategies and metrics
+- Database scaling: Read replicas, sharding, federation
+- Stateless design principles
+### 3.3 Fault Tolerance Patterns
 
-### Distributed Systems
+- **Redundancy**: Active-active vs active-passive
+- [**Rate limiting](rate_limiting.md)
+- **Circuit breakers**: Implementation and tuning
+- **Bulkheads**: Isolating failures
+- **Retry strategies**: Exponential backoff, jitter
+- [**Distributed locks**: Coordination patterns and pitfalls](Locks.md)
+## Module 6: Cloud-Native & DevOps
 
-- **Consensus algorithms (Raft, Paxos basics)**
-- **Distributed transactions and saga pattern**
-- **Service discovery and coordination**
-- **Practice exercise: Design a distributed task scheduler**
+### 6.1 Cloud Patterns
 
-### Performance and Optimization
+- Containerization and orchestration essentials
+- Serverless architecture trade-offs
+- Multi-cloud considerations
+- Cost optimization strategies
+- Kubernetes
 
-- **Performance metrics and SLAs**
-- **Caching layers: application, database, CDN**
-- **Query optimization and indexing strategies**
-- **Asynchronous processing patterns**
-- **Performance testing and capacity planning**
+### 6.2 Observability
 
-### Security Architecture
+- Metrics, logs, and traces
+- SRE: SLIs, SLOs, and error budgets
+- Alerting strategies
 
-- **Authentication and authorization patterns (OAuth, JWT, SSO)**
-- **API security best practices**
-- **Data encryption at rest and in transit**
-- **Security in microservices: service mesh, mTLS**
-- **Common security vulnerabilities and mitigation**
+## Module 7: Security & Compliance
 
-### Cloud Technologies and Microservices
+### 7.1 Security Architecture
 
-- **Cloud-native design principles**
-- **Container orchestration (Kubernetes concepts)**
-- **Serverless architecture patterns**
-- **Multi-region deployment strategies**
-- **Practice exercise: Migrate monolith to microservices**
+- Authentication patterns: OAuth 2.0, JWT, SSO
+- Authorization: RBAC, ABAC
+- Zero-trust architecture principles
+- API security best practices
 
-### Reliability and Observability
+### 7.2 Data Protection
 
-- **SRE principles and error budgets**
-- **Monitoring, logging, and tracing (the three pillars)**
-- **Incident response and postmortems**
-- **Chaos engineering basics**
-- **Practice exercise: Design monitoring for a payment system**
-
-### Use Case Analysis
-
-- **Full system design walkthroughs**
-- **Common interview questions: Design WhatsApp/Uber/Netflix**
-- **Mock interviews with feedback**
-- **Time management during system design interviews**
-
-### Capstone Project
-
-- **End-to-end design of a complex system**
-- **Peer review and presentation**
-- **Interview simulation with industry professionals**
+- Encryption at rest and in transit
+- Key management basics
+- Multi-tenancy isolation strategies
+- Compliance considerations (GDPR, PCI)
