@@ -28,7 +28,7 @@
 
 ### 2.2 Modern architectural styles, patterns and design
 
-* [Domain Driven Design](DDD.md)
+* [Domain Driven Design](module_2_core_fundamentals/2.2_architectural_patterns/DDD.md)
 * Modern architectural styles
 * Modular monoliths
 * Microservices architecture deep dive
@@ -38,11 +38,11 @@
 
 - Distributed systems overview
 - Sharding and replication
-- [CAP theorem and its practical implications](cap.md)
+- [CAP theorem and its practical implications](module_2_core_fundamentals/2.3_distributed_systems/cap.md)
 - Consistency models: strong, eventual, causal
-- [Partitioning and replication strategies](DBs.md)
+- [Partitioning and replication strategies](module_2_core_fundamentals/2.3_distributed_systems/DBs.md)
 - Consensus basics
-- [Distributed coordination and locking](Locks.md)
+- [Distributed coordination and locking](module_2_core_fundamentals/2.3_distributed_systems/Locks.md)
 - Clock synchronization and ordering
 
 ### 2.4 Data Storage and Processing
@@ -51,10 +51,10 @@
 - NoSQL databases
 - Data modeling
 - Partitioning and replication
-- [ACID vs BASE trade-offs](acid_base.md)
-- [Transaction isolation levels: Understanding anomalies and guarantees](isolation_levels.md)
+- [ACID vs BASE trade-offs](module_2_core_fundamentals/2.4_data_storage/acid_base.md)
+- [Transaction isolation levels: Understanding anomalies and guarantees](module_2_core_fundamentals/2.4_data_storage/isolation_levels.md)
 - Enabling distributed search
-- [Message Queue systems](message_brokers.md)
+- [Message Queue systems](module_2_core_fundamentals/2.4_data_storage/message_brokers.md)
 - Batch vs Stream Processing
 - Big Data and MapReduce
 - Data pipelines and ETL architectures
@@ -85,11 +85,11 @@
 ### 3.3 Fault Tolerance Patterns
 
 - Redundancy: Active-active vs active-passive
-- [Rate limiting](rate_limiting.md)
+- [Rate limiting](module_3_scalability_performance/3.3_fault_tolerance/rate_limiting.md)
 - Circuit breakers: Implementation and tuning
 - Bulkheads: Isolating failures
 - Retry strategies: Exponential backoff, jitter
-- [Distributed locks: Coordination patterns and pitfalls](Locks.md)
+- [Distributed locks: Coordination patterns and pitfalls](module_2_core_fundamentals/2.3_distributed_systems/Locks.md)
 ## Module 4: Cloud-Native & DevOps
 
 ### 4.1 Cloud Patterns
