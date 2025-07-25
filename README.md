@@ -69,7 +69,7 @@
 
 ### 2.6 Security and data protection
 
-- Authentication and authorization
+- [Authentication and authorization protocols](module_2_core_fundamentals/2.6_security_and_data_protection/auth.md)
 - Zero-trust architecture principles
 - Encryption at rest and in transit
 - Multi-tenancy isolation strategies
