@@ -1,4 +1,4 @@
-# System Design cloud-native SaaS systems - Interview Curriculum
+# System Design Cloud-Native SaaS Systems - Interview Curriculum
 
 ## Module 1: Interview Foundation & Framework
 
