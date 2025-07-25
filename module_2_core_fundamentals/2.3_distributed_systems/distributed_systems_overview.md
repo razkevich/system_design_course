@@ -116,7 +116,6 @@ When dealing with dysfunctional instances, the approach depends on your replicat
 
 ## Replication meets Sharding
 
-![[distributed_systems_overview_6.png.png]]
 
 Replication and sharding are orthogonal concepts but they can complement each other. In this section let's discuss how to combine them to deliver best qualities from both approaches:
 • Fault tolerance from replication ensures data availability even when nodes fail
@@ -124,6 +123,30 @@ Replication and sharding are orthogonal concepts but they can complement each ot
 • Read scaling through replica distribution across shards
 • Geographic distribution where each region has replicated shards
 
-MongoDB exemplifies this combination well: it uses replica sets (typically 3 nodes with one primary and two secondaries) for each shard, providing both fault tolerance and load distribution. Queries are distributed across shards based on the shard key, while reads can be served by secondary replicas within each shard. Other examples include Elasticsearch clusters (shards with replicas), Cassandra (consistent hashing with replication factor), and distributed SQL databases like CockroachDB.
+MongoDB exemplifies this combination well: it uses replica sets (typically 3 nodes with one primary and two secondaries) for each shard, providing both fault tolerance and load distribution. Queries are distributed across shards based on the shard key, while reads can be served by secondary replicas within each shard. 
+
+Apache Kafka provides another excellent example: topics are divided into partitions (sharding) where each partition can have multiple replicas across different brokers (replication). One replica serves as the leader handling reads and writes, while followers provide fault tolerance. This design allows Kafka to scale horizontally by adding more partitions and maintain high availability through replication.
+
+Other examples include Elasticsearch clusters (shards with replicas), Cassandra (consistent hashing with replication factor), and distributed SQL databases like CockroachDB.
 The main tradeoffs of combining replication and sharding include increased operational complexity (managing both shard distribution and replica consistency), higher resource requirements (multiple copies of data across multiple shards), and more complex failure scenarios (you need to handle both shard failures and replica failures). However, the benefits often outweigh these costs for large-scale systems that need both high availability and horizontal scalability. The key is choosing the right replication factor and sharding strategy for your specific use case and operational capabilities.
+
+## Conclusions
+
+Understanding distributed systems fundamentally comes down to grasping the tradeoffs between consistency, availability, and partition tolerance - though we can extend this to include scalability and operational complexity. Each architecture pattern we've explored represents different points on these tradeoff curves:
+
+**Single instance systems** offer the strongest consistency guarantees and simplest operations, but sacrifice scalability and availability. They're perfect for small-scale applications or when strong consistency is paramount.
+
+**Single-leader replication** provides a sweet spot for read-heavy workloads, offering natural linearizability while adding read scalability and basic fault tolerance. The tradeoff is limited write scalability and potential single points of failure.
+
+**Multi-leader replication** enables geographic distribution and write scalability but introduces the complexity of conflict resolution and gives up strong consistency guarantees. It's ideal when you need to handle writes across different regions or have naturally partitioned write patterns.
+
+**Leaderless replication** maximizes availability and eliminates single points of failure through symmetric architecture, but requires sophisticated client logic and careful tuning of quorum parameters to balance consistency and performance.
+
+**Sharding** becomes necessary when data or throughput exceeds single-machine capabilities, but introduces the complexity of data distribution, routing, and rebalancing. The choice of sharding strategy (range, hash, consistent hashing, or directory-based) depends on your access patterns and operational requirements.
+
+**Combined replication and sharding** represents the architecture of most large-scale distributed systems, offering both horizontal scalability and fault tolerance at the cost of significant operational complexity.
+
+The key insight is that there's no universally "best" approach - the right choice depends on your specific requirements for consistency, availability, scalability, and operational simplicity. Modern distributed systems often employ different patterns for different components: a strongly consistent metadata store might use single-leader replication, while user data might be sharded with leaderless replication for maximum availability.
+
+By understanding these fundamental patterns and their tradeoffs, you can make informed architectural decisions and better reason about the behavior of complex distributed systems in production.
 
