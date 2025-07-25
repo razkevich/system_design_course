@@ -37,7 +37,7 @@
 ### 2.3 Distributed Systems Essentials
 
 - Distributed systems overview
-- Sharding and replication
+- [Sharding and replication](module_2_core_fundamentals/2.3_distributed_systems/sharding_replication.md)
 - [CAP theorem and its practical implications](module_2_core_fundamentals/2.3_distributed_systems/cap.md)
 - Consistency models: strong, eventual, causal
 - [Partitioning and replication strategies](module_2_core_fundamentals/2.3_distributed_systems/DBs.md)
