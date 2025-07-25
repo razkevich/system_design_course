@@ -83,8 +83,8 @@ Token-based authentication has become the preferred approach for modern web appl
 
 **JSON Web Tokens (JWTs)** are self-contained tokens that carry user information and claims. They consist of three parts: a header specifying the algorithm, a payload containing claims, and a signature for verification. JWTs can be:
 
-- **Self-signed tokens**: The application verifies the token using a shared secret or public key, eliminating the need for database lookups on every request
-- **Opaque tokens**: Random strings that require server-side validation, offering better security through token revocation capabilities
+- **Self-signed tokens**: The application verifies the token using a shared secret or public key, eliminating the need for database lookups on every request. OpenID Connect (OIDC) identity tokens are prime examples—these self-signed JWTs embed claims like `sub` (user ID), `email`, `name`, and `exp` (expiration) directly in the token and are typically signed with RS256 (RSA with SHA-256), making them stateless and fast to verify.
+- **Opaque tokens**: Random strings that contain no readable information—the server must validate them by calling back to the authorization server. While OIDC identity tokens (which prove who you are) are JWTs, OAuth 2.0 access tokens (which grant permission to call APIs) are often opaque, and OAuth 2.0 originally assumed opaque tokens. GitHub's personal access tokens and many API keys use this format. The trade-off is clear: you get instant revocation capability and better security (since the token reveals nothing if stolen), but at the cost of network latency on every validation.
 
 **Server validation approaches** include:
 
