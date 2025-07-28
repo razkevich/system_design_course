@@ -67,7 +67,7 @@
 - Message patterns: Request-response, pub-sub, streaming
 - Load balancing: L4 vs L7, algorithms, health checks
 - [Network in AWS](module_2_core_fundamentals/2.5_network_and_communication/network_aws.md)
-- Network in Kubernetes
+- [Kubernetes Networking](module_2_core_fundamentals/2.5_network_and_communication/kubernetes_networking.md)
 
 ### 2.6 Security and data protection
 
