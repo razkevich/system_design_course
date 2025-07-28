@@ -30,8 +30,6 @@ Once you have a load balancer in place, you need to decide how it should distrib
 
 We mentioned **sticky sessions** above briefly (also called **Session affinity**) ensures users consistently reach the same server. As discussed, Cookie-based affinity works only with Layer 7 load balancers and inserts a cookie to remember which server a user should visit. Source IP affinity routes based on the user's IP address and works with both Layer 4 and 7 load balancers.
 
-However, sticky sessions can create hot spots and limit your ability to scale. Modern applications typically avoid them by storing session data in external systems like Redis or databases, allowing any server to handle any request. (todo how that works? lb asks redis for session mapping?)
-
 ### Production Considerations
 
 When you're running load balancers in production, several features become essential for maintaining reliability and security.
@@ -41,6 +39,8 @@ Health checks are your early warning system. Your load balancer continuously pin
 SSL termination is a game-changer for both performance and management. Instead of each backend server handling encryption and decryption, your load balancer does all the heavy lifting. This centralizes certificate management (instead of updating certs on dozens of servers) and frees up your application servers to focus on business logic.
 
 DDoS protection and rate limiting help shield your backend services from both malicious attacks and unexpected traffic spikes. Many cloud load balancers integrate seamlessly with Web Application Firewalls (WAFs) to provide comprehensive protection without additional configuration headaches.
+
+Caching capabilities in modern load balancers can significantly reduce backend load by storing frequently requested responses. While not as sophisticated as dedicated CDNs, load balancer caching is particularly effective for API responses and dynamic content that doesn't change frequently.
 
 ### Cloud Implementations
 
@@ -53,7 +53,7 @@ Cloud providers have made load balancing much more accessible, offering managed 
 
 ## API Gateways
 
-While load balancers excel at distributing requests among identical servers, API gateways tackle a different challenge: managing the complexity of microservices architectures (todo is it always about microservices? what about other architectural styles?). Think of an API gateway as the front desk of a large office building—it knows which department handles which requests and can direct visitors accordingly.
+While load balancers excel at distributing requests among identical servers, API gateways tackle a different challenge: managing API complexity across distributed architectures. While they're most commonly associated with microservices, API gateways are equally valuable in service-oriented architectures (SOA), hybrid cloud deployments, or even monolithic applications that expose multiple API endpoints. Think of an API gateway as the front desk of a large office building—it knows which department handles which requests and can direct visitors accordingly.
 
 Unlike load balancers that typically spread requests across multiple instances of the same service, API gateways make intelligent routing decisions. A request to `/users/profile` might go to your user service running on servers A and B, while `/orders/history` gets routed to your order service on servers C and D.
 
@@ -61,15 +61,13 @@ Unlike load balancers that typically spread requests across multiple instances o
 
 API gateways shine in several areas that go well beyond simple traffic distribution. They centralize security concerns, handling OAuth flows, JWT token validation, API key management, and role-based access control so your individual services don't have to. This means you can implement authentication once at the gateway level instead of duplicating it across dozens of backend services.
 
-Rate limiting and throttling protect your backend services from both malicious abuse and well-intentioned clients that might overwhelm your system. You can set different limits for different API tiers—maybe free users get 100 requests per hour while premium users get 10,000. (todo give example of a real system that provides that)
+Rate limiting and throttling protect your backend services from both malicious abuse and well-intentioned clients that might overwhelm your system. You can set different limits for different API tiers—for example, Twitter's API gives free tier users 300 requests per 15-minute window, while paid enterprise customers get much higher limits based on their subscription level.
 
 Request and response transformation is where API gateways really prove their worth. They can translate between different protocols (turning REST calls into GraphQL queries), convert data formats, and handle API versioning without touching your backend code. This is incredibly valuable when you need to maintain backward compatibility or integrate with legacy systems.
 
 Monitoring and analytics give you insights into how your APIs are actually being used. You'll see which endpoints are most popular, track error rates across services, and identify performance bottlenecks before they become user-facing problems.
 
-Caching at the gateway level reduces load on your backend services and improves response times for frequently requested data. (todo caching is true for LBs also? if so let's put a paragraph there too)
-
-(todo let's mention microservices api gw, forgot its name, what Kong is)
+Caching at the gateway level reduces load on your backend services and improves response times for frequently requested data.
 
 ### Choosing the Right Solution
 
@@ -89,7 +87,7 @@ In Kubernetes environments, you'll often see NGINX Ingress Controllers and Traef
 
 ## Proxies
 
-Proxies are the unsung heroes  (todo rephrase, i don't like this "unsung heroes") of network infrastructure, sitting quietly between clients and servers to handle caching, security, and optimization tasks that would otherwise burden your applications.
+Proxies are essential components of network infrastructure, sitting between clients and servers to handle caching, security, and optimization tasks that would otherwise burden your applications.
 
 ### Forward Proxies: Acting on Behalf of Clients
 
@@ -107,7 +105,7 @@ Reverse proxies excel at SSL termination (handling all the encryption/decryption
 
 From a security standpoint, reverse proxies are invaluable. They hide details about your backend infrastructure, provide DDoS protection through rate limiting, can include Web Application Firewall functionality, and centralize logging for all incoming traffic.
 
-NGINX and Apache HTTP Server are popular choices for self-hosted solutions, while Cloudflare provides a globally distributed reverse proxy service. The key is careful configuration—a poorly configured reverse proxy can easily become a bottleneck that limits your entire application's performance. (todo is reverse proxies also blend with LBs? or are they distinct type of software?)
+NGINX and Apache HTTP Server are popular choices for self-hosted solutions, while Cloudflare provides a globally distributed reverse proxy service. It's worth noting that the line between reverse proxies and load balancers has become increasingly blurred—many modern reverse proxies like NGINX Plus and HAProxy include sophisticated load balancing features, while load balancers often include reverse proxy capabilities like SSL termination and caching. The key is careful configuration—a poorly configured reverse proxy can easily become a bottleneck that limits your entire application's performance.
 
 ## Content Delivery Networks (CDNs)
 
@@ -147,7 +145,7 @@ The magic happens through sidecar proxies—small proxy servers deployed alongsi
 
 Web Application Firewalls operate at the application layer, filtering and monitoring HTTP traffic based on predefined rules. They're your defense against common attacks like SQL injection, cross-site scripting (XSS), and the full spectrum of OWASP Top 10 vulnerabilities.
 
-Modern WAFs like AWS WAF, Cloudflare WAF, and F5 Advanced WAF integrate seamlessly with CDNs and load balancers, providing comprehensive protection without adding latency. Many can learn from traffic patterns to automatically block suspicious requests before they reach your applications.
+Modern WAFs like AWS WAF, Cloudflare WAF, and F5 Advanced WAF integrate seamlessly with CDNs, load balancers, and API gateways, providing comprehensive protection without adding latency. Many can learn from traffic patterns to automatically block suspicious requests before they reach your applications.
 
 ### DNS and Service Discovery: Finding Services in Dynamic Environments
 
@@ -157,10 +155,10 @@ Modern DNS solutions have also evolved beyond simple domain resolution to provid
 
 ## Bringing It All Together
 
-The network components we've explored don't operate in isolation\u2014they work together as an interconnected ecosystem that transforms complex distributed architectures into seamless user experiences.
+The network components we've explored don't operate in isolation; they work together as an interconnected ecosystem that transforms complex distributed architectures into seamless user experiences.
 
 Your users might hit a CDN edge server first, which routes them through a WAF for security screening, then to a load balancer that distributes traffic across API gateways. Those gateways might use service mesh infrastructure to communicate with backend microservices, all while reverse proxies handle SSL termination and caching along the way.
 
 The art of system design lies not just in understanding each component individually, but in recognizing how they complement each other. A well-architected system uses load balancers for scaling, API gateways for microservices orchestration, proxies for security and performance optimization, CDNs for global reach, and specialized components like service meshes and WAFs for resilience and protection.
 
-As you design your next distributed system, remember that these components are tools in a toolkit\u2014choose the right ones for your specific challenges, and don't be afraid to start simple and evolve your architecture as your needs grow.
+As you design your next distributed system, remember that these components are tools in a toolkit; choose the right ones for your specific challenges, and don't be afraid to start simple and evolve your architecture as your needs grow.
