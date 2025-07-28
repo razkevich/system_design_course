@@ -61,7 +61,7 @@
 
 ### 2.5 Networking & Communication
 
-- [Key network components](module_2_core_fundamentals/2.5_network_and_communication/network_components.md))
+- [Key network components](module_2_core_fundamentals/2.5_network_and_communication/network_components.md)
 - Protocols: HTTP/2, WebSockets, gRPC
 - API paradigms: REST, GraphQL, RPC
 - Message patterns: Request-response, pub-sub, streaming
