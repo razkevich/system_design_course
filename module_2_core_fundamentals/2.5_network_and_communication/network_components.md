@@ -18,7 +18,7 @@ Choosing the right type of load balancer depends on your specific requirements a
 
 **Network Load Balancers (Layer 4)** such as AWS NLB focus purely on IP addresses and ports, which makes them incredibly fast—capable of handling millions of requests per second with ultra-low latency. They're your go-to choice when you need raw performance and don't require complex routing logic. Think high-frequency trading platforms or real-time gaming backends.
 
-**Application Load Balancers (Layer 7)** like AWS ALB can peek inside HTTP requests to make smart routing decisions based on URLs, headers, or even request content. While they require more processing power than their Layer 4 counterparts, they enable sophisticated features like sending `/api/users` requests to your user service while routing `/api/orders` to your order service. They're ideal for microservices architectures where different parts of your application live on different servers. 
+**Application Load Balancers (Layer 7)** like AWS ALB can peek inside HTTP requests to make intelligent routing decisions, but they're still fundamentally about distributing traffic across multiple instances of the same application. Their ability to inspect HTTP content enables powerful features like sticky sessions through cookie-based session affinity. For example, when a user first visits your application, the ALB can insert a special cookie that ensures all subsequent requests from that user go to the same backend server. This is crucial for applications that store session data locally on each server rather than in a shared session store. While they require more processing power than Layer 4 load balancers, they're essential when you need session persistence or other content-aware routing while still maintaining the core load balancing function.
 
 ### Load Balancing Algorithms
 
@@ -28,9 +28,9 @@ Once you have a load balancer in place, you need to decide how it should distrib
 
 **Dynamic algorithms** adapt to real-time conditions. Least Connections routes new requests to whichever server currently has the fewest active connections—great when requests take varying amounts of time to process. Least Response Time goes a step further, considering both connection count and how quickly each server has been responding. Least Loaded looks at actual server resource usage like CPU and memory.
 
-**Session affinity** (also called sticky sessions) ensures users consistently reach the same server. Cookie-based affinity works only with Layer 7 load balancers and inserts a cookie to remember which server a user should visit. Source IP affinity routes based on the user's IP address and works with both Layer 4 and 7 load balancers.
+We mentioned **sticky sessions** above briefly (also called **Session affinity**) ensures users consistently reach the same server. As discussed, Cookie-based affinity works only with Layer 7 load balancers and inserts a cookie to remember which server a user should visit. Source IP affinity routes based on the user's IP address and works with both Layer 4 and 7 load balancers.
 
-However, sticky sessions can create hot spots and limit your ability to scale. Modern applications typically avoid them by storing session data in external systems like Redis or databases, allowing any server to handle any request.
+However, sticky sessions can create hot spots and limit your ability to scale. Modern applications typically avoid them by storing session data in external systems like Redis or databases, allowing any server to handle any request. (todo how that works? lb asks redis for session mapping?)
 
 ### Production Considerations
 
@@ -38,7 +38,7 @@ When you're running load balancers in production, several features become essent
 
 Health checks are your early warning system. Your load balancer continuously pings each server with HTTP requests or TCP connections to make sure they're responding properly. When a server starts failing these checks, traffic gets automatically rerouted to healthy servers, often within seconds of a problem being detected.
 
-SSL termination is a game-changer for both performance and management. Instead of each backend server handling encryption and decryption, your load balancer does all the heavy lifting. This centralizes certificate management (no more updating certs on dozens of servers) and frees up your application servers to focus on business logic.
+SSL termination is a game-changer for both performance and management. Instead of each backend server handling encryption and decryption, your load balancer does all the heavy lifting. This centralizes certificate management (instead of updating certs on dozens of servers) and frees up your application servers to focus on business logic.
 
 DDoS protection and rate limiting help shield your backend services from both malicious attacks and unexpected traffic spikes. Many cloud load balancers integrate seamlessly with Web Application Firewalls (WAFs) to provide comprehensive protection without additional configuration headaches.
 
@@ -53,21 +53,23 @@ Cloud providers have made load balancing much more accessible, offering managed 
 
 ## API Gateways
 
-While load balancers excel at distributing requests among identical servers, API gateways tackle a different challenge: managing the complexity of microservices architectures. Think of an API gateway as the front desk of a large office building—it knows which department handles which requests and can direct visitors accordingly.
+While load balancers excel at distributing requests among identical servers, API gateways tackle a different challenge: managing the complexity of microservices architectures (todo is it always about microservices? what about other architectural styles?). Think of an API gateway as the front desk of a large office building—it knows which department handles which requests and can direct visitors accordingly.
 
 Unlike load balancers that typically spread requests across multiple instances of the same service, API gateways make intelligent routing decisions. A request to `/users/profile` might go to your user service running on servers A and B, while `/orders/history` gets routed to your order service on servers C and D.
 
 ### What Makes API Gateways Special
 
-API gateways shine in several areas that go well beyond simple traffic distribution. They centralize security concerns, handling OAuth flows, JWT token validation, API key management, and role-based access control so your individual services don't have to. This means you can implement authentication once at the gateway level instead of duplicating it across dozens of microservices.
+API gateways shine in several areas that go well beyond simple traffic distribution. They centralize security concerns, handling OAuth flows, JWT token validation, API key management, and role-based access control so your individual services don't have to. This means you can implement authentication once at the gateway level instead of duplicating it across dozens of backend services.
 
-Rate limiting and throttling protect your backend services from both malicious abuse and well-intentioned clients that might overwhelm your system. You can set different limits for different API tiers—maybe free users get 100 requests per hour while premium users get 10,000.
+Rate limiting and throttling protect your backend services from both malicious abuse and well-intentioned clients that might overwhelm your system. You can set different limits for different API tiers—maybe free users get 100 requests per hour while premium users get 10,000. (todo give example of a real system that provides that)
 
 Request and response transformation is where API gateways really prove their worth. They can translate between different protocols (turning REST calls into GraphQL queries), convert data formats, and handle API versioning without touching your backend code. This is incredibly valuable when you need to maintain backward compatibility or integrate with legacy systems.
 
 Monitoring and analytics give you insights into how your APIs are actually being used. You'll see which endpoints are most popular, track error rates across services, and identify performance bottlenecks before they become user-facing problems.
 
-Caching at the gateway level reduces load on your backend services and improves response times for frequently requested data.
+Caching at the gateway level reduces load on your backend services and improves response times for frequently requested data. (todo caching is true for LBs also? if so let's put a paragraph there too)
+
+(todo let's mention microservices api gw, forgot its name, what Kong is)
 
 ### Choosing the Right Solution
 
@@ -77,7 +79,7 @@ Hybrid solutions like Kong, Ambassador, and Istio Gateway combine advanced API m
 
 Pure API gateways such as AWS API Gateway, Google Cloud Endpoints, and Azure API Management focus primarily on API management features. They're typically fully managed services that integrate well with their respective cloud ecosystems but may have limitations when you need raw performance.
 
-Pure load balancers like AWS NLB, HAProxy, and F5 BIG-IP excel at high-performance traffic distribution but require additional tools for API management features.
+Pure load balancers like AWS NLB, basic HAProxy, and F5 BIG-IP excel at high-performance traffic distribution but require additional tools for API management features.
 
 ### Cloud & Kubernetes Integration
 
@@ -87,7 +89,7 @@ In Kubernetes environments, you'll often see NGINX Ingress Controllers and Traef
 
 ## Proxies
 
-Proxies are the unsung heroes of network infrastructure, sitting quietly between clients and servers to handle caching, security, and optimization tasks that would otherwise burden your applications.
+Proxies are the unsung heroes  (todo rephrase, i don't like this "unsung heroes") of network infrastructure, sitting quietly between clients and servers to handle caching, security, and optimization tasks that would otherwise burden your applications.
 
 ### Forward Proxies: Acting on Behalf of Clients
 
@@ -105,7 +107,7 @@ Reverse proxies excel at SSL termination (handling all the encryption/decryption
 
 From a security standpoint, reverse proxies are invaluable. They hide details about your backend infrastructure, provide DDoS protection through rate limiting, can include Web Application Firewall functionality, and centralize logging for all incoming traffic.
 
-NGINX and Apache HTTP Server are popular choices for self-hosted solutions, while Cloudflare provides a globally distributed reverse proxy service. The key is careful configuration—a poorly configured reverse proxy can easily become a bottleneck that limits your entire application's performance.
+NGINX and Apache HTTP Server are popular choices for self-hosted solutions, while Cloudflare provides a globally distributed reverse proxy service. The key is careful configuration—a poorly configured reverse proxy can easily become a bottleneck that limits your entire application's performance. (todo is reverse proxies also blend with LBs? or are they distinct type of software?)
 
 ## Content Delivery Networks (CDNs)
 
