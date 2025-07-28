@@ -1,4 +1,4 @@
-# Network Components: The Backbone of Modern Distributed Systems
+# Load Balancers, API Gateways, Proxies & CDNs Explained: The Network Components That Scale Your App to Millions of Users
 
 Modern web applications rely on critical network components that enable scaling, resilience, and global performance. This article covers the essential building blocks every system architect should understand: load balancers, API gateways, proxies, CDNs, and related infrastructure that powers today's distributed systems.
 
