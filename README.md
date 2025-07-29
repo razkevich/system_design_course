@@ -11,7 +11,7 @@
 
 ### 1.2 Modern architectural styles, patterns and design
 
-* [Domain Driven Design](module_2_core_fundamentals/2.2_architectural_patterns/DDD.md)
+* [Domain Driven Design](module_1_core_fundamentals/1.2_architectural_patterns/DDD.md)
 * Modern architectural styles
 * Modular monoliths
 * Microservices architecture deep dive
@@ -20,12 +20,12 @@
 ### 1.3 Distributed Systems Essentials
 
 - Distributed systems overview
-- [Sharding and replication](module_2_core_fundamentals/2.3_distributed_systems/sharding_replication.md)
-- [CAP theorem and its practical implications](module_2_core_fundamentals/2.3_distributed_systems/cap.md)
+- [Sharding and replication](module_1_core_fundamentals/1.3_distributed_systems/sharding_replication.md)
+- [CAP theorem and its practical implications](module_1_core_fundamentals/1.3_distributed_systems/cap.md)
 - Consistency models: strong, eventual, causal
-- [Partitioning and replication strategies](module_2_core_fundamentals/2.3_distributed_systems/DBs.md)
+- [Partitioning and replication strategies](module_1_core_fundamentals/1.3_distributed_systems/DBs.md)
 - Consensus basics
-- [Distributed coordination and locking](module_2_core_fundamentals/2.3_distributed_systems/Locks.md)
+- [Distributed coordination and locking](module_1_core_fundamentals/1.3_distributed_systems/Locks.md)
 - Clock synchronization and ordering
 
 ### 1.4 Data Storage and Processing
@@ -34,27 +34,27 @@
 - NoSQL databases
 - Data modeling
 - Partitioning and replication
-- [ACID vs BASE trade-offs](module_2_core_fundamentals/2.4_data_storage/acid_base.md)
-- [Transaction isolation levels: Understanding anomalies and guarantees](module_2_core_fundamentals/2.4_data_storage/isolation_levels.md)
+- [ACID vs BASE trade-offs](module_1_core_fundamentals/1.4_data_storage/acid_base.md)
+- [Transaction isolation levels: Understanding anomalies and guarantees](module_1_core_fundamentals/1.4_data_storage/isolation_levels.md)
 - Enabling distributed search
-- [Message Queue systems](module_2_core_fundamentals/2.4_data_storage/message_brokers.md)
+- [Message Queue systems](module_1_core_fundamentals/1.4_data_storage/message_brokers.md)
 - Batch vs Stream Processing
 - Big Data and MapReduce
 - Data pipelines and ETL architectures
 
 ### 1.5 Networking & Communication
 
-- [Key network components](module_2_core_fundamentals/2.5_network_and_communication/network_components.md)
+- [Key network components](module_1_core_fundamentals/1.5_network_and_communication/network_components.md)
 - Protocols: HTTP/2, WebSockets, gRPC
 - API paradigms: REST, GraphQL, RPC
 - Message patterns: Request-response, pub-sub, streaming
 - Load balancing: L4 vs L7, algorithms, health checks
-- [Network in AWS](module_2_core_fundamentals/2.5_network_and_communication/network_aws.md)
-- [Kubernetes Networking](module_2_core_fundamentals/2.5_network_and_communication/kubernetes_networking.md)
+- [Network in AWS](module_1_core_fundamentals/1.5_network_and_communication/network_aws.md)
+- [Kubernetes Networking](module_1_core_fundamentals/1.5_network_and_communication/kubernetes_networking.md)
 
 ### 1.6 Security and data protection
 
-- [Authentication and authorization protocols](module_2_core_fundamentals/2.6_security_and_data_protection/auth.md)
+- [Authentication and authorization protocols](module_1_core_fundamentals/1.6_security_and_data_protection/auth.md)
 - Zero-trust architecture principles
 - Encryption at rest and in transit
 - Multi-tenancy isolation strategies
@@ -70,11 +70,11 @@
 ### 2.3 Fault Tolerance Patterns
 
 - Redundancy: Active-active vs active-passive
-- [Rate limiting](module_3_scalability_performance/3.3_fault_tolerance/rate_limiting.md)
+- [Rate limiting](module_2_scalability_performance/2.3_fault_tolerance/rate_limiting.md)
 - Circuit breakers: Implementation and tuning
 - Bulkheads: Isolating failures
 - Retry strategies: Exponential backoff, jitter
-- [Distributed locks: Coordination patterns and pitfalls](module_2_core_fundamentals/2.3_distributed_systems/Locks.md)
+- [Distributed locks: Coordination patterns and pitfalls](module_1_core_fundamentals/1.3_distributed_systems/Locks.md)
 ## Module 3: Cloud-Native & DevOps
 
 ### 3.1 Cloud Patterns
