@@ -27,6 +27,7 @@
 - Consensus basics
 - [Distributed coordination and locking](module_1_core_fundamentals/1.3_distributed_systems/Locks.md)
 - Clock synchronization and ordering
+- Docker and Kubernetes deep dive
 
 ### 1.4 Data Storage and Processing
 
@@ -38,6 +39,7 @@
 - [Transaction isolation levels: Understanding anomalies and guarantees](module_1_core_fundamentals/1.4_data_storage/isolation_levels.md)
 - Enabling distributed search
 - [Message Queue systems](module_1_core_fundamentals/1.4_data_storage/message_brokers.md)
+- [Exactly-once semantics](module_1_core_fundamentals/1.4_data_storage/exactly_once.md)
 - Batch vs Stream Processing
 - Big Data and MapReduce
 - Data pipelines and ETL architectures
@@ -51,7 +53,6 @@
 - Load balancing: L4 vs L7, algorithms, health checks
 - [Network in AWS](module_1_core_fundamentals/1.5_network_and_communication/network_aws.md)
 - [Kubernetes Networking](module_1_core_fundamentals/1.5_network_and_communication/kubernetes_networking.md)
-
 ### 1.6 Security and data protection
 
 - [Authentication and authorization protocols](module_1_core_fundamentals/1.6_security_and_data_protection/auth.md)
@@ -75,18 +76,7 @@
 - Bulkheads: Isolating failures
 - Retry strategies: Exponential backoff, jitter
 - [Distributed locks: Coordination patterns and pitfalls](module_1_core_fundamentals/1.3_distributed_systems/Locks.md)
-## Module 3: Cloud-Native & DevOps
-
-### 3.1 Cloud Patterns
-
-- Containerization and orchestration essentials
-- Serverless architecture trade-offs
-- Multi-cloud considerations
-- Cost optimization strategies
-### 3.2 Kubernetes
-
-### 3.3 Observability
+### 2.4 Observability
 
 - Metrics, logs, and traces
 - SRE: SLIs, SLOs, and error budgets
-- Alerting strategies
