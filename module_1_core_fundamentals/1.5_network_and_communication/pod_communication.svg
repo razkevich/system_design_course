@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="600"
+   height="400"
+   version="1.1"
+   id="svg20"
+   sodipodi:docname="pod_communication.svg"
+   inkscape:version="1.4.2 (ebf0e940, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs20" />
+  <sodipodi:namedview
+     id="namedview20"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.4707821"
+     inkscape:cx="281.14294"
+     inkscape:cy="162.15862"
+     inkscape:window-width="1440"
+     inkscape:window-height="776"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg20" />
+  <!-- Background -->
+  <rect
+     width="600"
+     height="400"
+     fill="#f8f9fa"
+     id="rect1" />
+  <!-- Node Network Layer -->
+  <rect
+     x="50"
+     y="50"
+     width="500"
+     height="100"
+     fill="#e3f2fd"
+     stroke="#1976d2"
+     stroke-width="2"
+     rx="10"
+     id="rect2" />
+  <text
+     x="300"
+     y="30"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="16"
+     font-weight="bold"
+     id="text2">Node Network (10.0.1.0/24)</text>
+  <!-- Nodes -->
+  <rect
+     x="100"
+     y="70"
+     width="100"
+     height="60"
+     fill="#bbdefb"
+     stroke="#1976d2"
+     rx="5"
+     id="rect3" />
+  <text
+     x="150"
+     y="95"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="12"
+     font-weight="bold"
+     id="text3">Node 1</text>
+  <text
+     x="150"
+     y="110"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="10"
+     id="text4">10.0.1.100</text>
+  <rect
+     x="400"
+     y="70"
+     width="100"
+     height="60"
+     fill="#bbdefb"
+     stroke="#1976d2"
+     rx="5"
+     id="rect4" />
+  <text
+     x="450"
+     y="95"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="12"
+     font-weight="bold"
+     id="text5">Node 2</text>
+  <text
+     x="450"
+     y="110"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="10"
+     id="text6">10.0.1.101</text>
+  <!-- Pod Network Layer -->
+  <rect
+     x="50"
+     y="200"
+     width="500"
+     height="150"
+     fill="#f3e5f5"
+     stroke="#7b1fa2"
+     stroke-width="2"
+     rx="10"
+     id="rect6" />
+  <text
+     x="300"
+     y="180"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="16"
+     font-weight="bold"
+     id="text7">Pod Network (10.244.0.0/16)</text>
+  <!-- Pods -->
+  <rect
+     x="80"
+     y="220"
+     width="70"
+     height="50"
+     fill="#ce93d8"
+     stroke="#7b1fa2"
+     rx="5"
+     id="rect7" />
+  <text
+     x="115"
+     y="240"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="10"
+     font-weight="bold"
+     id="text8">Pod A</text>
+  <text
+     x="115"
+     y="255"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="9"
+     id="text9">10.244.1.10</text>
+  <rect
+     x="178.83884"
+     y="220"
+     width="70"
+     height="50"
+     fill="#ce93d8"
+     stroke="#7b1fa2"
+     rx="5"
+     id="rect9" />
+  <text
+     x="213.83884"
+     y="240"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="10px"
+     font-weight="bold"
+     id="text10">Pod B</text>
+  <text
+     x="213.83884"
+     y="255"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="9px"
+     id="text11">10.244.1.11</text>
+  <rect
+     x="360"
+     y="220"
+     width="70"
+     height="50"
+     fill="#ce93d8"
+     stroke="#7b1fa2"
+     rx="5"
+     id="rect11" />
+  <text
+     x="395"
+     y="240"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="10"
+     font-weight="bold"
+     id="text12">Pod C</text>
+  <text
+     x="395"
+     y="255"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="9"
+     id="text13">10.244.2.10</text>
+  <rect
+     x="450"
+     y="220"
+     width="70"
+     height="50"
+     fill="#ce93d8"
+     stroke="#7b1fa2"
+     rx="5"
+     id="rect13" />
+  <text
+     x="485"
+     y="240"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="10"
+     font-weight="bold"
+     id="text14">Pod D</text>
+  <text
+     x="485"
+     y="255"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="9"
+     id="text15">10.244.2.11</text>
+  <!-- Node to Pod connections -->
+  <line
+     x1="137.76161"
+     y1="130"
+     x2="137.76161"
+     y2="220"
+     stroke="#666666"
+     stroke-width="2.00001"
+     stroke-dasharray="5, 5"
+     id="line15" />
+  <line
+     x1="472.43704"
+     y1="128.64018"
+     x2="472.43704"
+     y2="219.3201"
+     stroke="#666666"
+     stroke-width="2.00754"
+     stroke-dasharray="5, 5"
+     id="line16" />
+  <!-- Pod to Pod communication -->
+  <!-- Same node -->
+  <line
+     x1="150"
+     y1="245"
+     x2="178.83884"
+     y2="245"
+     stroke="#4caf50"
+     stroke-width="3.60243"
+     id="line17" />
+  <text
+     x="164.07947"
+     y="240"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="8px"
+     fill="#4caf50"
+     id="text17">Direct</text>
+  <!-- Cross node -->
+  <line
+     x1="249.51874"
+     y1="245"
+     x2="360"
+     y2="245"
+     stroke="#ff9800"
+     stroke-width="2.87856"
+     id="line18" />
+  <text
+     x="300"
+     y="240"
+     text-anchor="middle"
+     font-family="Arial"
+     font-size="8"
+     fill="#ff9800"
+     id="text18">Via Node Network</text>
+  <!-- Legend -->
+  <rect
+     x="50.123276"
+     y="370.12329"
+     width="314.65829"
+     height="19.753447"
+     fill="#ffffff"
+     stroke="#cccccc"
+     id="rect18"
+     style="stroke-width:1.24655" />
+  <line
+     x1="60"
+     y1="380"
+     x2="80"
+     y2="380"
+     stroke="#4caf50"
+     stroke-width="3"
+     id="line19" />
+  <text
+     x="85"
+     y="384"
+     font-family="Arial"
+     font-size="10"
+     id="text19">Same Node Communication</text>
+  <line
+     x1="214.47678"
+     y1="380.6799"
+     x2="234.47678"
+     y2="380.6799"
+     stroke="#ff9800"
+     stroke-width="3"
+     id="line20" />
+  <text
+     x="238.79686"
+     y="383.3201"
+     font-family="Arial"
+     font-size="10px"
+     id="text20">Cross Node Communication</text>
+</svg>
