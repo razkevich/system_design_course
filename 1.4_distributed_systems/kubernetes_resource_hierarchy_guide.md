@@ -394,7 +394,7 @@ Observability in Kubernetes spans three distinct but interconnected domains: met
 
 The monitoring stack uses DataDog as a comprehensive SaaS monitoring platform. The DataDog Agent runs as a DaemonSet on each node, automatically discovering and collecting metrics from applications and system components. The Metrics Server provides a lightweight API for basic resource metrics used by autoscaling and kubectl top commands, while DataDog handles comprehensive application and infrastructure observability through its cloud platform.
 
-Logging follows a simpler pattern: agents like Fluentd or Fluent Bit collect logs from Pods and forward them to centralized logging systems. The key insight is that logs flow in one direction—from applications through agents to storage—while metrics support bidirectional queries and alerting.
+Logging in the DataDog ecosystem follows a streamlined pattern: the same DataDog Agent that collects metrics also handles log collection from both application and system sources. Logs flow directly from the agent to DataDog's cloud platform for processing, storage, and analysis. This unified approach eliminates the need for separate log processing pipelines and provides integrated correlation between metrics and logs.
 
 The extension stack represents Kubernetes' most powerful operational capability: the ability to extend the API itself. Custom Resource Definitions (CRDs) create new API types, while Operators implement the domain knowledge needed to manage complex applications. Controllers provide the reconciliation logic that continuously drives actual state toward desired state. This pattern enables platforms like service meshes, databases, and monitoring systems to integrate deeply with Kubernetes while maintaining the same declarative model used for built-in resources.
 
@@ -443,25 +443,22 @@ flowchart TD
         end
         
         subgraph "Collection Layer"
-            LoggingAgent["📋 Logging Agent<br/>DaemonSet log collector"]
+            DatadogLogAgent["🐕 DataDog Agent<br/>DaemonSet log collector"]
         end
         
         subgraph "Processing & Storage"
-            LogProcessor["🌊 Log Processor<br/>Fluentd/Fluent Bit"]
-            LogStorage["🗄️ Log Storage<br/>Elasticsearch/Loki"]
+            DatadogLogCloud["☁️ DataDog Cloud<br/>Log processing & storage"]
         end
         
-        AppPod -.->|"stdout/stderr"| LoggingAgent
-        SystemLogs -.->|"system logs"| LoggingAgent
-        LoggingAgent -->|"forwards logs to"| LogProcessor
-        LogProcessor -->|"processes & stores"| LogStorage
+        AppPod -.->|"stdout/stderr"| DatadogLogAgent
+        SystemLogs -.->|"system logs"| DatadogLogAgent
+        DatadogLogAgent -->|"streams logs to"| DatadogLogCloud
     end
     
     style AppPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
     style SystemLogs fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
-    style LoggingAgent fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
-    style LogProcessor fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
-    style LogStorage fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
+    style DatadogLogAgent fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    style DatadogLogCloud fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
 ```
 
 ### Custom Resources & Operators
