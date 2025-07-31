@@ -392,7 +392,7 @@ Monitoring, logging, and operational tooling.
 
 Observability in Kubernetes spans three distinct but interconnected domains: metrics, logs, and custom resource management. Each serves different purposes but together provide comprehensive insight into cluster and application health.
 
-The monitoring stack centers around Prometheus, which serves as both a metrics database and query engine. ServiceMonitors define how Prometheus discovers and scrapes metrics from applications, while the Metrics Server provides a lightweight API for basic resource metrics used by autoscaling and kubectl top commands. This dual-tier approach separates simple resource monitoring from comprehensive application observability.
+The monitoring stack uses DataDog as a comprehensive SaaS monitoring platform. The DataDog Agent runs as a DaemonSet on each node, automatically discovering and collecting metrics from applications and system components. The Metrics Server provides a lightweight API for basic resource metrics used by autoscaling and kubectl top commands, while DataDog handles comprehensive application and infrastructure observability through its cloud platform.
 
 Logging follows a simpler pattern: agents like Fluentd or Fluent Bit collect logs from Pods and forward them to centralized logging systems. The key insight is that logs flow in one direction—from applications through agents to storage—while metrics support bidirectional queries and alerting.
 
@@ -411,24 +411,24 @@ flowchart TD
         
         subgraph "Collection Layer"
             MetricsServer["📊 Metrics Server<br/>Resource metrics API"]
-            ServiceMonitor["📝 ServiceMonitor<br/>Prometheus scrape config"]
+            DatadogAgent["🐕 DataDog Agent<br/>DaemonSet metrics collector"]
         end
         
         subgraph "Storage & Query"
-            Prometheus["🔥 Prometheus<br/>Time-series database"]
+            DatadogCloud["☁️ DataDog Cloud<br/>SaaS monitoring platform"]
         end
         
-        MonitoredPod -.->|"exposes metrics"| ServiceMonitor
+        MonitoredPod -.->|"exposes metrics"| DatadogAgent
         NodeMetrics -.->|"system metrics"| MetricsServer
-        ServiceMonitor -->|"configures scraping for"| Prometheus
-        MetricsServer -.->|"resource metrics API"| Prometheus
+        NodeMetrics -.->|"system metrics"| DatadogAgent
+        DatadogAgent -->|"sends metrics to"| DatadogCloud
     end
     
     style MonitoredPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
     style NodeMetrics fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
     style MetricsServer fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
-    style Prometheus fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
-    style ServiceMonitor fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style DatadogAgent fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    style DatadogCloud fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
 ```
 
 ### Logging Stack
