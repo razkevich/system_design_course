@@ -187,8 +187,7 @@ flowchart TD
     end
     
     style ConfigPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
-    style ConfigMap fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#000
-    style Secret fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
+    style ConfigSources fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#000
     style EnvVar fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
     style VolumeMount fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
 ```
