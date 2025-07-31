@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Kubernetes Architecture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .diagram-container {
+            position: relative;
+            padding: 40px;
+            background: #fafafa;
+            min-height: 800px;
+        }
+
+        /* Components */
+        .component {
+            position: absolute;
+            background: white;
+            border: 2px solid;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .component:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+
+        .component h3 {
+            margin-bottom: 4px;
+            font-size: 1em;
+        }
+
+        .component p {
+            font-size: 0.8em;
+            opacity: 0.7;
+        }
+
+        /* External Components */
+        .external {
+            border-style: dashed;
+            background: #f8f9fa;
+            border-color: #6c757d;
+        }
+
+        .kubectl {
+            top: 150px;
+            left: 50px;
+            width: 100px;
+            height: 60px;
+        }
+
+        .users {
+            top: 150px;
+            right: 50px;
+            width: 100px;
+            height: 60px;
+        }
+
+        /* Control Plane Container */
+        .control-plane-container {
+            position: absolute;
+            top: 250px;
+            left: 200px;
+            width: 1000px;
+            height: 200px;
+            background: #e3f2fd;
+            border: 3px solid #2196f3;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .control-plane-header {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: #2196f3;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        /* Control Plane Components */
+        .api-server {
+            top: 290px;
+            left: 650px;
+            width: 120px;
+            height: 60px;
+            background: #e8f6ff;
+            border-color: #2196f3;
+        }
+
+        .etcd {
+            top: 290px;
+            left: 250px;
+            width: 120px;
+            height: 60px;
+            background: #fff3e0;
+            border-color: #ff9800;
+        }
+
+        .scheduler {
+            top: 290px;
+            right: 220px;
+            width: 120px;
+            height: 60px;
+            background: #f3e5f5;
+            border-color: #9c27b0;
+        }
+
+        .controller-manager {
+            top: 370px;
+            left: 250px;
+            width: 150px;
+            height: 60px;
+            background: #e8f5e8;
+            border-color: #4caf50;
+        }
+
+        .cloud-controller {
+            top: 370px;
+            right: 200px;
+            width: 150px;
+            height: 60px;
+            background: #fce4ec;
+            border-color: #e91e63;
+        }
+
+        /* Data Plane Container */
+        .data-plane-container {
+            position: absolute;
+            top: 500px;
+            left: 200px;
+            width: 1000px;
+            height: 250px;
+            background: #e8f5e8;
+            border: 3px solid #27ae60;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .data-plane-header {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        /* Data Plane Components */
+        .kubelet {
+            top: 540px;
+            left: 250px;
+            width: 120px;
+            height: 60px;
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .kube-proxy {
+            top: 540px;
+            right: 220px;
+            width: 120px;
+            height: 60px;
+            background: #f1f8e9;
+            border-color: #8bc34a;
+        }
+
+        .container-runtime {
+            top: 680px;
+            left: 620px;
+            width: 160px;
+            height: 60px;
+            background: #fff8e1;
+            border-color: #ffc107;
+        }
+
+        /* Pods */
+        .pod {
+            position: absolute;
+            width: 60px;
+            height: 40px;
+            background: #e1f5fe;
+            border: 2px solid #0277bd;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: bold;
+            color: #0277bd;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pod:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+
+        .pod1 {
+            top: 620px;
+            left: 580px;
+        }
+
+        .pod2 {
+            top: 620px;
+            left: 670px;
+        }
+
+        .pod3 {
+            top: 620px;
+            left: 760px;
+        }
+
+        /* Connection Lines */
+        .connection-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .connection-line {
+            stroke: #7f8c8d;
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 8,4;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+
+        .connection-line:hover {
+            stroke-width: 3;
+            opacity: 1;
+            stroke: #34495e;
+        }
+
+        .arrow-marker {
+            fill: #7f8c8d;
+            opacity: 0.7;
+        }
+
+        .connection-hover-area {
+            stroke: transparent;
+            stroke-width: 10;
+            fill: none;
+            cursor: pointer;
+            pointer-events: all;
+        }
+
+        /* Legend */
+        .legend {
+            position: absolute;
+            bottom: 40px;
+            left: 50px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 200px;
+        }
+
+        .legend h4 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 15px;
+            border-radius: 3px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .control-color { background: #e3f2fd; }
+        .data-color { background: #e8f5e8; }
+        .external-color { background: #f8f9fa; border-style: dashed; }
+
+        .legend-line {
+            width: 20px;
+            height: 2px;
+            background: #7f8c8d;
+            margin-right: 10px;
+            position: relative;
+        }
+
+        .legend-line::after {
+            content: '';
+            position: absolute;
+            right: -3px;
+            top: -2px;
+            width: 0;
+            height: 0;
+            border-left: 6px solid #7f8c8d;
+            border-top: 3px solid transparent;
+            border-bottom: 3px solid transparent;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: #2c3e50;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            max-width: 350px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            line-height: 1.4;
+        }
+
+        .tooltip.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid #2c3e50;
+        }
+
+        .tooltip strong {
+            color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Kubernetes Architecture</h1>
+            <p>Interactive diagram showing components and their relationships</p>
+        </div>
+        
+        <div class="diagram-container">
+            <!-- Connection SVG -->
+            <svg class="connection-svg">
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                     refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" class="arrow-marker" />
+                    </marker>
+                </defs>
+                
+                <!-- kubectl to API Server -->
+                <line x1="150" y1="180" x2="650" y2="320" class="connection-line" marker-end="url(#arrowhead)" />
+                <line x1="150" y1="180" x2="650" y2="320" class="connection-hover-area" 
+                      data-tooltip="<strong>kubectl → API Server</strong><br>Users interact with the cluster through kubectl CLI tool, which sends API requests to the kube-apiserver for all cluster operations." />
+                
+                <!-- Users to API Server -->
+                <line x1="1250" y1="180" x2="770" y2="320" class="connection-line" marker-end="url(#arrowhead)" />
+                <line x1="1250" y1="180" x2="770" y2="320" class="connection-hover-area"
+                      data-tooltip="<strong>Users → API Server</strong><br>External clients, applications, and operators communicate with Kubernetes through the API server using REST API calls." />
+                
+                <!-- etcd to API Server -->
+                <line x1="370" y1="320" x2="650" y2="320" class="connection-line" marker-end="url(#arrowhead)" />
+                <line x1="370" y1="320" x2="650" y2="320" class="connection-hover-area"
+                      data-tooltip="<strong>etcd ↔ API Server</strong><br>The API server reads from and writes to etcd, which stores all cluster state, configuration data, and metadata persistently." />
+                
+                <!-- API Server to Scheduler -->
+                <line x1="770" y1="320" x2="1030" y2="320" class="connection-line" marker-end="url(#arrowhead)" />
+                <line x1="770" y1="320" x2="1030" y2="320" class="connection-hover-area"
+                      data-tooltip="<strong>API Server → Scheduler</strong><br>The scheduler watches the API server for unscheduled pods and makes scheduling decisions based on resource requirements and constraints." />
+                
+                <!-- API Server to Controller Manager -->
+                <line x1="650" y1="350" x2="325" y2="370" class="connection-line" marker-end="url(#arrowhead)" />
+                <line x1="650" y1="350" x2="325" y2="370" class="connection-hover-area"
+                      data-tooltip="<strong>API Server → Controller Manager</strong><br>Controllers watch the API server for changes in cluster state and take corrective actions to maintain desired state." />
+                
+                <!-- API Server to Kubelet -->
+                <line x1="650" y1="400" x2="310" y2="540" class="connection-line" marker-end="url(#arrowhead)" />
+                <line x1="650" y1="400" x2="310" y2="540" class="connection-hover-area"
+                      data-tooltip="<strong>API Server → Kubelet</strong><br>The kubelet communicates with the API server to receive pod specifications and report node and pod status back to the cluster." />
+                
+                <!-- Kubelet to Container Runtime -->
+                <line x1="370" y1="600" x2="620" y2="680" class="connection-line" marker-end="url(#arrowhead)" />
+                <line x1="370" y1="600" x2="620" y2="680" class="connection-hover-area"
+                      data-tooltip="<strong>Kubelet → Container Runtime</strong><br>The kubelet instructs the container runtime (Docker, containerd, CRI-O) to pull images, start containers, and manage their lifecycle." />
+                
+                <!-- Container Runtime to Pods -->
+                <line x1="680" y1="680" x2="610" y2="660" class="connection-line" marker-end="url(#arrowhead)" />
+                <line x1="680" y1="680" x2="610" y2="660" class="connection-hover-area"
+                      data-tooltip="<strong>Container Runtime → Pods</strong><br>The container runtime creates and manages the actual containers that make up the pods, handling their execution and resource allocation." />
+                
+                <line x1="700" y1="680" x2="700" y2="660" class="connection-line" marker-end="url(#arrowhead)" />
+                <line x1="700" y1="680" x2="700" y2="660" class="connection-hover-area"
+                      data-tooltip="<strong>Container Runtime → Pods</strong><br>The container runtime creates and manages the actual containers that make up the pods, handling their execution and resource allocation." />
+                
+                <line x1="720" y1="680" x2="790" y2="660" class="connection-line" marker-end="url(#arrowhead)" />
+                <line x1="720" y1="680" x2="790" y2="660" class="connection-hover-area"
+                      data-tooltip="<strong>Container Runtime → Pods</strong><br>The container runtime creates and manages the actual containers that make up the pods, handling their execution and resource allocation." />
+            </svg>
+
+            <!-- Control Plane Container -->
+            <div class="control-plane-container" data-tooltip="<strong>Control Plane (Master Node)</strong><br>The control plane manages the overall cluster state, makes scheduling decisions, and exposes the API that all other components use to communicate.">
+                <div class="control-plane-header">Control Plane (Master Node)</div>
+            </div>
+
+            <!-- Data Plane Container -->
+            <div class="data-plane-container" data-tooltip="<strong>Data Plane (Worker Nodes)</strong><br>Worker nodes run the actual application workloads in pods. Each node contains the kubelet, kube-proxy, and container runtime to manage pods and networking.">
+                <div class="data-plane-header">Data Plane (Worker Nodes)</div>
+            </div>
+
+            <!-- External Components -->
+            <div class="component external kubectl" data-tooltip="<strong>kubectl</strong><br>Command-line interface for interacting with Kubernetes clusters. Used by developers and operators to deploy applications, inspect resources, view logs, and manage cluster operations through the API server.">
+                <h3>kubectl</h3>
+                <p>CLI Tool</p>
+            </div>
+
+            <div class="component external users" data-tooltip="<strong>Users/Clients</strong><br>External entities including developers, operators, CI/CD systems, and applications that interact with the Kubernetes cluster through various interfaces like kubectl, web UIs, or direct API calls.">
+                <h3>Users</h3>
+                <p>Clients</p>
+            </div>
+
+            <!-- Control Plane Components -->
+            <div class="component api-server" data-tooltip="<strong>API Server (kube-apiserver)</strong><br>The central management component that exposes the Kubernetes REST API. All cluster operations go through the API server, which validates requests, processes them, and updates the cluster state in etcd. It's the only component that directly communicates with etcd.">
+                <h3>API Server</h3>
+                <p>kube-apiserver</p>
+            </div>
+
+            <div class="component etcd" data-tooltip="<strong>etcd</strong><br>Distributed, consistent key-value store that serves as Kubernetes' database. It stores all cluster data including configuration, secrets, and current state. Only the API server communicates directly with etcd, ensuring data consistency across the cluster.">
+                <h3>etcd</h3>
+                <p>Key-Value Store</p>
+            </div>
+
+            <div class="component scheduler" data-tooltip="<strong>Scheduler (kube-scheduler)</strong><br>Watches for newly created pods with no assigned node and selects the optimal node for them to run on. Makes decisions based on resource requirements, hardware/software constraints, affinity rules, and current cluster load.">
+                <h3>Scheduler</h3>
+                <p>kube-scheduler</p>
+            </div>
+
+            <div class="component controller-manager" data-tooltip="<strong>Controller Manager (kube-controller-manager)</strong><br>Runs various controller processes that regulate cluster state. Includes node controller (manages node lifecycle), replication controller (maintains desired pod replicas), service controller (manages load balancer endpoints), and many others.">
+                <h3>Controller Manager</h3>
+                <p>kube-controller-manager</p>
+            </div>
+
+            <div class="component cloud-controller" data-tooltip="<strong>Cloud Controller Manager</strong><br>Manages cloud-specific control logic, allowing cloud providers to integrate their platforms with Kubernetes. Handles cloud-specific tasks like managing load balancers, nodes, and routes. Only relevant when running on cloud platforms.">
+                <h3>Cloud Controller</h3>
+                <p>cloud-controller-manager</p>
+            </div>
+
+            <!-- Data Plane Components -->
+            <div class="component kubelet" data-tooltip="<strong>Kubelet</strong><br>The primary node agent that runs on every worker node. Communicates with the API server to receive pod specifications (PodSpecs) and ensures containers are running and healthy. Manages pod lifecycle, resource monitoring, and reports node status back to the control plane.">
+                <h3>Kubelet</h3>
+                <p>Node Agent</p>
+            </div>
+
+            <div class="component kube-proxy" data-tooltip="<strong>Kube Proxy</strong><br>Network proxy that runs on each node and maintains network rules for pod communication. Implements Kubernetes service abstraction by forwarding requests to the correct backend pods. Handles load balancing and can use iptables, IPVS, or other mechanisms.">
+                <h3>Kube Proxy</h3>
+                <p>Network Proxy</p>
+            </div>
+
+            <div class="component container-runtime" data-tooltip="<strong>Container Runtime</strong><br>Software responsible for running containers on each node. Common runtimes include Docker, containerd, and CRI-O. Pulls container images from registries, creates containers from images, manages container lifecycle, and provides container execution environment.">
+                <h3>Container Runtime</h3>
+                <p>Docker/containerd/CRI-O</p>
+            </div>
+
+            <!-- Pods -->
+            <div class="pod pod1" data-tooltip="<strong>Pod</strong><br>The smallest deployable unit in Kubernetes. Contains one or more tightly coupled containers that share storage volumes, network IP, and lifecycle. Containers in the same pod can communicate via localhost and share mounted volumes.">Pod</div>
+            <div class="pod pod2" data-tooltip="<strong>Pod</strong><br>The smallest deployable unit in Kubernetes. Contains one or more tightly coupled containers that share storage volumes, network IP, and lifecycle. Containers in the same pod can communicate via localhost and share mounted volumes.">Pod</div>
+            <div class="pod pod3" data-tooltip="<strong>Pod</strong><br>The smallest deployable unit in Kubernetes. Contains one or more tightly coupled containers that share storage volumes, network IP, and lifecycle. Containers in the same pod can communicate via localhost and share mounted volumes.">Pod</div>
+
+            <!-- Legend -->
+            <div class="legend">
+                <h4>Legend</h4>
+                <div class="legend-item">
+                    <div class="legend-color control-color"></div>
+                    <span>Control Plane</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color data-color"></div>
+                    <span>Data Plane</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color external-color"></div>
+                    <span>External</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line"></div>
+                    <span>Relationship</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooltip element -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Tooltip functionality
+        const tooltip = document.getElementById('tooltip');
+        const tooltipElements = document.querySelectorAll('[data-tooltip]');
+
+        tooltipElements.forEach(element => {
+            element.addEventListener('mouseenter', (e) => {
+                const tooltipText = e.target.getAttribute('data-tooltip');
+                tooltip.innerHTML = tooltipText;
+                tooltip.classList.add('show');
+                
+                // Highlight connections for hovered element
+                if (element.classList.contains('component') || element.classList.contains('pod')) {
+                    highlightRelatedConnections(element);
+                }
+            });
+
+            element.addEventListener('mousemove', (e) => {
+                const rect = tooltip.getBoundingClientRect();
+                let left = e.pageX + 15;
+                let top = e.pageY - 15;
+                
+                // Prevent tooltip from going off-screen
+                if (left + rect.width > window.innerWidth) {
+                    left = e.pageX - rect.width - 15;
+                }
+                if (top < 0) {
+                    top = e.pageY + 25;
+                }
+                
+                tooltip.style.left = left + 'px';
+                tooltip.style.top = top + 'px';
+            });
+
+            element.addEventListener('mouseleave', () => {
+                tooltip.classList.remove('show');
+                resetConnectionHighlights();
+            });
+        });
+
+        // Highlight related connections
+        function highlightRelatedConnections(element) {
+            const connections = document.querySelectorAll('.connection-line');
+            connections.forEach(conn => {
+                conn.style.opacity = '0.3';
+            });
+            
+            // This would need more complex logic to determine which connections to highlight
+            // For now, we'll just dim all connections except when hovering over connections directly
+        }
+
+        function resetConnectionHighlights() {
+            const connections = document.querySelectorAll('.connection-line');
+            connections.forEach(conn => {
+                conn.style.opacity = '0.7';
+            });
+        }
+
+        // Add subtle entrance animations
+        document.addEventListener('DOMContentLoaded', () => {
+            const elements = document.querySelectorAll('.component, .pod, .control-plane-container, .data-plane-container');
+            elements.forEach((element, index) => {
+                element.style.opacity = '0';
+                element.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    element.style.transition = 'all 0.6s ease';
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }, index * 50);
+            });
+            
+            // Animate connections after components
+            setTimeout(() => {
+                const connections = document.querySelectorAll('.connection-line');
+                connections.forEach((conn, index) => {
+                    conn.style.strokeDashoffset = '100';
+                    conn.style.animation = `drawLine 1s ease forwards ${index * 0.1}s`;
+                });
+            }, elements.length * 50 + 500);
+        });
+
+        // CSS animation for line drawing
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes drawLine {
+                to {
+                    stroke-dashoffset: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
