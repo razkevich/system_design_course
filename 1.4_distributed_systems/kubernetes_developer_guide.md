@@ -25,13 +25,10 @@ flowchart TD
         end
         
         subgraph "Auto-scaling Controllers"
-            HPA["📈 HorizontalPodAutoscaler<br/>Scale replicas"]
-            VPA["📊 VerticalPodAutoscaler<br/>Scale resources"]
+            PodAutoscalers["📈 Pod Autoscalers<br/>HPA: Scale replicas<br/>VPA: Scale resources"]
             
-            HPA -.->|"scales"| Deployment
-            HPA -.->|"scales"| StatefulSet
-            VPA -.->|"recommends/evicts for"| Deployment
-            VPA -.->|"recommends/evicts for"| StatefulSet
+            PodAutoscalers -.->|"scales/adjusts"| Deployment
+            PodAutoscalers -.->|"scales/adjusts"| StatefulSet
         end
     end
     
@@ -40,8 +37,7 @@ flowchart TD
     style Deployment fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
     style StatefulSet fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
     style DaemonSet fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
-    style HPA fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#000
-    style VPA fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#000
+    style PodAutoscalers fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#000
 ```
 
 ### Batch Processing Hierarchy
@@ -59,14 +55,14 @@ flowchart TD
             Job -->|"runs to completion"| BatchPod
         end
         
-        subgraph "Job Types"
+        subgraph "Job Patterns"
             ParallelJob["🔄 Parallel Job<br/>Multiple pods"]
             WorkQueue["📋 Work Queue Job<br/>Coordinated tasks"]
             IndexedJob["🔢 Indexed Job<br/>Numbered tasks"]
             
-            ParallelJob -->|"runs multiple"| BatchPod
-            WorkQueue -->|"coordinates"| BatchPod
-            IndexedJob -->|"runs numbered"| BatchPod
+            ParallelJob -.->|"configures"| Job
+            WorkQueue -.->|"configures"| Job
+            IndexedJob -.->|"configures"| Job
         end
     end
     
@@ -93,7 +89,7 @@ flowchart TD
             EndpointSlice["📋 EndpointSlice<br/>Scalable endpoints"]
             NetworkPod["📦 Pod<br/>Target workload"]
             
-            IngressController -.->|"implements"| Ingress
+            IngressController -.->|"watches & implements"| Ingress
             Ingress -->|"routes traffic to"| Service
             Service -->|"discovers targets via"| EndpointSlice
             EndpointSlice -->|"points to"| NetworkPod
@@ -145,7 +141,7 @@ flowchart TD
             StoragePod["📦 Pod<br/>Volume consumer"]
             
             StorageClass -.->|"provisions"| PV
-            CSI -.->|"implements"| StorageClass
+            CSI -.->|"enables"| StorageClass
             PVC -->|"binds to"| PV
             StoragePod -->|"mounts"| PVC
         end
@@ -235,11 +231,11 @@ flowchart TD
         
         subgraph "Security Enforcement"
             AdmissionController["🛡️ Admission Controller<br/>Request validation"]
-            PodSecurityPolicy["📜 PodSecurityPolicy<br/>Pod security standards"]
+            PodSecurityStandard["📜 PodSecurityStandard<br/>Pod security policies"]
             SecurityContext["🔒 SecurityContext<br/>Runtime security"]
             
             AdmissionController -.->|"validates"| SecurityPod
-            PodSecurityPolicy -.->|"enforces"| SecurityPod
+            PodSecurityStandard -.->|"enforces"| SecurityPod
             SecurityContext -.->|"secures"| SecurityPod
         end
     end
@@ -252,7 +248,7 @@ flowchart TD
     style RoleBinding fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
     style ClusterRoleBinding fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#000
     style AdmissionController fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
-    style PodSecurityPolicy fill:#fce4ec,stroke:#ad1457,stroke-width:2px,color:#000
+    style PodSecurityStandard fill:#fce4ec,stroke:#ad1457,stroke-width:2px,color:#000
     style SecurityContext fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
 ```
 
@@ -318,7 +314,7 @@ flowchart TD
             MonitoredPod["📦 Pod<br/>Metrics source"]
             
             ServiceMonitor -->|"configures scraping for"| Prometheus
-            MetricsServer -->|"sends metrics to"| Prometheus
+            MetricsServer -.->|"provides metrics API"| MonitoredPod
             MonitoredPod -.->|"scraped by"| ServiceMonitor
             MonitoredPod -.->|"metrics"| MetricsServer
         end
