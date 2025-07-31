@@ -44,7 +44,7 @@
 - Consensus basics (see Database Internals by Alex Petrov)
 - [Distributed coordination and locking](1.4_distributed_systems/Locks.md)
 - [Kubernetes deep dive](1.4_distributed_systems/kubernetes_architecture.md)
-- [Kubernetes for developers](1.4_distributed_systems/kubernetes_developer_guide.md)
+- [Kubernetes for developers](1.4_distributed_systems/kubernetes_developer_guide.md) <---------TBD
 - Apache Spark deep dive
 ### 1.5 Data Storage and Processing
 
