@@ -94,7 +94,7 @@ NetworkPolicies provide microsegmentation at the Pod level, functioning as distr
 
 ```mermaid
 flowchart TD
-    subgraph "🔵 Networking & Service Mesh"
+    subgraph "🔵 Core Networking"
         
         subgraph "Traffic Flow Hierarchy"
             Ingress["🌐 Ingress<br/>HTTP/HTTPS routing"]
@@ -109,18 +109,6 @@ flowchart TD
             EndpointSlice -->|"points to"| NetworkPod
         end
         
-        subgraph "Service Mesh Hierarchy"
-            ServiceMesh["🕸️ Service Mesh<br/>Istio/Linkerd"]
-            VirtualService["🔀 VirtualService<br/>Traffic rules"]
-            DestinationRule["🎯 DestinationRule<br/>Load balancing"]
-            MeshService["⚖️ Service<br/>Mesh endpoint"]
-            
-            ServiceMesh -->|"configures"| VirtualService
-            ServiceMesh -->|"configures"| DestinationRule
-            VirtualService -->|"routes traffic to"| MeshService
-            DestinationRule -->|"load balances to"| MeshService
-        end
-        
         subgraph "Network Security"
             NetworkPolicy["🛡️ NetworkPolicy<br/>Traffic filtering"]
             NetworkPolicy -.->|"controls"| NetworkPod
@@ -132,11 +120,41 @@ flowchart TD
     style Ingress fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
     style IngressController fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
     style EndpointSlice fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    style NetworkPolicy fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
+```
+
+### Service Mesh Architecture
+
+```mermaid
+flowchart TD
+    subgraph "🕸️ Service Mesh"
+        
+        subgraph "Mesh Control Plane"
+            ServiceMesh["🕸️ Service Mesh<br/>Istio/Linkerd Control Plane"]
+        end
+        
+        subgraph "Traffic Management"
+            VirtualService["🔀 VirtualService<br/>Traffic routing rules"]
+            DestinationRule["🎯 DestinationRule<br/>Load balancing policies"]
+        end
+        
+        subgraph "Service Endpoints"
+            MeshService["⚖️ Service<br/>Mesh-enabled endpoint"]
+            MeshPod["📦 Pod<br/>With sidecar proxy"]
+        end
+        
+        ServiceMesh -->|"configures"| VirtualService
+        ServiceMesh -->|"configures"| DestinationRule
+        VirtualService -->|"routes traffic to"| MeshService
+        DestinationRule -->|"applies policies to"| MeshService
+        MeshService -->|"load balances to"| MeshPod
+    end
+    
+    style MeshPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style MeshService fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
     style ServiceMesh fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
     style VirtualService fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
     style DestinationRule fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
-    style MeshService fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
-    style NetworkPolicy fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
 ```
 
 ## 🟠 Storage & Data
