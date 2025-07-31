@@ -196,42 +196,40 @@ flowchart TD
 
 Authentication, authorization, and security policies.
 
+### RBAC Authorization
+
 ```mermaid
 flowchart TD
-    subgraph "🟣 Security & Access Control"
+    subgraph "🔐 RBAC Authorization"
         
         subgraph "Identity Sources"
             User["👤 User<br/>Human identity"]
             ServiceAccount["🎭 ServiceAccount<br/>Pod identity"]
         end
         
-        subgraph "RBAC Hierarchy"
+        subgraph "Permission Definitions"
             Role["📋 Role<br/>Namespace permissions"]
             ClusterRole["🌐 ClusterRole<br/>Cluster permissions"]
-            RoleBinding["🔗 RoleBinding<br/>Role assignment"]
-            ClusterRoleBinding["🌍 ClusterRoleBinding<br/>Cluster role assignment"]
-            SecurityPod["📦 Pod<br/>Access granted"]
-            
-            User -->|"assigned via"| RoleBinding
-            User -->|"assigned via"| ClusterRoleBinding
-            ServiceAccount -->|"assigned via"| RoleBinding
-            ServiceAccount -->|"assigned via"| ClusterRoleBinding
-            Role -->|"permissions granted by"| RoleBinding
-            ClusterRole -->|"permissions granted by"| RoleBinding
-            ClusterRole -->|"permissions granted by"| ClusterRoleBinding
-            RoleBinding -->|"grants access to"| SecurityPod
-            ClusterRoleBinding -->|"grants access to"| SecurityPod
         end
         
-        subgraph "Security Enforcement"
-            AdmissionController["🛡️ Admission Controller<br/>Request validation"]
-            PodSecurityStandard["📜 PodSecurityStandard<br/>Pod security policies"]
-            SecurityContext["🔒 SecurityContext<br/>Runtime security"]
-            
-            AdmissionController -.->|"validates"| SecurityPod
-            PodSecurityStandard -.->|"enforces"| SecurityPod
-            SecurityContext -.->|"secures"| SecurityPod
+        subgraph "Authorization Bindings"
+            RoleBinding["🔗 RoleBinding<br/>Namespace role assignment"]
+            ClusterRoleBinding["🌍 ClusterRoleBinding<br/>Cluster role assignment"]
         end
+        
+        subgraph "Protected Resources"
+            SecurityPod["📦 Pod<br/>Access controlled"]
+        end
+        
+        User -->|"bound via"| RoleBinding
+        User -->|"bound via"| ClusterRoleBinding
+        ServiceAccount -->|"bound via"| RoleBinding
+        ServiceAccount -->|"bound via"| ClusterRoleBinding
+        Role -->|"defines permissions for"| RoleBinding
+        ClusterRole -->|"defines permissions for"| RoleBinding
+        ClusterRole -->|"defines permissions for"| ClusterRoleBinding
+        RoleBinding -->|"grants access to"| SecurityPod
+        ClusterRoleBinding -->|"grants access to"| SecurityPod
     end
     
     style SecurityPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
@@ -241,6 +239,33 @@ flowchart TD
     style ClusterRole fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
     style RoleBinding fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
     style ClusterRoleBinding fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#000
+```
+
+### Security Enforcement
+
+```mermaid
+flowchart TD
+    subgraph "🛡️ Security Enforcement"
+        
+        subgraph "Request Validation"
+            AdmissionController["🛡️ Admission Controller<br/>Request validation"]
+            PodSecurityStandard["📜 Pod Security Standards<br/>Pod security policies"]
+        end
+        
+        subgraph "Runtime Security"
+            SecurityContext["🔒 Security Context<br/>Container security settings"]
+        end
+        
+        subgraph "Target Workloads"
+            EnforcedPod["📦 Pod<br/>Security applied"]
+        end
+        
+        AdmissionController -.->|"validates requests for"| EnforcedPod
+        PodSecurityStandard -.->|"enforces policies on"| EnforcedPod
+        SecurityContext -.->|"configures runtime security for"| EnforcedPod
+    end
+    
+    style EnforcedPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
     style AdmissionController fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
     style PodSecurityStandard fill:#fce4ec,stroke:#ad1457,stroke-width:2px,color:#000
     style SecurityContext fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
