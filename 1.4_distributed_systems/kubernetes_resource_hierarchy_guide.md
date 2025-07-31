@@ -398,55 +398,110 @@ Logging follows a simpler pattern: agents like Fluentd or Fluent Bit collect log
 
 The extension stack represents Kubernetes' most powerful operational capability: the ability to extend the API itself. Custom Resource Definitions (CRDs) create new API types, while Operators implement the domain knowledge needed to manage complex applications. Controllers provide the reconciliation logic that continuously drives actual state toward desired state. This pattern enables platforms like service meshes, databases, and monitoring systems to integrate deeply with Kubernetes while maintaining the same declarative model used for built-in resources.
 
+### Monitoring Stack
+
 ```mermaid
 flowchart TD
-    subgraph "🔵 Observability & Operations"
+    subgraph "📊 Monitoring & Metrics"
         
-        MonitoredPod["📦 Pod<br/>Metrics source"]
-        LogPod["📦 Pod<br/>Log source"]
-        
-        subgraph "Monitoring Stack"
-            MetricsServer["📊 Metrics Server<br/>Resource metrics"]
-            ServiceMonitor["📝 ServiceMonitor<br/>Scrape config"]
-            Prometheus["🔥 Prometheus<br/>Time-series DB"]
-            
-            MonitoredPod -.->|"metrics"| MetricsServer
-            MonitoredPod -.->|"scraped by"| ServiceMonitor
-            ServiceMonitor -->|"configures scraping for"| Prometheus
+        subgraph "Metric Sources"
+            MonitoredPod["📦 Pod<br/>Application metrics"]
+            NodeMetrics["🖥️ Node<br/>System metrics"]
         end
         
-        subgraph "Logging Stack"
-            LoggingAgent["📜 Logging Agent<br/>Log collection"]
-            Fluentd["🌊 Fluentd/Fluent Bit<br/>Log processing"]
-            
-            LogPod -.->|"logs"| LoggingAgent
-            LoggingAgent -->|"forwards logs to"| Fluentd
+        subgraph "Collection Layer"
+            MetricsServer["📊 Metrics Server<br/>Resource metrics API"]
+            ServiceMonitor["📝 ServiceMonitor<br/>Prometheus scrape config"]
         end
         
-        subgraph "Extension Stack"
-            CRD["🛠️ CustomResourceDefinition<br/>API extensions"]
-            CustomResource["📋 Custom Resource<br/>User-defined objects"]
-            Controller["🎮 Controller<br/>Reconciliation loop"]
-            Operator["🤖 Operator<br/>Application management"]
-            
-            CRD -->|"creates instances of"| CustomResource
-            Controller -.->|"reconciles"| CustomResource
-            Operator -->|"implements"| Controller
-            Operator -->|"defines"| CRD
+        subgraph "Storage & Query"
+            Prometheus["🔥 Prometheus<br/>Time-series database"]
         end
+        
+        MonitoredPod -.->|"exposes metrics"| ServiceMonitor
+        NodeMetrics -.->|"system metrics"| MetricsServer
+        ServiceMonitor -->|"configures scraping for"| Prometheus
+        MetricsServer -.->|"resource metrics API"| Prometheus
     end
     
     style MonitoredPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
-    style LogPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style NodeMetrics fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
     style MetricsServer fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
     style Prometheus fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
-    style ServiceMonitor fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    style ServiceMonitor fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+```
+
+### Logging Stack
+
+```mermaid
+flowchart TD
+    subgraph "📜 Logging & Log Processing"
+        
+        subgraph "Log Sources"
+            AppPod["📦 Pod<br/>Application logs"]
+            SystemLogs["🖥️ Node<br/>System logs"]
+        end
+        
+        subgraph "Collection Layer"
+            LoggingAgent["📋 Logging Agent<br/>DaemonSet log collector"]
+        end
+        
+        subgraph "Processing & Storage"
+            LogProcessor["🌊 Log Processor<br/>Fluentd/Fluent Bit"]
+            LogStorage["🗄️ Log Storage<br/>Elasticsearch/Loki"]
+        end
+        
+        AppPod -.->|"stdout/stderr"| LoggingAgent
+        SystemLogs -.->|"system logs"| LoggingAgent
+        LoggingAgent -->|"forwards logs to"| LogProcessor
+        LogProcessor -->|"processes & stores"| LogStorage
+    end
+    
+    style AppPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style SystemLogs fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
     style LoggingAgent fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
-    style Fluentd fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
-    style Operator fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
-    style Controller fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#000
-    style CRD fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+    style LogProcessor fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
+    style LogStorage fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
+```
+
+### Custom Resources & Operators
+
+```mermaid
+flowchart TD
+    subgraph "🛠️ Kubernetes API Extensions"
+        
+        subgraph "API Extension"
+            CRD["🛠️ CustomResourceDefinition<br/>Extends Kubernetes API"]
+        end
+        
+        subgraph "Custom Resources"
+            CustomResource["📋 Custom Resource<br/>User-defined objects"]
+        end
+        
+        subgraph "Control Logic"
+            Controller["🎮 Controller<br/>Reconciliation loop"]
+            Operator["🤖 Operator<br/>Domain-specific automation"]
+        end
+        
+        subgraph "Managed Resources"
+            ManagedPod["📦 Pod<br/>Operator-managed"]
+            ManagedService["⚖️ Service<br/>Operator-managed"]
+        end
+        
+        CRD -->|"defines schema for"| CustomResource
+        Operator -->|"implements"| Controller
+        Operator -->|"creates & manages"| CRD
+        Controller -->|"watches & reconciles"| CustomResource
+        Controller -->|"creates & manages"| ManagedPod
+        Controller -->|"creates & manages"| ManagedService
+    end
+    
     style CustomResource fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
+    style CRD fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+    style Controller fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#000
+    style Operator fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
+    style ManagedPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style ManagedService fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
 ```
 
 ## Key Relationships
