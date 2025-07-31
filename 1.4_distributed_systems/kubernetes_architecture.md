@@ -20,11 +20,26 @@ The control plane is not a single application, but rather a collective name for 
 
 Each runs as an independent service, communicating primarily through the API server and etcd.
 
-This collection of components represents the management layer of the Kubernetes cluster, responsible for making global decisions about the cluster. Think of it as the distributed system's "brain," where policies are defined, resources are allocated, and the desired state is maintained. In production clusters, these components can be distributed across multiple master nodes for high availability, while logically functioning as a unified management layer.
+This collection of components represents the management layer of the Kubernetes cluster, responsible for making global decisions about the cluster. Think of it as the distributed system's "brain," where policies are defined, resources are allocated, and the desired state is maintained. In production clusters, these components can be distributed across multiple **master nodes** for high availability, while logically functioning as a unified management layer.
+
+### Master Nodes: The Control Plane Infrastructure
+
+**Master nodes** (also called control plane nodes) are the servers that host the Kubernetes control plane components. Unlike worker nodes that run application workloads, master nodes are dedicated to cluster management and coordination. In a typical production setup:
+
+- **Single Master**: Simple setups might have one master node, but this creates a single point of failure
+- **Multi-Master HA**: Production clusters typically use 3 or 5 master nodes (odd numbers for etcd quorum) distributed across different availability zones
+- **Dedicated Infrastructure**: Master nodes often have different hardware specifications optimized for control plane workloads (more CPU for API server, fast SSDs for etcd)
+- **Taint Protection**: Master nodes are usually "tainted" to prevent regular application pods from being scheduled on them, preserving resources for control plane operations
+
+The master nodes collectively provide the control plane's distributed nature—if one master fails, the others continue operating the cluster seamlessly.
 
 ### API Server
 
 At the heart of the control plane sits the **kube-apiserver**, which serves as the cluster's central nervous system. The API server is responsible for processing all REST API requests, authenticating and authorizing users, validating resource specifications, and persisting cluster state to etcd. It acts as the front door to the Kubernetes cluster, handling all communication between clients and the cluster's internal components. This component embodies several critical distributed systems patterns:
+
+**Deployment**: The API server typically runs as a **static pod** on master nodes, defined by manifest files in `/etc/kubernetes/manifests/`. For high availability, multiple API server instances run behind a load balancer (often an external cloud load balancer or HAProxy). Each instance is stateless and can handle requests independently. In managed services like EKS, GKE, or AKS, the API server is automatically deployed and managed across multiple availability zones for fault tolerance.
+
+**Static Pods**: Static pods are a special type of pod that are managed directly by the kubelet on a specific node, rather than by the API server. The kubelet watches a designated directory (typically `/etc/kubernetes/manifests/`) for pod manifest files and automatically creates, manages, and restarts pods based on these manifests. Static pods are ideal for control plane components because they can run even when the API server is unavailable, providing bootstrap capabilities and ensuring the control plane can self-heal. Unlike regular pods, static pods cannot be deleted through the API server—they can only be removed by deleting their manifest files from the node.
 
 **Gateway**: The API server acts as the single entry point for all cluster operations. Whether you're using kubectl, a dashboard, or any other tool, all requests funnel through this component. This centralization provides security, authentication, and consistent access control.
 
@@ -39,6 +54,8 @@ At the heart of the control plane sits the **kube-apiserver**, which serves as t
 
 Behind the API server lies **etcd**, a distributed key-value store that serves as Kubernetes' source of truth. All cluster state is stored in etcd, including pod specifications, service definitions, secrets, config maps, node information, resource quotas, and cluster policies. Essentially, every `kubectl get` command ultimately reads from etcd, and every `kubectl apply` writes to it. etcd is where distributed systems theory meets practice in the most concrete way:
 
+**Deployment**: etcd runs as a static pod on master nodes, typically configured for high availability with an odd number of instances (3 or 5) to maintain quorum. Each etcd instance requires persistent storage and should be deployed across different failure domains (availability zones). In production, etcd is often deployed on dedicated nodes separate from the API server for performance isolation. Managed Kubernetes services handle etcd deployment automatically, often using cloud-native storage solutions with automated backups and disaster recovery.
+
 **Raft Consensus Protocol**: etcd implements the Raft consensus algorithm, ensuring that even in a multi-master setup, all nodes agree on the cluster state. This solves the fundamental problem of maintaining consistency across multiple machines in the presence of network partitions and node failures.
 
 **Strong Consistency**: Unlike eventually consistent systems, etcd provides strong consistency guarantees through its Raft consensus protocol, which requires a majority of nodes to agree before any write is committed. When the API server writes data to etcd, that write is guaranteed to be durable and immediately visible to all subsequent reads. This is crucial for a system that needs to maintain a coherent view of resource allocation and scheduling decisions.
@@ -48,6 +65,10 @@ Behind the API server lies **etcd**, a distributed key-value store that serves a
 ### Scheduler: Distributed Resource Allocation
 
 The **kube-scheduler** is responsible for deciding which node should run each newly created pod. It watches for unscheduled pods (those without a node assignment) and evaluates all available nodes to find the best fit based on resource requirements, constraints, and policies. Once a decision is made, the scheduler binds the pod to the chosen node by updating the pod's specification in etcd. The kubelet on the target node (we'll talk about that later) then detects this assignment through its watch on the API server and proceeds to create the actual containers.
+
+**Deployment**: The scheduler runs as a static pod on master nodes, defined in `/etc/kubernetes/manifests/kube-scheduler.yaml`. For high availability, multiple scheduler instances can run simultaneously, but only one is active at a time through **leader election** (using a lease object in etcd). The inactive schedulers remain on standby, ready to take over if the active scheduler fails. In cloud-managed clusters, the scheduler is deployed and managed automatically across multiple master nodes for fault tolerance.
+
+**Leader Election**: Leader election is a distributed systems pattern used to ensure that only one instance of a component is active at any given time, even when multiple instances are running for high availability. In Kubernetes, components like the scheduler and controller manager use leader election by competing to acquire and renew a "lease" object stored in etcd. The instance that successfully acquires the lease becomes the leader and performs actual work, while others remain in standby mode. If the leader fails to renew its lease (due to failure or network partition), another instance can acquire the lease and become the new leader, ensuring continuous operation without split-brain scenarios.
 
 The scheduler demonstrates how distributed systems approach the complex problem of resource allocation across a heterogeneous cluster:
 
@@ -63,6 +84,8 @@ The **kube-controller-manager** is responsible for running various controllers t
 
 The **kube-controller-manager** runs multiple controllers, each implementing what's arguably Kubernetes' most important distributed systems pattern: the reconciliation loop. For example, when you update a deployment, the deployment controller creates a new ReplicaSet with the updated pod template while gradually scaling down the old ReplicaSet, ensuring zero-downtime rolling updates.
 
+**Deployment**: The controller manager runs as a static pod on master nodes, packaged as a single binary that hosts multiple controllers (deployment, replicaset, node, service, etc.). Like the scheduler, it uses leader election to ensure only one instance is active at a time across multiple master nodes. The active controller manager runs all controllers, while standby instances remain ready for failover. Each controller operates independently within the manager process, with configurable concurrency settings to handle different workload patterns.
+
 **Declarative vs. Imperative**: Instead of executing step-by-step instructions, Kubernetes controllers continuously work to make the actual state match the desired state. This approach is inherently self-healing and handles partial failures gracefully.
 
 **Watch Pattern**: Controllers don't poll for changes—they watch the API server for events related to their resources. This event-driven approach reduces load and provides near-real-time responsiveness.
@@ -71,7 +94,9 @@ The **kube-controller-manager** runs multiple controllers, each implementing wha
 
 ### Cloud Controller Manager: Abstraction and Integration
 
-The **cloud-controller-manager** is responsible for managing cloud-specific resources and integrating Kubernetes with the underlying cloud provider's APIs. It handles tasks like provisioning load balancers, managing node lifecycle, and setting up persistent volumes using cloud provider services, while abstracting these cloud-specific details from the rest of the Kubernetes control plane. 
+The **cloud-controller-manager** is responsible for managing cloud-specific resources and integrating Kubernetes with the underlying cloud provider's APIs. It handles tasks like provisioning load balancers, managing node lifecycle, and setting up persistent volumes using cloud provider services, while abstracting these cloud-specific details from the rest of the Kubernetes control plane.
+
+**Deployment**: The cloud controller manager runs as a deployment in the kube-system namespace (rather than a static pod) to allow for easier updates and cloud-provider-specific customization. It's typically deployed with cloud provider credentials and appropriate IAM roles/service accounts to manage cloud resources. In managed Kubernetes services, this component is often integrated directly into the control plane and managed by the cloud provider. For self-managed clusters on cloud platforms, it's deployed as a separate pod with cloud-specific configurations and network access to cloud APIs. 
 
 **Adapter**: Cloud controllers act as adapters between Kubernetes' generic resource model and cloud-specific implementations. A LoadBalancer service looks the same whether it's running on AWS, GCP, or Azure, but the underlying implementation differs completely. For example, in AWS EKS, when you create a LoadBalancer service, the cloud controller manager automatically provisions an AWS Application Load Balancer (ALB) or Network Load Balancer (NLB), configures security groups, and manages the lifecycle of these resources as the service changes.
 
@@ -79,11 +104,25 @@ The **cloud-controller-manager** is responsible for managing cloud-specific reso
 
 ## The Data Plane: Where Work Gets Done
 
-The data plane consists of the components that actually run your workloads. Like the control plane, the data plane is not a single service but rather a collection of components distributed across worker nodes. While the control plane makes decisions, the data plane executes them—a classic separation of concerns in distributed systems.
+The data plane consists of the components that actually run your workloads. Like the control plane, the data plane is not a single service but rather a collection of components distributed across **worker nodes**. While the control plane makes decisions, the data plane executes them—a classic separation of concerns in distributed systems.
+
+### Worker Nodes: The Application Runtime Infrastructure
+
+**Worker nodes** (sometimes called compute nodes or simply nodes) are the servers where your application pods actually run. They form the execution layer of the Kubernetes cluster and are distinct from master nodes in both purpose and configuration:
+
+- **Application Hosting**: Worker nodes run the actual application workloads, while master nodes run control plane components
+- **Resource Allocation**: They provide CPU, memory, storage, and network resources for pods
+- **Scalability**: Worker nodes can be easily added or removed to scale cluster capacity horizontally
+- **Heterogeneity**: Different worker nodes can have different hardware specifications (CPU-optimized, memory-optimized, GPU-enabled) to match workload requirements
+- **Auto-scaling**: In cloud environments, worker node pools can automatically scale based on resource demand
+
+Each worker node runs the essential data plane components: kubelet, kube-proxy, and a container runtime, making them self-sufficient for pod execution once they receive instructions from the control plane.
 
 ### Kubelet: The Node Agent
 
 The **kubelet** is Kubernetes' node agent, responsible for managing the actual containers on each worker node. Each node runs a kubelet that acts as the control plane's representative on that node. This distributed agent model allows the system to scale horizontally while maintaining local autonomy.
+
+**Deployment**: The kubelet runs as a system service (systemd daemon) directly on each node's host operating system, not as a container or pod. It's typically installed via package managers (apt, yum) or configuration management tools during node bootstrap. The kubelet requires access to the container runtime socket, host filesystem, and network interfaces to manage pods. In managed Kubernetes services, the kubelet is pre-installed and configured on worker nodes, with automatic updates handled by the cloud provider. It registers itself with the API server and continuously reports node status and resource availability.
 
 **Pull-based Architecture**: Rather than receiving push commands, the kubelet pulls its desired state from the API server. This inversion of control makes the system more resilient to network partitions and reduces the blast radius of control plane failures.
 
@@ -92,6 +131,10 @@ The **kubelet** is Kubernetes' node agent, responsible for managing the actual c
 ### Kube-proxy: Distributed Service Discovery
 
 **Kube-proxy** runs on each node and is responsible for implementing Kubernetes services by managing network routing rules. It ensures that traffic sent to a service's virtual IP address gets properly distributed to the actual pod endpoints, handling the networking layer that makes services accessible within the cluster. **Kube-proxy** implements Kubernetes' service abstraction, demonstrating several key networking patterns in distributed systems:
+
+**Deployment**: Kube-proxy typically runs as a **DaemonSet** in the kube-system namespace, ensuring one instance per node. It can also run as a static pod or system service depending on the cluster setup. The proxy requires elevated privileges to modify iptables rules or eBPF programs and access to the host network namespace. In some setups, especially with CNI plugins like Cilium, kube-proxy may be replaced entirely by the CNI implementation for better performance and features.
+
+**DaemonSet**: A DaemonSet is a Kubernetes workload type that ensures a copy of a pod runs on all (or selected) nodes in the cluster. Unlike Deployments that focus on running a specified number of replicas, DaemonSets focus on node coverage. As nodes are added to the cluster, DaemonSet pods are automatically scheduled to them; when nodes are removed, the pods are garbage collected. DaemonSets are ideal for cluster-wide services like log collectors, monitoring agents, network proxies, and storage daemons that need to run on every node to function properly.
 
 **Service Discovery**: Services provide stable endpoints for accessing groups of pods, even as individual pods come and go. This abstraction is essential in dynamic environments where IP addresses constantly change.
 
@@ -102,6 +145,8 @@ The **kubelet** is Kubernetes' node agent, responsible for managing the actual c
 ### Container Runtime: The Execution Layer
 
 The **container runtime** is responsible for actually running containers on each node. It handles the low-level operations of pulling container images, creating and starting containers, and managing their lifecycle according to the specifications provided by the kubelet. The **container runtime** (Docker, containerd, or CRI-O) represents the lowest level of the abstraction stack:
+
+**Deployment**: Container runtimes are installed directly on each node as system services, typically during node initialization. containerd and CRI-O are the most common choices, with Docker being phased out in favor of containerd in newer Kubernetes versions. The runtime must implement the Container Runtime Interface (CRI) and run with appropriate privileges to manage containers, networks, and storage. It's configured to work with the kubelet through a Unix socket (typically `/run/containerd/containerd.sock`). The runtime also handles image management, including pulling from registries and garbage collection of unused images.
 
 **Runtime Abstraction**: The Container Runtime Interface (CRI) provides a pluggable abstraction, allowing different runtimes while maintaining consistent behavior. This abstraction enables innovation in container technology without disrupting the higher-level orchestration.
 
@@ -140,6 +185,8 @@ Multiple control plane components can run in high-availability mode:
 - etcd forms a cluster with leader election for write operations
 
 This combination provides both availability and consistency—a careful balance in distributed systems design.
+
+**High Availability (HA)**: High availability in Kubernetes refers to the design approach that ensures the cluster remains operational even when individual components fail. This is achieved through redundancy, automatic failover, and geographic distribution. For the control plane, HA typically involves running multiple instances of each component across different master nodes and availability zones. The stateless nature of the API server allows for simple load balancing, while stateful components like etcd and single-active components like controllers rely on leader election and consensus algorithms to maintain consistency while providing fault tolerance.
 
 ### Graceful Degradation
 
