@@ -8,7 +8,7 @@ Core application deployment and job execution components.
 
 ```mermaid
 flowchart TD
-    subgraph "🔴 Workloads & Scheduling"
+    subgraph "🔴 Core Workloads & Scheduling"
         
         subgraph "Core Workload Hierarchy"
             Deployment["🔄 Deployment<br/>Stateless apps"]
@@ -24,15 +24,6 @@ flowchart TD
             ReplicaSet --> Pod
         end
         
-        subgraph "Batch Processing Hierarchy"
-            CronJob["⏰ CronJob<br/>Scheduled tasks"]
-            Job["🔧 Job<br/>Run-to-completion"]
-            BatchPod["📦 Pod<br/>Task execution"]
-            
-            CronJob --> Job
-            Job --> BatchPod
-        end
-        
         subgraph "Auto-scaling Controllers"
             HPA["📈 HorizontalPodAutoscaler<br/>Scale replicas"]
             VPA["📊 VerticalPodAutoscaler<br/>Scale resources"]
@@ -43,11 +34,47 @@ flowchart TD
         end
     end
     
-    style Pod fill:#ff9999
-    style ReplicaSet fill:#ffb3b3
-    style Deployment fill:#ffcccc
-    style StatefulSet fill:#ffcccc
-    style DaemonSet fill:#ffcccc
+    style Pod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style ReplicaSet fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    style Deployment fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style StatefulSet fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    style DaemonSet fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+    style HPA fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#000
+    style VPA fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#000
+```
+
+### Batch Processing Hierarchy
+
+```mermaid
+flowchart TD
+    subgraph "⏰ Batch Processing & Jobs"
+        
+        subgraph "Scheduled Execution"
+            CronJob["⏰ CronJob<br/>Scheduled tasks"]
+            Job["🔧 Job<br/>Run-to-completion"]
+            BatchPod["📦 Pod<br/>Task execution"]
+            
+            CronJob --> Job
+            Job --> BatchPod
+        end
+        
+        subgraph "Job Types"
+            ParallelJob["🔄 Parallel Job<br/>Multiple pods"]
+            WorkQueue["📋 Work Queue Job<br/>Coordinated tasks"]
+            IndexedJob["🔢 Indexed Job<br/>Numbered tasks"]
+            
+            ParallelJob --> BatchPod
+            WorkQueue --> BatchPod
+            IndexedJob --> BatchPod
+        end
+    end
+    
+    style BatchPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style Job fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
+    style CronJob fill:#fce4ec,stroke:#ad1457,stroke-width:2px,color:#000
+    style ParallelJob fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
+    style WorkQueue fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
+    style IndexedJob fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
 ```
 
 ## 🔵 Networking & Service Mesh
@@ -89,9 +116,16 @@ flowchart TD
         end
     end
     
-    style NetworkPod fill:#cce5ff
-    style Service fill:#99ccff
-    style Ingress fill:#66b3ff
+    style NetworkPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style Service fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
+    style Ingress fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
+    style IngressController fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
+    style EndpointSlice fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    style ServiceMesh fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
+    style VirtualService fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
+    style DestinationRule fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
+    style MeshService fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
+    style NetworkPolicy fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
 ```
 
 ## 🟠 Storage & Data
@@ -124,9 +158,13 @@ flowchart TD
         end
     end
     
-    style PV fill:#ffcc99
-    style PVC fill:#ff9966
-    style StorageClass fill:#ffb366
+    style StoragePod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style PV fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    style PVC fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+    style StorageClass fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style CSI fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    style VolumeSnapshotClass fill:#e0f2f1,stroke:#00695c,stroke-width:2px,color:#000
+    style VolumeSnapshot fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#000
 ```
 
 ## 🟡 Configuration & Secrets
@@ -156,9 +194,11 @@ flowchart TD
         end
     end
     
-    style ConfigMap fill:#fff2cc
-    style Secret fill:#ffe066
-    style ConfigPod fill:#ffeb99
+    style ConfigPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style ConfigMap fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#000
+    style Secret fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
+    style EnvVar fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
+    style VolumeMount fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
 ```
 
 ## 🟣 Security & Access Control
@@ -203,10 +243,16 @@ flowchart TD
         end
     end
     
-    style ServiceAccount fill:#e6ccff
-    style Role fill:#d9b3ff
-    style ClusterRole fill:#cc99ff
-    style PodSecurityPolicy fill:#bf80ff
+    style SecurityPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style User fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
+    style ServiceAccount fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    style Role fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style ClusterRole fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    style RoleBinding fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
+    style ClusterRoleBinding fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#000
+    style AdmissionController fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
+    style PodSecurityPolicy fill:#fce4ec,stroke:#ad1457,stroke-width:2px,color:#000
+    style SecurityContext fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
 ```
 
 ## 🟢 Cluster Infrastructure
@@ -246,10 +292,14 @@ flowchart TD
         end
     end
     
-    style Node fill:#ccffcc
-    style ControlPlane fill:#99ff99
-    style Namespace fill:#66ff66
-    style ResourceQuota fill:#33ff33
+    style InfraPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style Node fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style ControlPlane fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#000
+    style Namespace fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
+    style ResourceQuota fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    style LimitRange fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+    style PriorityClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    style RuntimeClass fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
 ```
 
 ## 🔵 Observability & Operations
@@ -294,10 +344,17 @@ flowchart TD
         end
     end
     
-    style MetricsServer fill:#cce5ff
-    style CRD fill:#99ccff
-    style Operator fill:#66b3ff
-    style Controller fill:#3399ff
+    style MonitoredPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style LogPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style MetricsServer fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
+    style Prometheus fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
+    style ServiceMonitor fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    style LoggingAgent fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style Fluentd fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
+    style Operator fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
+    style Controller fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#000
+    style CRD fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+    style CustomResource fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
 ```
 
 ## Key Relationships
