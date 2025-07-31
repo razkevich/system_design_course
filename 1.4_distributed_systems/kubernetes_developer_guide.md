@@ -30,7 +30,8 @@ flowchart TD
             
             HPA -.->|"scales"| Deployment
             HPA -.->|"scales"| StatefulSet
-            VPA -.->|"adjusts"| Pod
+            VPA -.->|"recommends/evicts for"| Deployment
+            VPA -.->|"recommends/evicts for"| StatefulSet
         end
     end
     
