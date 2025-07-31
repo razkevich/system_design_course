@@ -43,7 +43,8 @@
 - [Partitioning and replication strategies](1.4_distributed_systems/DBs.md)
 - Consensus basics (see Database Internals by Alex Petrov)
 - [Distributed coordination and locking](1.4_distributed_systems/Locks.md)
-- Kubernetes deep dive
+- [Kubernetes deep dive](1.4_distributed_systems/kubernetes_architecture.md)
+- [Kubernetes for developers](1.4_distributed_systems/kubernetes_developer_guide.md)
 - Apache Spark deep dive
 ### 1.5 Data Storage and Processing
 
