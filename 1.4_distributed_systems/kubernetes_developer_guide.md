@@ -45,34 +45,32 @@ flowchart TD
 ```mermaid
 flowchart TD
     subgraph "⏰ Batch Processing & Jobs"
+        CronJob["⏰ CronJob<br/>Scheduled tasks"]
+        Job["🔧 Job<br/>Run-to-completion"]
+        BatchPod["📦 Pod<br/>Task execution"]
         
-        subgraph "Scheduled Execution"
-            CronJob["⏰ CronJob<br/>Scheduled tasks"]
-            Job["🔧 Job<br/>Run-to-completion"]
-            BatchPod["📦 Pod<br/>Task execution"]
-            
-            CronJob -->|"creates on schedule"| Job
-            Job -->|"runs to completion"| BatchPod
-        end
-        
-        subgraph "Job Patterns"
-            ParallelJob["🔄 Parallel Job<br/>Multiple pods"]
-            WorkQueue["📋 Work Queue Job<br/>Coordinated tasks"]
-            IndexedJob["🔢 Indexed Job<br/>Numbered tasks"]
-            
-            ParallelJob -.->|"configures"| Job
-            WorkQueue -.->|"configures"| Job
-            IndexedJob -.->|"configures"| Job
-        end
+        CronJob -->|"creates on schedule"| Job
+        Job -->|"runs to completion"| BatchPod
     end
     
     style BatchPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
     style Job fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
     style CronJob fill:#fce4ec,stroke:#ad1457,stroke-width:2px,color:#000
-    style ParallelJob fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
-    style WorkQueue fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
-    style IndexedJob fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
 ```
+
+**Job Execution Patterns:**
+
+While the diagram shows the basic Job → Pod relationship, Jobs offer flexible execution patterns to handle different workload requirements:
+
+- **Sequential Jobs** (default): Runs one pod at a time until the specified number of completions is reached. This is ideal for tasks that must be processed in order or when resource constraints require limiting concurrent execution.
+
+- **Parallel Jobs**: Configure multiple pods to run simultaneously using the `parallelism` setting. For example, setting `parallelism: 3` allows up to 3 pods to run concurrently, dramatically reducing processing time for independent tasks like image processing or data transformation.
+
+- **Work Queue Jobs**: Multiple pods coordinate to process items from a shared work queue. Each pod pulls tasks from the queue until it's empty, making this pattern perfect for scenarios like processing files from a shared storage location or handling messages from a queue system.
+
+- **Indexed Jobs**: Each pod receives a unique completion index (0, 1, 2, etc.) through the `JOB_COMPLETION_INDEX` environment variable. This enables scenarios like parallel database migrations where each pod handles a specific shard, or distributed training where each pod processes a particular data partition.
+
+These patterns are configured through Job specifications rather than separate Kubernetes resources, giving you precise control over how your batch workloads execute while maintaining the simple CronJob → Job → Pod hierarchy.
 
 ## 🔵 Networking & Service Mesh
 
