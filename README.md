@@ -26,7 +26,7 @@
 
 ### 1.3 Networking & Communication
 
-- Protocols and OSI model
+- [Protocols and OSI model](1.3_network_and_communication/protocols_osi_model.md)
 - [Key network components](1.3_network_and_communication/network_components.md)
 - Service Meshes
 - API architecture (see Mastering API Architecture)
