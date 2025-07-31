@@ -6,6 +6,14 @@ A comprehensive guide to Kubernetes concepts organized by functional categories 
 
 Core application deployment and job execution components.
 
+Understanding workload hierarchy is fundamental to Kubernetes mastery. At its heart, Kubernetes follows a controller pattern where higher-level abstractions manage lower-level resources. The Pod serves as the atomic unit—a wrapper around one or more containers that share storage and network. However, you rarely create Pods directly in production.
+
+Instead, you use controllers like Deployments for stateless applications or StatefulSets for stateful services. These controllers provide crucial capabilities: Deployments manage ReplicaSets behind the scenes to ensure your desired number of Pod replicas are running, while also enabling zero-downtime rolling updates. StatefulSets, on the other hand, directly manage Pods with stable network identities and ordered deployment—essential for databases and other stateful workloads.
+
+DaemonSets represent a different paradigm entirely, ensuring exactly one Pod runs on each node (or a subset of nodes). This makes them perfect for node-level services like log collectors, monitoring agents, or network plugins that need to run cluster-wide.
+
+The auto-scaling layer adds intelligence to your workloads. The Horizontal Pod Autoscaler (HPA) monitors metrics and scales the number of replicas, while the Vertical Pod Autoscaler (VPA) adjusts resource requests and limits. Both work through the workload controllers rather than manipulating Pods directly, maintaining the system's hierarchical integrity.
+
 ```mermaid
 flowchart TD
     subgraph "🔴 Core Workloads & Scheduling"
@@ -76,6 +84,14 @@ These patterns are configured through Job specifications rather than separate Ku
 
 Service discovery, connectivity, and traffic management.
 
+Kubernetes networking operates on multiple layers, each solving different connectivity challenges. The Service abstraction sits at the center, providing stable endpoints for your dynamic Pod infrastructure. As Pods come and go—whether through scaling, updates, or failures—Services maintain consistent access points through their integration with EndpointSlices, which track the current set of healthy Pod IPs.
+
+The traffic flow hierarchy shows how external requests reach your applications. Ingress resources define HTTP/HTTPS routing rules, but they're just configuration—the actual work happens through Ingress Controllers (like NGINX or Traefik) that watch these resources and configure the underlying load balancer accordingly. This separation of concerns allows different implementations while maintaining a consistent API.
+
+Service mesh technology adds another layer of sophistication. Platforms like Istio introduce sidecar proxies to every Pod, enabling advanced traffic management without modifying application code. VirtualServices define sophisticated routing rules (canary deployments, traffic splitting), while DestinationRules configure load balancing and circuit breaking policies. This architecture transforms the network itself into a programmable platform.
+
+NetworkPolicies provide microsegmentation at the Pod level, functioning as distributed firewalls that can restrict communication based on labels, namespaces, and port specifications. This enables zero-trust networking where connectivity is explicitly defined rather than implicitly allowed.
+
 ```mermaid
 flowchart TD
     subgraph "🔵 Networking & Service Mesh"
@@ -127,6 +143,14 @@ flowchart TD
 
 Persistent data and volume management.
 
+Storage in Kubernetes involves a sophisticated abstraction layer that decouples applications from underlying storage infrastructure. The relationship between PersistentVolumeClaims (PVCs) and PersistentVolumes (PVs) embodies this principle: applications request storage through PVCs without knowing the implementation details, while PVs represent the actual storage resources in the cluster.
+
+StorageClasses enable dynamic provisioning by defining storage "templates" with specific parameters—performance tiers, replication factors, or backup policies. When a PVC references a StorageClass, Kubernetes automatically creates a PV with the specified characteristics. Container Storage Interface (CSI) drivers make this magic possible, providing a standardized way for storage vendors to integrate with Kubernetes without modifying core components.
+
+The binding process is crucial to understand: PVCs "claim" PVs based on size, access modes, and storage class requirements. Once bound, this relationship persists until explicitly broken, ensuring data safety even if Pods are rescheduled across nodes.
+
+Data protection operates through volume snapshots, providing point-in-time copies for backup and recovery scenarios. VolumeSnapshotClasses define how snapshots are created and managed, similar to how StorageClasses govern volume provisioning. This snapshot capability enables sophisticated backup strategies and disaster recovery procedures without requiring application-specific knowledge.
+
 ```mermaid
 flowchart TD
     subgraph "🟠 Storage & Data"
@@ -166,6 +190,14 @@ flowchart TD
 
 Application settings and sensitive data management.
 
+Configuration management in Kubernetes follows the twelve-factor app principle of separating configuration from code. ConfigMaps handle non-sensitive configuration data like application settings, feature flags, or environment-specific parameters, while Secrets manage sensitive information such as passwords, API keys, and certificates. Both resources provide the same consumption mechanisms but with different security characteristics—Secrets are base64-encoded and can be encrypted at rest.
+
+The consumption hierarchy reveals Kubernetes' flexibility in configuration delivery. Applications can receive configuration data as environment variables for simple key-value pairs, or as mounted files for complex configurations like JSON/YAML files or certificates. This dual approach accommodates both legacy applications expecting environment variables and cloud-native applications that prefer file-based configuration.
+
+The decoupling between configuration sources and consumption methods is particularly powerful. The same ConfigMap can simultaneously populate environment variables for one container and provide mounted configuration files for another, all within the same Pod. This flexibility allows gradual migration strategies and supports diverse application architectures within a single deployment.
+
+Understanding this pattern is crucial for maintaining security boundaries: while ConfigMaps are suitable for non-sensitive data, Secrets should be used for any information that could compromise security if exposed, even if it seems innocuous. The distinction affects not just storage but also access logging, rotation strategies, and backup procedures.
+
 ```mermaid
 flowchart TD
     subgraph "🟡 Configuration & Secrets"
@@ -195,6 +227,10 @@ flowchart TD
 ## 🟣 Security & Access Control
 
 Authentication, authorization, and security policies.
+
+Kubernetes security operates through layered defense mechanisms, each addressing different aspects of cluster protection. The system distinguishes between authentication (proving who you are) and authorization (determining what you can do), with Role-Based Access Control (RBAC) serving as the primary authorization framework.
+
+RBAC follows a straightforward but powerful model: identities (Users or ServiceAccounts) are bound to roles (Role or ClusterRole) through bindings (RoleBinding or ClusterRoleBinding). This creates a flexible permission system where the same role can be assigned to multiple identities, and identities can hold multiple roles across different namespaces.
 
 ### RBAC Authorization
 
@@ -241,7 +277,11 @@ flowchart TD
     style ClusterRoleBinding fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#000
 ```
 
+The distinction between namespace-scoped and cluster-scoped permissions is critical: Roles define permissions within a specific namespace, while ClusterRoles can grant cluster-wide access or serve as templates for namespace-specific bindings. ServiceAccounts provide identity for Pods, enabling applications to interact with the Kubernetes API using the principle of least privilege.
+
 ### Security Enforcement
+
+Beyond authorization, Kubernetes provides multiple enforcement mechanisms that operate at different stages of the Pod lifecycle. These controls work together to create defense-in-depth, ensuring security policies are applied consistently across the cluster.
 
 ```mermaid
 flowchart TD
@@ -271,9 +311,19 @@ flowchart TD
     style SecurityContext fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
 ```
 
+Admission Controllers act as gatekeepers, intercepting API requests before resources are persisted to etcd. They can validate, mutate, or reject requests based on policy rules. Pod Security Standards (the modern replacement for Pod Security Policies) enforce security constraints on Pod specifications—preventing privileged containers, enforcing read-only root filesystems, or requiring specific security contexts.
+
+Security Contexts define the runtime security attributes for Pods and containers, including user IDs, group IDs, filesystem permissions, and capability sets. These settings are applied when containers start, providing the final layer of runtime protection.
+
 ## 🟢 Cluster Infrastructure
 
 Platform management and resource governance.
+
+Cluster infrastructure represents the foundational layer that supports all other Kubernetes resources. The Control Plane manages the cluster's desired state through components like the API server, scheduler, and controller manager, while Nodes provide the compute resources where workloads execute.
+
+Namespaces create virtual clusters within the physical cluster, providing scope for names and enabling multi-tenancy. They're not just organizational tools—they're security and resource boundaries. ResourceQuotas enforce limits on resource consumption within namespaces, preventing any single tenant from consuming excessive cluster resources. LimitRanges complement quotas by enforcing constraints on individual objects, such as minimum and maximum resource requests for Pods.
+
+The scheduling hierarchy determines where Pods run. PriorityClasses enable workload prioritization during resource contention, ensuring critical applications get scheduled first. RuntimeClasses specify which container runtime to use, enabling scenarios where different workloads require different runtime environments (like gVisor for enhanced isolation or GPU-enabled runtimes for machine learning workloads).
 
 ```mermaid
 flowchart TD
@@ -322,41 +372,49 @@ flowchart TD
 
 Monitoring, logging, and operational tooling.
 
+Observability in Kubernetes spans three distinct but interconnected domains: metrics, logs, and custom resource management. Each serves different purposes but together provide comprehensive insight into cluster and application health.
+
+The monitoring stack centers around Prometheus, which serves as both a metrics database and query engine. ServiceMonitors define how Prometheus discovers and scrapes metrics from applications, while the Metrics Server provides a lightweight API for basic resource metrics used by autoscaling and kubectl top commands. This dual-tier approach separates simple resource monitoring from comprehensive application observability.
+
+Logging follows a simpler pattern: agents like Fluentd or Fluent Bit collect logs from Pods and forward them to centralized logging systems. The key insight is that logs flow in one direction—from applications through agents to storage—while metrics support bidirectional queries and alerting.
+
+The extension stack represents Kubernetes' most powerful operational capability: the ability to extend the API itself. Custom Resource Definitions (CRDs) create new API types, while Operators implement the domain knowledge needed to manage complex applications. Controllers provide the reconciliation logic that continuously drives actual state toward desired state. This pattern enables platforms like service meshes, databases, and monitoring systems to integrate deeply with Kubernetes while maintaining the same declarative model used for built-in resources.
+
 ```mermaid
 flowchart TD
     subgraph "🔵 Observability & Operations"
         
-        subgraph "Monitoring Hierarchy"
+        MonitoredPod["📦 Pod<br/>Metrics source"]
+        LogPod["📦 Pod<br/>Log source"]
+        
+        subgraph "Monitoring Stack"
             MetricsServer["📊 Metrics Server<br/>Resource metrics"]
-            Prometheus["🔥 Prometheus<br/>Time-series DB"]
             ServiceMonitor["📝 ServiceMonitor<br/>Scrape config"]
-            MonitoredPod["📦 Pod<br/>Metrics source"]
+            Prometheus["🔥 Prometheus<br/>Time-series DB"]
             
-            ServiceMonitor -->|"configures scraping for"| Prometheus
-            MetricsServer -.->|"provides metrics API"| MonitoredPod
-            MonitoredPod -.->|"scraped by"| ServiceMonitor
             MonitoredPod -.->|"metrics"| MetricsServer
+            MonitoredPod -.->|"scraped by"| ServiceMonitor
+            ServiceMonitor -->|"configures scraping for"| Prometheus
         end
         
-        subgraph "Logging Hierarchy"
+        subgraph "Logging Stack"
             LoggingAgent["📜 Logging Agent<br/>Log collection"]
             Fluentd["🌊 Fluentd/Fluent Bit<br/>Log processing"]
-            LogPod["📦 Pod<br/>Log source"]
             
             LogPod -.->|"logs"| LoggingAgent
             LoggingAgent -->|"forwards logs to"| Fluentd
         end
         
-        subgraph "Custom Resource Hierarchy"
-            Operator["🤖 Operator<br/>Application management"]
-            Controller["🎮 Controller<br/>Reconciliation loop"]
+        subgraph "Extension Stack"
             CRD["🛠️ CustomResourceDefinition<br/>API extensions"]
             CustomResource["📋 Custom Resource<br/>User-defined objects"]
+            Controller["🎮 Controller<br/>Reconciliation loop"]
+            Operator["🤖 Operator<br/>Application management"]
             
-            Operator -->|"implements"| Controller
-            Operator -->|"defines"| CRD
             CRD -->|"creates instances of"| CustomResource
             Controller -.->|"reconciles"| CustomResource
+            Operator -->|"implements"| Controller
+            Operator -->|"defines"| CRD
         end
     end
     
