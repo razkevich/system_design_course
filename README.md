@@ -1,4 +1,4 @@
-# System Design Cloud-Native SaaS Systems - Interview Curriculum
+# System Design for Cloud-Native SaaS Systems
 
 ## Module 1: Core System Design Fundamentals
 
@@ -12,7 +12,7 @@
 ### 1.2 Modern architectural styles, patterns and design
 
 * Requirements gathering (see `Hands-On Software Architecture with Java`, Design it!)
-* [Domain Driven Design](module_1_core_fundamentals/1.2_architectural_patterns/DDD.md)
+* [Domain Driven Design](1.2_architectural_patterns/DDD.md)
 * Modern architectural styles
 * Modular monoliths
 * Microservices and its cousins (SOA, macroservices and miniservices)
@@ -24,56 +24,56 @@
 * Serverless
 * Testing cloud based applications
 
-### 1.5 Networking & Communication
+### 1.3 Networking & Communication
 
 - Protocols and OSI model
-- [Key network components](module_1_core_fundamentals/1.5_network_and_communication/network_components.md)
+- [Key network components](1.3_network_and_communication/network_components.md)
 - Service Meshes
 - API architecture (see Mastering API Architecture)
-- [Network in AWS](module_1_core_fundamentals/1.5_network_and_communication/network_aws.md)
-- [Kubernetes Networking](module_1_core_fundamentals/1.5_network_and_communication/kubernetes_networking.md)
+- [Network in AWS](1.3_network_and_communication/network_aws.md)
+- [Kubernetes Networking](1.3_network_and_communication/kubernetes_networking.md)
 
-### 1.3 Distributed Systems Essentials
+### 1.4 Distributed Systems Essentials
 
 - Distributed systems overview
 - Concurrent programming essentials
-- [Sharding and replication](module_1_core_fundamentals/1.3_distributed_systems/sharding_replication.md)
-- [CAP theorem and its practical implications](module_1_core_fundamentals/1.3_distributed_systems/cap.md)
+- [Sharding and replication](1.4_distributed_systems/sharding_replication.md)
+- [CAP theorem and its practical implications](1.4_distributed_systems/cap.md)
 - Consistency models: strong, eventual, causal
-- [Partitioning and replication strategies](module_1_core_fundamentals/1.3_distributed_systems/DBs.md)
+- [Partitioning and replication strategies](1.4_distributed_systems/DBs.md)
 - Consensus basics (see Database Internals by Alex Petrov)
-- [Distributed coordination and locking](module_1_core_fundamentals/1.3_distributed_systems/Locks.md)
+- [Distributed coordination and locking](1.4_distributed_systems/Locks.md)
 - Kubernetes deep dive
 - Apache Spark deep dive
-### 1.4 Data Storage and Processing
+### 1.5 Data Storage and Processing
 
 - Types of databases and data modeling
-- [Scalability in databases](module_1_core_fundamentals/1.4_data_storage/scalability_db.md)
-- [ACID vs BASE trade-offs](module_1_core_fundamentals/1.4_data_storage/acid_base.md)
-- [Transaction isolation levels: Understanding anomalies and guarantees](module_1_core_fundamentals/1.4_data_storage/isolation_levels.md)
+- [Scalability in databases](1.5_data_storage/scalability_db.md)
+- [ACID vs BASE trade-offs](1.5_data_storage/acid_base.md)
+- [Transaction isolation levels: Understanding anomalies and guarantees](1.5_data_storage/isolation_levels.md)
 - Distributed search
 - Message patterns
-- [Message Queue systems](module_1_core_fundamentals/1.4_data_storage/message_brokers.md)
-- [Exactly-once semantics](module_1_core_fundamentals/1.4_data_storage/exactly_once.md)
+- [Message Queue systems](1.5_data_storage/message_brokers.md)
+- [Exactly-once semantics](1.5_data_storage/exactly_once.md)
 - Batch vs Stream Processing
 - Big Data and MapReduce
 - Data pipelines and ETL architectures
 - Kafka deep dive
-### 2.3 Fault Tolerance and scalability
+### 1.6 Fault Tolerance and scalability
 
 - Redundancy
-- [Rate limiting](module_2_scalability_performance/2.3_fault_tolerance/rate_limiting.md)
+- [Rate limiting](1.6_fault_tolerance/rate_limiting.md)
 - Circuit breakers, Bulkheads, Retry strategies
-- [Distributed locks: Coordination patterns and pitfalls](module_1_core_fundamentals/1.3_distributed_systems/Locks.md)
+- [Distributed locks: Coordination patterns and pitfalls](1.4_distributed_systems/Locks.md)
 - Caching
 
-### 1.6 Security and data protection
+### 1.7 Security and data protection
 
-- [Authentication and authorization protocols](module_1_core_fundamentals/1.6_security_and_data_protection/auth.md)
+- [Authentication and authorization protocols](1.7_security_and_data_protection/auth.md)
 - Zero-trust architecture principles
 - Encryption at rest and in transit
 - Multi-tenancy
-### 2.4 Observability
+### 1.8 Observability
 
 - Metrics, logs, and traces
 - SRE: SLIs, SLOs, and error budgets
