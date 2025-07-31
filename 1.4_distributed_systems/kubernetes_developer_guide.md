@@ -171,8 +171,7 @@ flowchart TD
     subgraph "🟡 Configuration & Secrets"
         
         subgraph "Configuration Sources"
-            ConfigMap["📋 ConfigMap<br/>Non-sensitive config"]
-            Secret["🔐 Secret<br/>Sensitive data"]
+            ConfigSources["📋 Configuration Sources<br/>ConfigMap: Non-sensitive config<br/>Secret: Sensitive data"]
         end
         
         subgraph "Consumption Hierarchy"
@@ -180,10 +179,8 @@ flowchart TD
             VolumeMount["📁 Volume Mounts<br/>File system"]
             ConfigPod["📦 Pod<br/>Consumes config"]
             
-            ConfigMap -->|"provides data as"| EnvVar
-            ConfigMap -->|"provides data as"| VolumeMount
-            Secret -->|"provides data as"| EnvVar
-            Secret -->|"provides data as"| VolumeMount
+            ConfigSources -->|"provides data as"| EnvVar
+            ConfigSources -->|"provides data as"| VolumeMount
             EnvVar -->|"consumed by"| ConfigPod
             VolumeMount -->|"mounted in"| ConfigPod
         end
