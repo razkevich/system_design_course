@@ -18,10 +18,10 @@ flowchart TD
             ReplicaSet["📋 ReplicaSet<br/>Replica management"]
             Pod["📦 Pod<br/>Basic execution unit"]
             
-            Deployment --> ReplicaSet
-            StatefulSet --> Pod
-            DaemonSet --> Pod
-            ReplicaSet --> Pod
+            Deployment -->|"creates & manages"| ReplicaSet
+            StatefulSet -->|"creates & manages"| Pod
+            DaemonSet -->|"creates on each node"| Pod
+            ReplicaSet -->|"maintains replicas of"| Pod
         end
         
         subgraph "Auto-scaling Controllers"
@@ -54,8 +54,8 @@ flowchart TD
             Job["🔧 Job<br/>Run-to-completion"]
             BatchPod["📦 Pod<br/>Task execution"]
             
-            CronJob --> Job
-            Job --> BatchPod
+            CronJob -->|"creates on schedule"| Job
+            Job -->|"runs to completion"| BatchPod
         end
         
         subgraph "Job Types"
@@ -63,9 +63,9 @@ flowchart TD
             WorkQueue["📋 Work Queue Job<br/>Coordinated tasks"]
             IndexedJob["🔢 Indexed Job<br/>Numbered tasks"]
             
-            ParallelJob --> BatchPod
-            WorkQueue --> BatchPod
-            IndexedJob --> BatchPod
+            ParallelJob -->|"runs multiple"| BatchPod
+            WorkQueue -->|"coordinates"| BatchPod
+            IndexedJob -->|"runs numbered"| BatchPod
         end
     end
     
@@ -93,9 +93,9 @@ flowchart TD
             NetworkPod["📦 Pod<br/>Target workload"]
             
             IngressController -.->|"implements"| Ingress
-            Ingress --> Service
-            Service --> EndpointSlice
-            EndpointSlice --> NetworkPod
+            Ingress -->|"routes traffic to"| Service
+            Service -->|"discovers targets via"| EndpointSlice
+            EndpointSlice -->|"points to"| NetworkPod
         end
         
         subgraph "Service Mesh Hierarchy"
@@ -104,10 +104,10 @@ flowchart TD
             DestinationRule["🎯 DestinationRule<br/>Load balancing"]
             MeshService["⚖️ Service<br/>Mesh endpoint"]
             
-            ServiceMesh --> VirtualService
-            ServiceMesh --> DestinationRule
-            VirtualService --> MeshService
-            DestinationRule --> MeshService
+            ServiceMesh -->|"configures"| VirtualService
+            ServiceMesh -->|"configures"| DestinationRule
+            VirtualService -->|"routes traffic to"| MeshService
+            DestinationRule -->|"load balances to"| MeshService
         end
         
         subgraph "Network Security"
@@ -185,12 +185,12 @@ flowchart TD
             VolumeMount["📁 Volume Mounts<br/>File system"]
             ConfigPod["📦 Pod<br/>Consumes config"]
             
-            ConfigMap --> EnvVar
-            ConfigMap --> VolumeMount
-            Secret --> EnvVar
-            Secret --> VolumeMount
-            EnvVar --> ConfigPod
-            VolumeMount --> ConfigPod
+            ConfigMap -->|"provides data as"| EnvVar
+            ConfigMap -->|"provides data as"| VolumeMount
+            Secret -->|"provides data as"| EnvVar
+            Secret -->|"provides data as"| VolumeMount
+            EnvVar -->|"consumed by"| ConfigPod
+            VolumeMount -->|"mounted in"| ConfigPod
         end
     end
     
@@ -221,15 +221,15 @@ flowchart TD
             ClusterRoleBinding["🌍 ClusterRoleBinding<br/>Cluster role assignment"]
             SecurityPod["📦 Pod<br/>Access granted"]
             
-            User --> RoleBinding
-            User --> ClusterRoleBinding
-            ServiceAccount --> RoleBinding
-            ServiceAccount --> ClusterRoleBinding
-            Role --> RoleBinding
-            ClusterRole --> RoleBinding
-            ClusterRole --> ClusterRoleBinding
-            RoleBinding --> SecurityPod
-            ClusterRoleBinding --> SecurityPod
+            User -->|"assigned via"| RoleBinding
+            User -->|"assigned via"| ClusterRoleBinding
+            ServiceAccount -->|"assigned via"| RoleBinding
+            ServiceAccount -->|"assigned via"| ClusterRoleBinding
+            Role -->|"permissions granted by"| RoleBinding
+            ClusterRole -->|"permissions granted by"| RoleBinding
+            ClusterRole -->|"permissions granted by"| ClusterRoleBinding
+            RoleBinding -->|"grants access to"| SecurityPod
+            ClusterRoleBinding -->|"grants access to"| SecurityPod
         end
         
         subgraph "Security Enforcement"
@@ -275,8 +275,8 @@ flowchart TD
             ResourceQuota["📊 ResourceQuota<br/>Namespace limits"]
             LimitRange["📏 LimitRange<br/>Object constraints"]
             
-            Namespace --> ResourceQuota
-            Namespace --> LimitRange
+            Namespace -->|"contains"| ResourceQuota
+            Namespace -->|"contains"| LimitRange
         end
         
         subgraph "Scheduling Hierarchy"
@@ -284,7 +284,7 @@ flowchart TD
             RuntimeClass["⚙️ RuntimeClass<br/>Container runtime"]
             InfraPod["📦 Pod<br/>Scheduled workload"]
             
-            Node --> InfraPod
+            Node -->|"schedules & runs"| InfraPod
             PriorityClass -.->|"prioritizes"| InfraPod
             RuntimeClass -.->|"configures"| InfraPod
             ResourceQuota -.->|"limits"| InfraPod
@@ -316,8 +316,8 @@ flowchart TD
             ServiceMonitor["📝 ServiceMonitor<br/>Scrape config"]
             MonitoredPod["📦 Pod<br/>Metrics source"]
             
-            ServiceMonitor --> Prometheus
-            MetricsServer --> Prometheus
+            ServiceMonitor -->|"configures scraping for"| Prometheus
+            MetricsServer -->|"sends metrics to"| Prometheus
             MonitoredPod -.->|"scraped by"| ServiceMonitor
             MonitoredPod -.->|"metrics"| MetricsServer
         end
@@ -328,7 +328,7 @@ flowchart TD
             LogPod["📦 Pod<br/>Log source"]
             
             LogPod -.->|"logs"| LoggingAgent
-            LoggingAgent --> Fluentd
+            LoggingAgent -->|"forwards logs to"| Fluentd
         end
         
         subgraph "Custom Resource Hierarchy"
@@ -337,9 +337,9 @@ flowchart TD
             CRD["🛠️ CustomResourceDefinition<br/>API extensions"]
             CustomResource["📋 Custom Resource<br/>User-defined objects"]
             
-            Operator --> Controller
-            Operator --> CRD
-            CRD --> CustomResource
+            Operator -->|"implements"| Controller
+            Operator -->|"defines"| CRD
+            CRD -->|"creates instances of"| CustomResource
             Controller -.->|"reconciles"| CustomResource
         end
     end
