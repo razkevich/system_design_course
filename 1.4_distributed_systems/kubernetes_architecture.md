@@ -31,8 +31,8 @@ flowchart LR
             Controllers["🔄 Controllers<br/>Reconciliation"]
             
             APIServer -->|"stores & retrieves state"| etcd
-            APIServer <-->|"watches for unscheduled pods"| Scheduler
-            APIServer <-->|"watch for resource changes"| Controllers
+            APIServer <-->|"Scheduler watches/API serves"| Scheduler
+            APIServer <-->|"Controllers watch/API serves"| Controllers
         end
         
         subgraph DP ["💻 Data Plane"]
@@ -42,7 +42,7 @@ flowchart LR
             Runtime["📦 Runtime<br/>Containers"]
             
             Kubelet -->|"manages container lifecycle"| Runtime
-            KubeProxy -->|"configures network rules"| Runtime
+            KubeProxy -.->|"coordinates with"| Kubelet
         end
         
         subgraph Apps ["📦 Applications"]
@@ -51,7 +51,7 @@ flowchart LR
         
         %% Cross-plane communication
         APIServer -.->|"sends pod specs & updates"| Kubelet
-        Scheduler -.->|"assigns pods to nodes"| Pod
+        Scheduler -.->|"updates pod assignments via"| APIServer
         Controllers -.->|"ensures desired state"| Pod
         Kubelet -->|"creates & monitors"| Pod
         KubeProxy -->|"routes service traffic to"| Pod
