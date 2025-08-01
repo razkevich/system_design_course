@@ -7,7 +7,14 @@
 - What is architecture and system design
 - Architectural views
 - Models for documentation
-- Integration, disintegration drivers, cohesion and coupling (from clean architecture; hard parts)
+- System design principles
+	- Architecture decomposition and boundaries
+	- Dependency management and flow
+	- Trade-offs
+	- Evolution and Change Management
+	- Quality Attributes. Technical and Business Constraints
+	- Data and State Management
+	- Communication Patterns 
 
 ### 1.2 Modern architectural styles, patterns and design
 
