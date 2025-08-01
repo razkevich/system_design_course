@@ -139,7 +139,7 @@ Different Service types provide various levels of network exposure, from interna
 flowchart TD
     subgraph "🔵 Service Types & Exposure"
         
-        subgraph "ClusterIP (Internal Only)"
+        subgraph "ClusterIP Service <br/>(Internal Only)"
             ClusterIP["⚖️ ClusterIP Service<br/>Internal load balancing"]
             ClusterIP --> P1["📦 Pod 1"]
             ClusterIP --> P2["📦 Pod 2"]
@@ -149,13 +149,13 @@ flowchart TD
             HeadlessService["🔍 Headless Service<br/>DNS-based discovery"]
         end
         
-        subgraph "NodePort (Extends ClusterIP)"
-            NodePort["🌐 NodePort :30080<br/>Node-level access"]
+        subgraph "NodePort Service"
+            NodePort["🌐 NodePort Service<br/>Node-level access"]
             NodePort -->|"routes to"| ClusterIP
         end
         
-        subgraph "LoadBalancer <br> (Extends NodePort)"
-            LoadBalancer["☁️ Cloud Load Balancer<br/>External access"]
+        subgraph "LoadBalancer Service"
+            LoadBalancer["☁️ LoadBalancer Service<br/>Cloud Load Balancer"]
             LoadBalancer -->|"routes to"| NodePort
         end
         
