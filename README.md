@@ -45,6 +45,7 @@
 - [Distributed coordination and locking](1.4_distributed_systems/Locks.md)
 - [Kubernetes deep dive](1.4_distributed_systems/kubernetes_architecture.md)
 - [Kubernetes Resource Hierarchy Guide](1.4_distributed_systems/kubernetes_resource_hierarchy_guide.md)
+- [AWS Resource Hierarchy Guide](1.4_distributed_systems/aws_resource_hierarchy_guide.md)
 - Apache Spark deep dive
 ### 1.5 Data Storage and Processing
 
