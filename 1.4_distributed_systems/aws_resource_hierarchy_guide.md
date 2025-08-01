@@ -13,6 +13,7 @@ Understanding AWS foundational infrastructure is crucial before exploring higher
 AWS Organizations provides the foundation for multi-account management and governance. AWS Accounts serve as the fundamental billing and security boundary, while Organizations enables hierarchical management with consolidated billing and policy inheritance. Organizational Units (OUs) group accounts for management purposes, while Service Control Policies (SCPs) provide guardrails that cannot be exceeded even by account administrators.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🏢 Organizational Hierarchy"
         Organization["🏢 AWS Organization<br/>Multi-account management"]
@@ -36,6 +37,7 @@ flowchart TD
 The regional and availability zone structure provides the foundation for high availability architectures. Regions are geographically distributed locations containing multiple Availability Zones (AZs), which are isolated data centers within a region. Virtual Private Clouds (VPCs) create isolated network environments within regions, with subnets providing further subdivision across availability zones.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🌍 Regional & Network Foundation"
         
@@ -87,6 +89,7 @@ Security in AWS starts with Identity and Access Management (IAM), which provides
 IAM Users represent individual identities with long-term credentials, while IAM Roles provide temporary, assumable identities preferred for service-to-service communication. Groups simplify permission management by allowing policy attachment to collections of users. Policies define permissions using JSON documents that can be attached to users, groups, or roles.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🔐 IAM Core"
         
@@ -135,6 +138,7 @@ flowchart TD
 Cross-account access patterns use IAM Roles to enable secure access between different AWS accounts without sharing long-term credentials. This capability is essential for multi-account architectures and third-party integrations while maintaining security boundaries.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🔗 Cross-Account Security"
         
@@ -181,6 +185,7 @@ The compute hierarchy demonstrates AWS's layered approach to abstraction. EC2 in
 Understanding this hierarchy helps in making architectural decisions: use EC2 when you need full control, ECS when you want container orchestration with infrastructure visibility, Fargate when you prefer serverless containers, and Lambda for event-driven workloads. Each level trades control for operational simplicity.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🖥️ Compute & Container Services"
         
@@ -236,6 +241,7 @@ AWS networking operates at both global and regional levels, providing comprehens
 Route 53 provides DNS services with health checking and traffic routing capabilities, while CloudFront offers global content distribution with edge caching. Together, they enable low-latency, highly available applications that can serve global audiences effectively.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🌍 Global Networking"
         
@@ -275,6 +281,7 @@ flowchart TD
 AWS networking centers around the Virtual Private Cloud (VPC), which provides isolated network environments within AWS regions. Security operates through layered controls, and internet connectivity follows specific patterns for public and private resources.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🏠 VPC Networking"
         
@@ -337,6 +344,7 @@ Storage hierarchy considerations include durability, availability, and performan
 Understanding these storage patterns enables appropriate service selection based on access patterns, consistency requirements, and cost considerations. The hierarchy flows from application needs through storage abstractions to underlying infrastructure management.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "💾 Storage & Database"
         
@@ -394,6 +402,7 @@ Systems Manager offers operational management capabilities including patch manag
 The management hierarchy flows from organizational structure through infrastructure definition to operational management. This enables enterprise-scale governance while maintaining development team autonomy within defined boundaries.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "⚙️ Management & Governance"
         
@@ -459,6 +468,7 @@ DataDog enhances AWS observability with advanced analytics, alerting, and dashbo
 The observability hierarchy flows from data collection through processing to analysis and alerting. This enables proactive monitoring strategies that can prevent issues before they impact users while providing the insights needed for continuous optimization.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "📊 Observability & Analytics"
         
