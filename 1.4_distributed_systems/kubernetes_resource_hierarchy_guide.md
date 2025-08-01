@@ -178,7 +178,6 @@ flowchart TD
     style HeadlessService fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
     style IngressRoute fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
     style P1 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
-    style P2 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
 ```
 
 ### Service Mesh Architecture
