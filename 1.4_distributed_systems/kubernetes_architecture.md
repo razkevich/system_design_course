@@ -42,10 +42,10 @@ flowchart LR
         end
         
         %% Internal control plane relationships
-        APIServer -->|"stores & retrieves"| etcd
+        APIServer -->|"stores cluster state"| etcd
         APIServer <-->|"watches & updates"| Scheduler
-        APIServer <-->|"watches & reconciles"| ControllerMgr
-        APIServer <-->|"watches & manages"| CloudController
+        APIServer <-->|"watches & reconciles resources"| ControllerMgr
+        APIServer <-->|"watches & manages cloud resources"| CloudController
         
         %% Internal data plane relationships  
         Kubelet -->|"manages lifecycle"| Runtime
