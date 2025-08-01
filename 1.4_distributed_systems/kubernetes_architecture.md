@@ -1,7 +1,5 @@
 # Kubernetes Internal Architecture: Understanding the Distributed System Behind Container Orchestration
 
-![Kubernetes Architecture](k8s-architecture.drawio.svg)
-
 ## Introduction
 
 Kubernetes has revolutionized how we think about deploying and managing containerized applications at scale. But beneath its elegant command-line interface lies a sophisticated distributed system that exemplifies many of the core principles we study in distributed systems design. Understanding Kubernetes' internal architecture isn't just about knowing how to deploy containers—it's about grasping how modern distributed systems solve fundamental challenges of coordination, consistency, and fault tolerance.
