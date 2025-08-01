@@ -20,7 +20,7 @@ The auto-scaling layer adds intelligence to your workloads. The Horizontal Pod A
 
 ```mermaid
 flowchart TD
-    subgraph "🔴 Core Workloads & Scheduling"
+    subgraph "🔴 Core Workloads"
         
         subgraph "Core Workload Hierarchy"
             Deployment["🔄 Deployment<br/>Stateless apps"]
