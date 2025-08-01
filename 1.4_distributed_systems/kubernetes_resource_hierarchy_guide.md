@@ -141,8 +141,7 @@ flowchart TD
         
         subgraph "ClusterIP Service <br/>(Internal Only)"
             ClusterIP["⚖️ ClusterIP Service<br/>Internal load balancing"]
-            ClusterIP --> P1["📦 Pod 1"]
-            ClusterIP --> P2["📦 Pod 2"]
+            ClusterIP --> P1["📦 Pod"]
         end
         
         subgraph "Headless"
@@ -169,9 +168,8 @@ flowchart TD
             HeadlessService["🔍 Headless Service<br/>DNS-based discovery"]
         end
         
-        %% Headless service references existing pods
+        %% Headless service references existing pod
         HeadlessService -.->|"DNS resolution"| P1
-        HeadlessService -.->|"DNS resolution"| P2
     end
     
     style ClusterIP fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
