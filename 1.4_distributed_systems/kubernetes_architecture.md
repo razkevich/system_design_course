@@ -20,10 +20,10 @@ Kubernetes operates as a distributed system with clear separation between the **
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
-flowchart TD
+flowchart TB
     subgraph "⚙️ Kubernetes Architecture"
         
-        subgraph "Control Plane (Master Nodes)"
+        subgraph CP ["Control Plane (Master Nodes)"]
             APIServer["🌐 API Server<br/>Central gateway & validation"]
             etcd["🗄️ etcd<br/>Distributed key-value store"]
             Scheduler["📅 Scheduler<br/>Pod placement decisions"]
@@ -31,13 +31,13 @@ flowchart TD
             CloudController["☁️ Cloud Controller<br/>Cloud provider integration"]
         end
         
-        subgraph "Data Plane (Worker Nodes)"
+        subgraph DP ["Data Plane (Worker Nodes)"]
             Kubelet["🤖 kubelet<br/>Node agent"]
             KubeProxy["🔗 kube-proxy<br/>Service networking"]
             ContainerRuntime["📦 Container Runtime<br/>Container execution"]
         end
         
-        subgraph "Workloads"
+        subgraph WL ["Workloads"]
             Pod["📦 Pod<br/>Application containers"]
         end
         
