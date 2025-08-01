@@ -229,27 +229,62 @@ flowchart TD
 
 Virtual private cloud infrastructure and global content distribution.
 
-AWS networking centers around the Virtual Private Cloud (VPC), which provides isolated network environments within AWS regions. The VPC hierarchy starts with the VPC itself, then subdivides into Availability Zones containing subnets. This design enables both high availability and network isolation strategies.
+AWS networking operates at both global and regional levels, providing comprehensive connectivity and content delivery solutions. Understanding the distinction between global services and VPC-specific infrastructure is crucial for designing scalable, secure applications.
 
-Security operates through layered controls: Network Access Control Lists (NACLs) provide subnet-level filtering, while Security Groups act as virtual firewalls for individual resources. The stateful nature of Security Groups versus the stateless NACLs creates complementary security layers that can implement defense-in-depth strategies.
-
-Internet connectivity follows specific patterns: Internet Gateways enable public subnet access to the internet, while NAT Gateways allow private subnets to initiate outbound connections without accepting inbound traffic. This architecture supports common patterns like web servers in public subnets and databases in private subnets.
+### Global Networking
 
 Route 53 provides DNS services with health checking and traffic routing capabilities, while CloudFront offers global content distribution with edge caching. Together, they enable low-latency, highly available applications that can serve global audiences effectively.
 
 ```mermaid
 flowchart TD
-    subgraph "🌐 Networking & Content Delivery"
+    subgraph "🌍 Global Networking"
         
-        subgraph "Global Services"
+        subgraph "DNS & Traffic Management"
             Route53["🌍 Route 53<br/>DNS & Traffic Routing"]
-            CloudFront["🚀 CloudFront<br/>Global CDN"]
+            HealthChecks["❤️ Health Checks<br/>Endpoint monitoring"]
         end
+        
+        subgraph "Content Distribution"
+            CloudFront["🚀 CloudFront<br/>Global CDN"]
+            EdgeLocations["🌐 Edge Locations<br/>Cached content"]
+        end
+        
+        subgraph "Origin Sources"
+            S3Origin["🪣 S3 Bucket<br/>Static content origin"]
+            ALBOrigin["⚖️ Application Load Balancer<br/>Dynamic content origin"]
+        end
+        
+        Route53 -->|"resolves to"| CloudFront
+        HealthChecks -.->|"monitors"| ALBOrigin
+        Route53 -->|"uses"| HealthChecks
+        CloudFront -->|"caches at"| EdgeLocations
+        CloudFront -->|"origins from"| S3Origin
+        CloudFront -->|"origins from"| ALBOrigin
+    end
+    
+    style Route53 fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
+    style CloudFront fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
+    style EdgeLocations fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style S3Origin fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style ALBOrigin fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    style HealthChecks fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+```
+
+### VPC Networking
+
+AWS networking centers around the Virtual Private Cloud (VPC), which provides isolated network environments within AWS regions. Security operates through layered controls, and internet connectivity follows specific patterns for public and private resources.
+
+```mermaid
+flowchart TD
+    subgraph "🏠 VPC Networking"
         
         subgraph "VPC Infrastructure"
             VPC["🏢 VPC<br/>Virtual Private Cloud"]
             PublicSubnet["🌐 Public Subnet<br/>Internet accessible"]
             PrivateSubnet["🔒 Private Subnet<br/>Internal only"]
+        end
+        
+        subgraph "Internet Connectivity"
             IGW["🌉 Internet Gateway<br/>VPC internet access"]
             NAT["🔄 NAT Gateway<br/>Outbound internet access"]
         end
@@ -259,21 +294,21 @@ flowchart TD
             SecurityGroup["🔥 Security Group<br/>Instance-level firewall"]
         end
         
-        subgraph "Resources"
-            EC2Instance["🖥️ EC2 Instance<br/>Compute resource"]
-            RDSInstance["🗄️ RDS Instance<br/>Database resource"]
+        subgraph "Compute Resources"
+            EC2Instance["🖥️ EC2 Instance<br/>Public subnet resource"]
+            RDSInstance["🗄️ RDS Instance<br/>Private subnet resource"]
         end
         
-        Route53 -->|"resolves to"| CloudFront
-        CloudFront -->|"origins from"| IGW
         VPC -->|"contains"| PublicSubnet
         VPC -->|"contains"| PrivateSubnet
+        IGW -->|"attached to"| VPC
         IGW -->|"provides internet access to"| PublicSubnet
+        NAT -->|"deployed in"| PublicSubnet
         NAT -->|"enables outbound access from"| PrivateSubnet
-        NACL -.->|"controls traffic to"| PublicSubnet
-        NACL -.->|"controls traffic to"| PrivateSubnet
-        SecurityGroup -.->|"controls traffic to"| EC2Instance
-        SecurityGroup -.->|"controls traffic to"| RDSInstance
+        NACL -.->|"controls subnet traffic for"| PublicSubnet
+        NACL -.->|"controls subnet traffic for"| PrivateSubnet
+        SecurityGroup -.->|"controls instance traffic for"| EC2Instance
+        SecurityGroup -.->|"controls instance traffic for"| RDSInstance
         PublicSubnet -->|"hosts"| EC2Instance
         PrivateSubnet -->|"hosts"| RDSInstance
     end
@@ -283,8 +318,10 @@ flowchart TD
     style PrivateSubnet fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
     style SecurityGroup fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
     style EC2Instance fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
-    style CloudFront fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
-    style Route53 fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
+    style IGW fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
+    style NAT fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
+    style NACL fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style RDSInstance fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#000
 ```
 
 ## 💾 Storage & Database
@@ -343,68 +380,6 @@ flowchart TD
     style Application fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
 ```
 
-## 🔐 Security & Identity
-
-Authentication, authorization, and security controls.
-
-AWS security follows a shared responsibility model with layered defense mechanisms. Identity and Access Management (IAM) serves as the foundation, providing authentication and fine-grained authorization controls. The principle of least privilege is enforced through IAM policies attached to users, groups, or roles, with roles being the preferred method for service-to-service authentication.
-
-Amazon Cognito handles application user authentication and authorization, supporting both user pools for authentication and identity pools for temporary AWS credentials. This enables secure access patterns for web and mobile applications without storing long-term credentials in client applications.
-
-Encryption operates at multiple layers: KMS provides key management services for encryption at rest and in transit, while services like S3 and RDS integrate transparently with KMS for automatic encryption. Security Groups and NACLs provide network-level controls, creating multiple security boundaries around resources.
-
-The security hierarchy emphasizes identity verification, permission boundaries, and data protection. Each layer provides specific capabilities that combine to create comprehensive security postures suitable for enterprise workloads and compliance requirements.
-
-```mermaid
-flowchart TD
-    subgraph "🔐 Security & Identity"
-        
-        subgraph "Identity Management"
-            IAMUser["👤 IAM User<br/>Programmatic access"]
-            IAMRole["🎭 IAM Role<br/>Temporary credentials"]
-            Cognito["🔑 Cognito<br/>Application user auth"]
-        end
-        
-        subgraph "Permission Policies"
-            IAMPolicy["📋 IAM Policy<br/>Permission definitions"]
-            ResourcePolicy["🏷️ Resource Policy<br/>Resource-based permissions"]
-        end
-        
-        subgraph "Encryption & Secrets"
-            KMS["🔐 KMS Key<br/>Encryption key management"]
-            SecretsManager["🗝️ Secrets Manager<br/>Credential rotation"]
-        end
-        
-        subgraph "Network Security"
-            SecurityGroupSec["🔥 Security Group<br/>Instance firewall"]
-            WAF["🛡️ WAF<br/>Web application firewall"]
-        end
-        
-        subgraph "Protected Resources"
-            S3Bucket["🪣 S3 Bucket<br/>Encrypted storage"]
-            RDSDatabase["🗄️ RDS Database<br/>Encrypted database"]
-            Application["📱 Application<br/>Secure access"]
-        end
-        
-        IAMUser -->|"assumes"| IAMRole
-        IAMPolicy -->|"attached to"| IAMUser
-        IAMPolicy -->|"attached to"| IAMRole
-        ResourcePolicy -.->|"controls access to"| S3Bucket
-        Cognito -->|"authenticates users for"| Application
-        KMS -.->|"encrypts"| S3Bucket
-        KMS -.->|"encrypts"| RDSDatabase
-        SecretsManager -.->|"provides credentials to"| Application
-        SecurityGroupSec -.->|"controls access to"| RDSDatabase
-        WAF -.->|"protects"| Application
-    end
-    
-    style IAMRole fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
-    style IAMPolicy fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
-    style KMS fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
-    style Cognito fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
-    style Application fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
-    style SecurityGroupSec fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
-```
 
 ## ⚙️ Management & Governance
 
