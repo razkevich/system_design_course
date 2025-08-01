@@ -145,6 +145,10 @@ flowchart TD
             ClusterIP --> P2["📦 Pod 2"]
         end
         
+        subgraph "Headless"
+            HeadlessService["🔍 Headless Service<br/>DNS-based discovery"]
+        end
+        
         subgraph "NodePort (Extends ClusterIP)"
             NodePort["🌐 NodePort :30080<br/>Node-level access"]
             NodePort -->|"routes to"| ClusterIP
@@ -155,17 +159,19 @@ flowchart TD
             LoadBalancer -->|"routes to"| NodePort
         end
         
-        subgraph "Headless (Direct Pod Access)"
-            HeadlessService["🔍 Headless Service<br/>DNS-based discovery"]
-            HeadlessService -.->|"DNS resolution"| HP1["📦 Pod 1"]
-            HeadlessService -.->|"DNS resolution"| HP2["📦 Pod 2"]
-        end
-        
         subgraph "Ingress Layer"
             IngressRoute["🌐 Ingress<br/>HTTP/HTTPS routing"]
             IngressRoute -->|"routes to"| ClusterIP
             IngressRoute -->|"can route to"| NodePort
         end
+        
+        subgraph "Headless"
+            HeadlessService["🔍 Headless Service<br/>DNS-based discovery"]
+        end
+        
+        %% Headless service references existing pods
+        HeadlessService -.->|"DNS resolution"| P1
+        HeadlessService -.->|"DNS resolution"| P2
     end
     
     style ClusterIP fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
@@ -175,8 +181,6 @@ flowchart TD
     style IngressRoute fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
     style P1 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
     style P2 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
-    style HP1 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
-    style HP2 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
 ```
 
 ### Service Mesh Architecture
