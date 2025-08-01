@@ -185,6 +185,8 @@ flowchart TD
 
 ### Service Mesh Architecture
 
+Service mesh provides advanced traffic management, security, and observability for microservices communication. Unlike traditional networking where applications communicate directly, service mesh intercepts all traffic through sidecar proxies, enabling sophisticated routing rules, mutual TLS, and detailed telemetry without modifying application code.
+
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
