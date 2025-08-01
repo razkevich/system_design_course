@@ -127,6 +127,54 @@ flowchart TD
     style NetworkPolicy fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
 ```
 
+### Service Types & Exposure Patterns
+
+Different Service types provide various levels of network exposure, from internal cluster communication to external access through cloud load balancers.
+
+```mermaid
+flowchart TD
+    subgraph "🔵 Service Types & Exposure"
+        
+        subgraph "ClusterIP (Internal Only)"
+            ClusterIP["⚖️ ClusterIP Service<br/>Internal load balancing"]
+            ClusterIP --> P1["📦 Pod 1"]
+            ClusterIP --> P2["📦 Pod 2"]
+        end
+        
+        subgraph "NodePort (Extends ClusterIP)"
+            NodePort["🌐 NodePort :30080<br/>Node-level access"]
+            NodePort -->|"routes to"| ClusterIP
+        end
+        
+        subgraph "LoadBalancer (Extends NodePort)"
+            LoadBalancer["☁️ Cloud Load Balancer<br/>External access"]
+            LoadBalancer -->|"routes to"| NodePort
+        end
+        
+        subgraph "Headless (Direct Pod Access)"
+            HeadlessService["🔍 Headless Service<br/>DNS-based discovery"]
+            HeadlessService -.->|"DNS resolution"| HP1["📦 Pod 1"]
+            HeadlessService -.->|"DNS resolution"| HP2["📦 Pod 2"]
+        end
+        
+        subgraph "Ingress Layer"
+            IngressRoute["🌐 Ingress<br/>HTTP/HTTPS routing"]
+            IngressRoute -->|"routes to"| ClusterIP
+            IngressRoute -->|"can route to"| NodePort
+        end
+    end
+    
+    style ClusterIP fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style NodePort fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
+    style LoadBalancer fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+    style HeadlessService fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    style IngressRoute fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
+    style P1 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style P2 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style HP1 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style HP2 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+```
+
 ### Service Mesh Architecture
 
 ```mermaid

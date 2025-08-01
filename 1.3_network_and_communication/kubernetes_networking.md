@@ -102,16 +102,13 @@ flowchart TB
     INFRA --> CNI2
     CNI2 --> PC
     
-    %% Styling
-    classDef nodeStyle fill:#bbdefb,stroke:#1976d2,stroke-width:2px
-    classDef cniStyle fill:#81c784,stroke:#388e3c,stroke-width:2px
-    classDef podStyle fill:#ce93d8,stroke:#7b1fa2,stroke-width:2px
-    classDef netStyle fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
-    
-    class N1,N2 nodeStyle
-    class CNI1,CNI2 cniStyle
-    class PA,PB,PC,PD podStyle
-    class NET,INFRA netStyle
+    style CNI1 fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style CNI2 fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style PA fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style PB fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style PC fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style PD fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style INFRA fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
 ```
 
 **Direct Pod-to-Pod Communication:**
@@ -168,20 +165,15 @@ flowchart TB
     INFRA --> CNI2
     CNI2 --> PC
     
-    %% Styling
-    classDef nodeStyle fill:#bbdefb,stroke:#1976d2,stroke-width:2px
-    classDef cniStyle fill:#81c784,stroke:#388e3c,stroke-width:2px
-    classDef podStyle fill:#ce93d8,stroke:#7b1fa2,stroke-width:2px
-    classDef netStyle fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
-    classDef rulesStyle fill:#fff3e0,stroke:#ff8f00,stroke-width:2px
-    classDef serviceStyle fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
-    
-    class N1,N2 nodeStyle
-    class CNI1,CNI2 cniStyle
-    class PA,PB,PC,PD podStyle
-    class NET,INFRA netStyle
-    class IPT1 rulesStyle
-    class SVC,S1 serviceStyle
+    style CNI1 fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style CNI2 fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style PA fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style PB fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style PC fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style PD fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style INFRA fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+    style IPT1 fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    style S1 fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
 ```
 
 **Service-based Communication Flow:**
@@ -225,18 +217,14 @@ flowchart TD
         H -.-> HP2["Pod 2"]
     end
     
-    %% Styling
-    classDef serviceStyle fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
-    classDef podStyle fill:#ce93d8,stroke:#7b1fa2,stroke-width:2px
-    classDef nodeStyle fill:#bbdefb,stroke:#1976d2,stroke-width:2px
-    classDef lbStyle fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
-    classDef dnsStyle fill:#fff3e0,stroke:#ff8f00,stroke-width:2px
-    
-    class C serviceStyle
-    class P1,P2,HP1,HP2 podStyle
-    class N nodeStyle
-    class L lbStyle
-    class H dnsStyle
+    style C fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style P1 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style P2 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style HP1 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style HP2 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style N fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
+    style L fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+    style H fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
 ```
 
 ### 2.3 Service Discovery and DNS
@@ -286,14 +274,15 @@ flowchart LR
         Pod4
     end
     
-    %% Styling
-    classDef podStyle fill:#ce93d8,stroke:#7b1fa2,stroke-width:2px
-    classDef dnsStyle fill:#fff3e0,stroke:#ff8f00,stroke-width:2px
-    classDef serviceStyle fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
-    
-    class P,P2,Pod1,Pod2,Pod3,Pod4 podStyle
-    class D,D2 dnsStyle
-    class S serviceStyle
+    style P fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style P2 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style Pod1 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style Pod2 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style Pod3 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style Pod4 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style D fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    style D2 fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    style S fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
 ```
 
 ### 2.4 Ingress: External Access to Your Services
@@ -330,18 +319,14 @@ flowchart TD
     S2 --> P3
     S2 --> P4
     
-    %% Styling
-    classDef userStyle fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
-    classDef ingressStyle fill:#fff3e0,stroke:#ff8f00,stroke-width:2px
-    classDef serviceStyle fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
-    classDef podStyle fill:#ce93d8,stroke:#7b1fa2,stroke-width:2px
-    classDef clusterStyle fill:#f8f9fa,stroke:#6c757d,stroke-width:1px
-    
-    class U userStyle
-    class I ingressStyle
-    class S1,S2 serviceStyle
-    class P1,P2,P3,P4 podStyle
-    class CLUSTER,SVC,PODS,EXT clusterStyle
+    style U fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+    style I fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
+    style S1 fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style S2 fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style P1 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style P2 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style P3 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style P4 fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
 ```
 
 Services are great for internal communication, but what about external traffic? Sure, we can use NodePort or LoadBalancer Services to expose the applications, but in production environments but that's where Ingress comes in as a more convenient and powerful mechanism.
