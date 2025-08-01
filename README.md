@@ -8,7 +8,7 @@
 - Architectural views
 - Models for documentation
 - System design principles
-	- Architecture decomposition and boundaries
+	- [Decomposition and boundaries](1.2_architecture_basics/decomposition_boundaries.md)
 	- Dependency management and flow
 	- Trade-offs
 	- Evolution and Change Management
