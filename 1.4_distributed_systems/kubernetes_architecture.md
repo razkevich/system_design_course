@@ -20,47 +20,50 @@ Kubernetes operates as a distributed system with clear separation between the **
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
-flowchart TB
+flowchart LR
     subgraph "⚙️ Kubernetes Architecture"
         
-        subgraph CP ["Control Plane (Master Nodes)"]
-            APIServer["🌐 API Server<br/>Central gateway & validation"]
-            etcd["🗄️ etcd<br/>Distributed key-value store"]
-            Scheduler["📅 Scheduler<br/>Pod placement decisions"]
-            ControllerManager["🔄 Controller Manager<br/>Reconciliation loops"]
-            CloudController["☁️ Cloud Controller<br/>Cloud provider integration"]
+        subgraph CP ["🏢 Control Plane"]
+            direction TB
+            APIServer["🌐 API Server<br/>Gateway"]
+            etcd["🗄️ etcd<br/>Data store"]
+            Scheduler["📅 Scheduler<br/>Placement"]
+            Controllers["🔄 Controllers<br/>Reconciliation"]
+            
+            APIServer --- etcd
+            APIServer --- Scheduler
+            APIServer --- Controllers
         end
         
-        subgraph DP ["Data Plane (Worker Nodes)"]
+        subgraph DP ["💻 Data Plane"]
+            direction TB
             Kubelet["🤖 kubelet<br/>Node agent"]
-            KubeProxy["🔗 kube-proxy<br/>Service networking"]
-            ContainerRuntime["📦 Container Runtime<br/>Container execution"]
+            KubeProxy["🔗 kube-proxy<br/>Networking"]  
+            Runtime["📦 Runtime<br/>Containers"]
+            
+            Kubelet --- Runtime
+            KubeProxy --- Runtime
         end
         
-        subgraph WL ["Workloads"]
-            Pod["📦 Pod<br/>Application containers"]
+        subgraph Apps ["📦 Applications"]
+            Pod["Pod<br/>Workload"]
         end
         
-        APIServer -->|"stores state"| etcd
-        APIServer -->|"watches for changes"| ControllerManager
-        APIServer -->|"watches for unscheduled pods"| Scheduler
-        APIServer -->|"receives updates from"| Kubelet
-        Scheduler -->|"assigns pods to nodes"| APIServer
-        ControllerManager -->|"manages resources via"| APIServer
-        CloudController -->|"manages cloud resources via"| APIServer
-        Kubelet -->|"manages containers via"| ContainerRuntime
-        Kubelet -->|"creates & manages"| Pod
-        KubeProxy -->|"routes traffic to"| Pod
+        %% Cross-plane communication
+        APIServer -.->|"manages"| Kubelet
+        Scheduler -.->|"assigns"| Pod
+        Controllers -.->|"controls"| Pod
+        Kubelet -->|"creates"| Pod
+        KubeProxy -->|"routes to"| Pod
     end
     
     style APIServer fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
     style etcd fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
     style Scheduler fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
-    style ControllerManager fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
-    style CloudController fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
+    style Controllers fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
     style Kubelet fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
     style KubeProxy fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
-    style ContainerRuntime fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
+    style Runtime fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
     style Pod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
 ```
 
