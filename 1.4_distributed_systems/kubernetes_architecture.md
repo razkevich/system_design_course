@@ -8,6 +8,62 @@ Kubernetes has revolutionized how we think about deploying and managing containe
 
 When you execute `kubectl apply -f deployment.yaml`, you're not just creating some containers. You're triggering a cascade of interactions across multiple components, each designed with specific distributed systems patterns in mind. This orchestration happens across what Kubernetes calls the **control plane** and **data plane**—a separation that mirrors the fundamental architectural principle of decoupling decision-making from execution in distributed systems.
 
+## ⚙️ Kubernetes Architecture
+
+Core infrastructure components that form the foundation of the Kubernetes distributed system.
+
+Kubernetes operates as a distributed system with clear separation between the **control plane** (decision-making) and **data plane** (execution). The control plane components run on master nodes and manage cluster state, while data plane components run on worker nodes and execute workloads. This architecture enables horizontal scaling, fault tolerance, and clear separation of concerns.
+
+**Control Plane**: API Server serves as the central gateway, etcd provides distributed storage with strong consistency, Scheduler makes placement decisions, and Controllers implement reconciliation loops to maintain desired state.
+
+**Data Plane**: Worker nodes run the kubelet (node agent), kube-proxy (service networking), and container runtime to execute pods and provide compute resources.
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
+flowchart TD
+    subgraph "⚙️ Kubernetes Architecture"
+        
+        subgraph "Control Plane (Master Nodes)"
+            APIServer["🌐 API Server<br/>Central gateway & validation"]
+            etcd["🗄️ etcd<br/>Distributed key-value store"]
+            Scheduler["📅 Scheduler<br/>Pod placement decisions"]
+            ControllerManager["🔄 Controller Manager<br/>Reconciliation loops"]
+            CloudController["☁️ Cloud Controller<br/>Cloud provider integration"]
+        end
+        
+        subgraph "Data Plane (Worker Nodes)"
+            Kubelet["🤖 kubelet<br/>Node agent"]
+            KubeProxy["🔗 kube-proxy<br/>Service networking"]
+            ContainerRuntime["📦 Container Runtime<br/>Container execution"]
+        end
+        
+        subgraph "Workloads"
+            Pod["📦 Pod<br/>Application containers"]
+        end
+        
+        APIServer -->|"stores state"| etcd
+        APIServer -->|"watches for changes"| ControllerManager
+        APIServer -->|"watches for unscheduled pods"| Scheduler
+        APIServer -->|"receives updates from"| Kubelet
+        Scheduler -->|"assigns pods to nodes"| APIServer
+        ControllerManager -->|"manages resources via"| APIServer
+        CloudController -->|"manages cloud resources via"| APIServer
+        Kubelet -->|"manages containers via"| ContainerRuntime
+        Kubelet -->|"creates & manages"| Pod
+        KubeProxy -->|"routes traffic to"| Pod
+    end
+    
+    style APIServer fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
+    style etcd fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    style Scheduler fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    style ControllerManager fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style CloudController fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
+    style Kubelet fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
+    style KubeProxy fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+    style ContainerRuntime fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
+    style Pod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+```
+
 ## The Control Plane: The Brain of the Distributed System
 
 The control plane is not a single application, but rather a collective name for multiple separate components that work together to manage the Kubernetes cluster. These components include:
