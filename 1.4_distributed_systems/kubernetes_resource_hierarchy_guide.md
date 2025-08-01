@@ -1,9 +1,5 @@
 # Kubernetes Resource Hierarchy Guide
 
-A comprehensive guide to Kubernetes concepts organized by functional categories with modern Mermaid diagrams.
-
-## Introduction
-
 Kubernetes orchestrates containerized applications through a rich ecosystem of interconnected resources. Understanding how these resources relate to each other is crucial for effective cluster management and application deployment.
 
 This guide organizes Kubernetes resources into seven functional categories, each with detailed diagrams showing hierarchical relationships and dependencies. Rather than treating resources in isolation, these diagrams reveal the control flows and data paths that make Kubernetes work—from how Deployments manage ReplicaSets to create Pods, to how Services discover endpoints and route traffic.
