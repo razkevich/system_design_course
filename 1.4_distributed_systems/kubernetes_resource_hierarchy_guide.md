@@ -330,27 +330,22 @@ flowchart TD
         end
         
         subgraph "Authorization Bindings"
-            RoleBinding["🔗 RoleBinding<br/>Namespace role assignment"]
-            ClusterRoleBinding["🌍 ClusterRoleBinding<br/>Cluster role assignment"]
+            Bindings["🔗 Bindings<br/>RoleBinding & ClusterRoleBinding"]
         end
         
         subgraph "Protected Resources"
             SecurityPod["📦 Pod<br/>Access controlled"]
         end
         
-        Identity -->|"bound via"| RoleBinding
-        Identity -->|"bound via"| ClusterRoleBinding
-        RoleTypes -->|"defines permissions for"| RoleBinding
-        RoleTypes -->|"defines permissions for"| ClusterRoleBinding
-        RoleBinding -->|"grants access to"| SecurityPod
-        ClusterRoleBinding -->|"grants access to"| SecurityPod
+        Identity -->|"bound via"| Bindings
+        RoleTypes -->|"defines permissions for"| Bindings
+        Bindings -->|"grants access to"| SecurityPod
     end
     
     style SecurityPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
     style Identity fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
     style RoleTypes fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
-    style RoleBinding fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
-    style ClusterRoleBinding fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#000
+    style Bindings fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
 ```
 
 The distinction between namespace-scoped and cluster-scoped permissions is critical: Roles define permissions within a specific namespace, while ClusterRoles can grant cluster-wide access or serve as templates for namespace-specific bindings. ServiceAccounts provide identity for Pods, enabling applications to interact with the Kubernetes API using the principle of least privilege.
