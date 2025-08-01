@@ -24,43 +24,44 @@ flowchart LR
     subgraph "⚙️ Kubernetes Architecture"
         
         subgraph CP ["🏢 Control Plane"]
-            direction TB
-            APIServer["🌐 API Server<br/>Gateway"]
-            etcd["🗄️ etcd<br/>Data store"]
-            Scheduler["📅 Scheduler<br/>Placement"]
-            Controllers["🔄 Controllers<br/>Reconciliation"]
-            
-            APIServer -->|"stores & retrieves state"| etcd
-            APIServer <-->|"Scheduler watches/API serves"| Scheduler
-            APIServer <-->|"Controllers watch/API serves"| Controllers
+            APIServer["🌐 kube-apiserver"]
+            etcd["🗄️ etcd"]
+            Scheduler["📅 kube-scheduler"]
+            ControllerMgr["🔄 kube-controller-manager"]
+            CloudController["☁️ cloud-controller-manager"]
         end
         
         subgraph DP ["💻 Data Plane"]
-            direction TB
-            Kubelet["🤖 kubelet<br/>Node agent"]
-            KubeProxy["🔗 kube-proxy<br/>Networking"]  
-            Runtime["📦 Runtime<br/>Containers"]
-            
-            Kubelet -->|"manages container lifecycle"| Runtime
-            KubeProxy -.->|"coordinates with"| Kubelet
+            Kubelet["🤖 kubelet"]
+            KubeProxy["🔗 kube-proxy"]  
+            Runtime["📦 container runtime"]
         end
         
         subgraph Apps ["📦 Applications"]
-            Pod["Pod<br/>Workload"]
+            Pod["📦 Pod"]
         end
         
-        %% Cross-plane communication
-        APIServer -.->|"sends pod specs & updates"| Kubelet
-        Scheduler -.->|"updates pod assignments via"| APIServer
-        Controllers -.->|"ensures desired state"| Pod
+        %% Internal control plane relationships
+        APIServer -->|"stores & retrieves"| etcd
+        APIServer <-->|"watches & updates"| Scheduler
+        APIServer <-->|"watches & reconciles"| ControllerMgr
+        APIServer <-->|"watches & manages"| CloudController
+        
+        %% Internal data plane relationships  
+        Kubelet -->|"manages lifecycle"| Runtime
+        
+        %% Cross-plane interactions
+        APIServer -->|"sends pod specs"| Kubelet
+        ControllerMgr -->|"ensures desired state"| Pod
         Kubelet -->|"creates & monitors"| Pod
-        KubeProxy -->|"routes service traffic to"| Pod
+        KubeProxy -->|"routes service traffic"| Pod
     end
     
     style APIServer fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
     style etcd fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
     style Scheduler fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
-    style Controllers fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style ControllerMgr fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    style CloudController fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
     style Kubelet fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
     style KubeProxy fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
     style Runtime fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
