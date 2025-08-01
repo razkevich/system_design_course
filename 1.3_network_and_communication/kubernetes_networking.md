@@ -76,6 +76,7 @@ Here's where it gets more interesting. When a Pod on Node A wants to talk to a P
 
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TB
     subgraph N1 ["Node 1"]
         CNI1["CNI Bridge"]
@@ -133,6 +134,7 @@ Here's where kube-proxy comes in. Running on every node, kube-proxy watches the 
 Think of kube-proxy as the traffic director that translates "I want to reach the frontend service" into "route this traffic to one of these specific Pod IP addresses."
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TB
     subgraph N1 ["Node 1"]
         CNI1["CNI Bridge"]
@@ -198,6 +200,7 @@ Kubernetes provides several Service types for different use cases:
 **Headless** (`clusterIP: None`): Skips the virtual IP and returns Pod IPs directly via DNS. Useful for stateful applications and direct pod access.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "ClusterIP"
         C["ClusterIP Service"] --> P1["Pod 1"]
@@ -249,6 +252,7 @@ CoreDNS can also create DNS records for individual Pods (though this is disabled
 You can customize DNS behavior through the Pod's dnsPolicy and dnsConfig fields. This is useful for scenarios like using custom DNS servers, adding search domains, or configuring DNS options for performance tuning.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart LR
     P["Pod"] --> D["CoreDNS"]
     D --> S["Service IP"]
@@ -289,6 +293,7 @@ flowchart LR
 
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph EXT ["External Traffic"]
         U["Users"]

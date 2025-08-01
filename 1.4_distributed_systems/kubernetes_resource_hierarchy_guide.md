@@ -19,6 +19,7 @@ DaemonSets represent a different paradigm entirely, ensuring exactly one Pod run
 The auto-scaling layer adds intelligence to your workloads. The Horizontal Pod Autoscaler (HPA) monitors metrics and scales the number of replicas, while the Vertical Pod Autoscaler (VPA) adjusts resource requests and limits. Both work through the workload controllers rather than manipulating Pods directly, maintaining the system's hierarchical integrity.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🔴 Core Workloads"
         
@@ -55,6 +56,7 @@ flowchart TD
 ### Batch Processing Hierarchy
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "⏰ Batch Processing & Jobs"
         CronJob["⏰ CronJob<br/>Scheduled tasks"]
@@ -97,6 +99,7 @@ Service mesh technology adds another layer of sophistication. Platforms like Ist
 NetworkPolicies provide microsegmentation at the Pod level, functioning as distributed firewalls that can restrict communication based on labels, namespaces, and port specifications. This enables zero-trust networking where connectivity is explicitly defined rather than implicitly allowed.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🔵 Core Networking"
         
@@ -132,6 +135,7 @@ flowchart TD
 Different Service types provide various levels of network exposure, from internal cluster communication to external access through cloud load balancers.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🔵 Service Types & Exposure"
         
@@ -146,7 +150,7 @@ flowchart TD
             NodePort -->|"routes to"| ClusterIP
         end
         
-        subgraph "LoadBalancer (Extends NodePort)"
+        subgraph "LoadBalancer <br> (Extends NodePort)"
             LoadBalancer["☁️ Cloud Load Balancer<br/>External access"]
             LoadBalancer -->|"routes to"| NodePort
         end
@@ -178,6 +182,7 @@ flowchart TD
 ### Service Mesh Architecture
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🕸️ Service Mesh"
         
@@ -222,6 +227,7 @@ The binding process is crucial to understand: PVCs "claim" PVs based on size, ac
 Data protection operates through volume snapshots, providing point-in-time copies for backup and recovery scenarios. VolumeSnapshotClasses define how snapshots are created and managed, similar to how StorageClasses govern volume provisioning. This snapshot capability enables sophisticated backup strategies and disaster recovery procedures without requiring application-specific knowledge.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🟠 Storage & Data"
         
@@ -269,6 +275,7 @@ The decoupling between configuration sources and consumption methods is particul
 Understanding this pattern is crucial for maintaining security boundaries: while ConfigMaps are suitable for non-sensitive data, Secrets should be used for any information that could compromise security if exposed, even if it seems innocuous. The distinction affects not just storage but also access logging, rotation strategies, and backup procedures.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🟡 Configuration & Secrets"
         
@@ -305,6 +312,7 @@ RBAC follows a straightforward but powerful model: identities (Users or ServiceA
 ### RBAC Authorization
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🔐 RBAC Authorization"
         
@@ -354,6 +362,7 @@ The distinction between namespace-scoped and cluster-scoped permissions is criti
 Beyond authorization, Kubernetes provides multiple enforcement mechanisms that operate at different stages of the Pod lifecycle. These controls work together to create defense-in-depth, ensuring security policies are applied consistently across the cluster.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🛡️ Security Enforcement"
         
@@ -396,6 +405,7 @@ Namespaces create virtual clusters within the physical cluster, providing scope 
 The scheduling hierarchy determines where Pods run. PriorityClasses enable workload prioritization during resource contention, ensuring critical applications get scheduled first. RuntimeClasses specify which container runtime to use, enabling scenarios where different workloads require different runtime environments (like gVisor for enhanced isolation or GPU-enabled runtimes for machine learning workloads).
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🟢 Cluster Infrastructure"
         
@@ -453,6 +463,7 @@ The extension stack represents Kubernetes' most powerful operational capability:
 ### Monitoring Stack
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "📊 Monitoring & Metrics"
         
@@ -486,6 +497,7 @@ flowchart TD
 ### Logging Stack
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "📜 Logging & Log Processing"
         
@@ -516,6 +528,7 @@ flowchart TD
 ### Custom Resources & Operators
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
     subgraph "🛠️ Kubernetes API Extensions"
         
