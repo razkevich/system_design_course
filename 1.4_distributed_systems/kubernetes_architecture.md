@@ -31,8 +31,8 @@ flowchart LR
             Controllers["🔄 Controllers<br/>Reconciliation"]
             
             APIServer -->|"stores & retrieves state"| etcd
-            APIServer -->|"receives scheduling requests"| Scheduler
-            APIServer -->|"publishes resource changes"| Controllers
+            Scheduler -->|"watches for unscheduled pods"| APIServer
+            Controllers -->|"watch for resource changes"| APIServer
         end
         
         subgraph DP ["💻 Data Plane"]
