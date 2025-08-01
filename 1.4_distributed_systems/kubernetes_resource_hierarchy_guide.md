@@ -4,7 +4,7 @@ Kubernetes orchestrates containerized applications through a rich ecosystem of i
 
 This guide organizes Kubernetes resources into seven functional categories, each with detailed diagrams showing hierarchical relationships and dependencies. Rather than treating resources in isolation, these diagrams reveal the control flows and data paths that make Kubernetes work—from how Deployments manage ReplicaSets to create Pods, to how Services discover endpoints and route traffic.
 
-Each category includes both architectural context and practical insights to help you understand not just *what* each resource does, but *how* they work together to create resilient, scalable applications. 
+Each category includes both architectural context and practical insights to help you understand not just *what* each resource does, but *how* they work together to create resilient, scalable applications.
 
 ## 🔴 Workloads & Scheduling
 
@@ -183,6 +183,8 @@ flowchart TD
 ### Service Mesh Architecture
 
 Service mesh provides advanced traffic management, security, and observability for microservices communication. Unlike traditional networking where applications communicate directly, service mesh intercepts all traffic through sidecar proxies, enabling sophisticated routing rules, mutual TLS, and detailed telemetry without modifying application code.
+
+The service mesh control plane manages VirtualServices (routing rules), DestinationRules (load balancing policies), and ServiceEntries (external service registration). Each Pod gets a sidecar proxy that enforces these policies, while the mesh control plane continuously configures and monitors all proxies across the cluster.
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
