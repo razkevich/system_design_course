@@ -9,12 +9,12 @@
 - Models for documentation
 - System design principles
 	- [Decomposition and boundaries](1.2_architecture_basics/decomposition_boundaries.md)
-	- Dependency management and flow
-	- Trade-offs
-	- Evolution and Change Management
-	- Quality Attributes. Technical and Business Constraints
-	- Data and State Management
-	- Communication Patterns 
+	- [Dependency management and flow](1.2_architecture_basics/dependency_management_flow.md)
+	- [Trade-offs in software architecture](1.2_architecture_basics/architecture_tradeoffs.md)
+	- [Evolution and change management](1.2_architecture_basics/evolution_change_management.md)
+	- [Quality attributes and constraints](1.2_architecture_basics/quality_attributes_constraints.md)
+	- [Data and state management](1.2_architecture_basics/data_state_management.md)
+	- [Communication patterns](1.2_architecture_basics/communication_patterns.md) 
 
 ### 1.2 Modern architectural styles, patterns and design
 
