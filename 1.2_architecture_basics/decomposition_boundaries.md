@@ -68,30 +68,39 @@ Several other forces influence how we structure software components:
 
 ### High Cohesion, Low Coupling
 
-(todo any idea how to make this section consistent and coherent with our discussion of decomposition drivers above? because we discussed the drivers, and below we kind of are repeating that to some extent)
+The decomposition drivers we discussed earlier (domain boundaries, quality attributes, organizational constraints) and the principle of high cohesion and low coupling are really two complementary lenses for looking at the same fundamental problem. The drivers provide the business and technical forces that suggest where boundaries might be beneficial, while cohesion and coupling principles help us evaluate whether the boundaries we've drawn are actually good ones. They speak about the same underlying concepts but in different languages—domain-driven design naturally leads to high cohesion within bounded contexts and low coupling between them.
 
 This principle, first articulated by Larry Constantine in the 1970s, remains the cornerstone of good decomposition. It applies at every level of software design—from individual functions and classes to modules, services, and entire systems.
 
-**Cohesion** refers to how closely related and focused the responsibilities of a single component are. High cohesion means that elements within a component work together toward a common purpose. Types of cohesion include:
+**Cohesion** refers to how closely related and focused the responsibilities of a single component are. High cohesion means that elements within a component work together toward a common purpose. Types of cohesion, ranked from best to weakest:
 
-(todo let's explain if the below kinds of Cohesion are good or bad and why - briefly)
-
-- **Functional cohesion**: Elements work together to accomplish a single, well-defined task
-- **Data cohesion**: Elements operate on the same data structures
-- **Temporal cohesion**: Elements that are accessed or modified at the same time
-- **Change cohesion**: Elements that change for the same reasons
+- **Functional cohesion**: Elements work together to accomplish a single, well-defined task *(best - creates focused, reusable components)*
+- **Data cohesion**: Elements operate on the same data structures *(good - natural grouping around data)*
+- **Change cohesion**: Elements that change for the same reasons *(good - aligns with business evolution)*
+- **Temporal cohesion**: Elements that are accessed or modified at the same time *(weaker - may indicate missing abstraction)*
 
 High cohesion is important because it makes components easier to understand, test, maintain, and reuse. When a component has a clear, focused purpose, developers can reason about it in isolation.
 
-**Coupling** refers to the degree of interdependence between components. Low coupling means that components can operate independently with minimal knowledge of each other's internals. Types of coupling we want to minimize include:
+**Coupling** refers to the degree of interdependence between components. Low coupling means that components can operate independently with minimal knowledge of each other's internals. Types of coupling, ranked from best to worst:
 
-(todo let's explain if the below kinds of coupling are good or bad and why - briefly)
-- **Data coupling**: Components share data
-- **Stamp coupling**: Components share data structures
-- **Control coupling**: One component controls the flow of another
-- **Content coupling**: One component directly accesses another's internal data
+- **Data coupling**: Components share only simple data *(best - minimal dependencies)*
+- **Stamp coupling**: Components share data structures *(acceptable - common in well-designed APIs)*
+- **Control coupling**: One component controls the flow of another *(problematic - creates tight dependencies)*
+- **Content coupling**: One component directly accesses another's internal data *(worst - breaks encapsulation)*
 
-Low coupling is crucial because it enables independent development, testing, deployment, and scaling. When components are loosely coupled, changes in one component are less likely to require changes in others. (todo explain how it relates to the microservices philosophy )
+Low coupling is crucial because it enables independent development, testing, deployment, and scaling. When components are loosely coupled, changes in one component are less likely to require changes in others. This principle directly drives the microservices philosophy: each service should be independently deployable, scalable, and maintainable. The goal is to create "shared nothing" architectures where services communicate only through well-defined interfaces, enabling teams to work autonomously.
+
+**Architecture Quantums and Coupling Boundaries**
+
+An architecture quantum, as defined by Neal Ford and Mark Richards in "Software Architecture: The Hard Parts," represents "an independently deployable artifact with high functional cohesion, high static coupling, and synchronous dynamic coupling." This concept bridges our decomposition drivers with coupling principles—quantum boundaries often align with domain boundaries, team ownership, and deployment independence we discussed earlier.
+
+From a coupling perspective, quantums help us understand:
+- **Static coupling**: Shared databases, frameworks, and operational dependencies (acceptable within quantums, problematic across them)
+- **Dynamic coupling**: Runtime communication patterns (synchronous within quantums for consistency, asynchronous across quantums for independence)
+
+Not all coupling is bad. Good coupling aligns with your architectural goals:
+- **Acceptable coupling**: Between components that change together, belong to the same business capability, or need strong consistency
+- **Problematic coupling**: Between components owned by different teams, with different scaling requirements, or different change frequencies
 
 ### The Dependency Rule
 
@@ -102,7 +111,9 @@ This means:
 - Use cases should not depend on UI frameworks
 - Core domain logic should not depend on external services
 
-Hexagonal Architecture supports this principle by creating clear dependency directions, with business logic at the center surrounded by adapters that handle external concerns. (todo create a simple mermaid diagram to illustrate hexagonal architecture)
+Hexagonal Architecture supports this principle by creating clear dependency directions, with business logic at the center surrounded by adapters that handle external concerns.
+
+![[Pasted image 20250802215245.png]]
 
 ### Information Hiding and Interface Design
 
@@ -115,28 +126,12 @@ Information hiding is important because it:
 - Supports testing by providing stable interfaces to mock
 
 Good interfaces are minimal, stable, and focused on the consumer's needs rather than the provider's implementation convenience.
-(let's say it's relevant both on the lower level like code, good example is recent java modules, or high level like microservices, maybe you have other good examples (don't be forced)?)
-## Architecture Quantums and Coupling (todo let's delete this section and merge the crutial information into High Cohesion, Low Coupling where we talk about coupling)
 
-An architecture quantum, as defined by Neal Ford and Mark Richards in "Software Architecture: The Hard Parts," is "an independently deployable artifact with high functional cohesion, high static coupling, and synchronous dynamic coupling." This concept provides a valuable lens for thinking about decomposition because it helps identify the natural boundaries of deployment and scaling.
-
-From a decomposition perspective, architecture quantums help us understand:
-- What components must be deployed together
-- Where we can optimize for independent scaling
-- How to minimize coordination overhead between teams
-- Where to invest in decoupling efforts for maximum impact
-
-Understanding quantum boundaries is crucial for microservices architecture, where you want to minimize the number of services that must be deployed together to implement a single business capability.
-
-(todo explain briefly how it overlaps with other concepts we discussed here such as DDD or decomposition drivers)
-
-**Static coupling** represents how components are wired together—shared databases, frameworks, configuration, and operational dependencies. While static coupling within a quantum is acceptable and often necessary, static coupling across quantum boundaries creates deployment and operational complexity.
-
-**Dynamic coupling** represents how components communicate at runtime. Synchronous calls create tight coupling and shared failure modes, while asynchronous messaging enables loose coupling and better fault isolation. However, synchronous coupling within a quantum is often appropriate and necessary for consistency.
-
-Not all coupling is bad. Good coupling aligns with your architectural goals:
-- **Acceptable coupling**: Between components that change together, belong to the same business capability, or need strong consistency
-- **Problematic coupling**: Between components owned by different teams, with different scaling requirements, or different change frequencies
+This principle applies at multiple levels:
+- **Code level**: Java modules (Project Jigsaw) expose only specific packages while hiding implementation details
+- **Service level**: Microservices expose REST APIs while hiding internal data models and business logic
+- **System level**: Public APIs hide the complexity of entire platforms (like how Stripe's payment API hides the complexity of payment processing)
+- **Team level**: Well-defined team interfaces specify what services a team provides and consumes, hiding internal team processes
 
 ## Common Anti-patterns and Solutions
 
