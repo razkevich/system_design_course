@@ -113,7 +113,7 @@ This means:
 
 Hexagonal Architecture supports this principle by creating clear dependency directions, with business logic at the center surrounded by adapters that handle external concerns.
 
-![[Pasted image 20250802215245.png]]
+![[hexagonal.png]]
 
 ### Information Hiding and Interface Design
 
