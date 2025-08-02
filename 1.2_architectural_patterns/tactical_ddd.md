@@ -20,7 +20,7 @@ public class Order {
 
 These "Java Bean" style objects feel natural—they're simple, familiar, and work well with frameworks. But there's a problem: they don't capture the rich behavior and business rules that make your domain unique. Instead, all the interesting logic gets pushed into service classes, creating what Domain-Driven Design calls "anemic domain models."
 
-This article explores tactical DDD patterns that can transform your passive data containers into expressive domain objects that tell the story of your business.
+I think many experienced developers unknowingly follow the principles of DDD Tactical Design because it just often makes sense, but I also think many are not and conscious of their insights. This article explores tactical DDD patterns that can transform the way we write java classes by comprehending and making use of the mental model that DDD provides.
 
 ## The Problem with Anemic Domain Models
 
@@ -51,6 +51,8 @@ While functional, this design separates business rules from the data they operat
 ## Tactical DDD: Building Rich Domain Models
 
 Tactical DDD provides patterns for creating domain objects that encapsulate both data and behavior. The goal isn't to eliminate all services, but to place business logic where it naturally belongs—close to the data it operates on.
+
+From the DDD perspective, Java Beans can be either Entities or Value Objects. Both can benefit from encapsulating business logic and taking more ownership of their state.
 
 ### 1. Entities: Objects with Identity
 
@@ -108,48 +110,45 @@ public class Order {
 
 Notice how the business rules are now embedded within the entity. The order knows how to validate its own state transitions and maintain its invariants.
 
-### 2. Value Objects: Immutable Concepts
+In section 3 we'll talk about when it's actually preferential to keep business logic and behavior away from Entities to Services.
 
-Value objects represent concepts that are defined by their attributes rather than identity. They're immutable and can be freely shared.
+### 2. Value Objects: Transforming How You Work with Data
 
-```java
-public class Money {
-    public static final Money ZERO = new Money(BigDecimal.ZERO);
-    
-    private final BigDecimal amount;
-    
-    public Money(BigDecimal amount) {
-        this.amount = Objects.requireNonNull(amount);
-    }
-    
-    public Money add(Money other) {
-        return new Money(this.amount.add(other.amount));
-    }
-    
-    public Money multiply(int factor) {
-        return new Money(this.amount.multiply(new BigDecimal(factor)));
-    }
-    
-    public boolean isGreaterThan(Money other) {
-        return this.amount.compareTo(other.amount) > 0;
-    }
-    
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof Money)) return false;
-        Money money = (Money) obj;
-        return Objects.equals(amount, money.amount);
-    }
-    
-    @Override
-    public int hashCode() {
-        return Objects.hash(amount);
-    }
-}
-```
+Value Objects change how you handle data in Java applications. Instead of scattering primitive types and collections throughout your codebase, VOs group related properties into cohesive, meaningful objects with their own behavior.
 
-Value objects make your domain model more expressive and type-safe. Instead of passing around raw `BigDecimal` values, you're working with `Money` objects that carry domain meaning.
+**From Primitive Obsession to Rich Types**
+
+Consider a typical method signature before VOs:
+`calculateShipping(BigDecimal amount, String currency, String street, String city, String zipCode, String country)`
+
+With Value Objects:
+`calculateShipping(Money price, Address destination)`
+
+The transformation goes beyond just grouping—VOs encapsulate behavior that would otherwise live in utility classes or services.
+
+**VOs Have Behavior, Not Just State**
+
+Like entities, Value Objects can contain business logic. A `Money` object doesn't just hold an amount—it knows how to add, multiply, and compare itself. An `Address` object can validate postal codes or calculate distances. This behavior stays close to the data it operates on.
+
+**Key Benefits:**
+
+- **Type Safety**: Impossible to accidentally pass a customer ID where an order ID is expected
+- **Expressiveness**: Method signatures become self-documenting
+- **Validation**: Business rules are enforced at object creation
+- **Immutability**: Changes return new instances, preventing accidental modifications
+- **Testability**: Business logic in VOs is easy to unit test
+
+**When to Create Value Objects:**
+
+Replace primitive types when they represent domain concepts (email addresses, phone numbers, money), group related fields that always travel together (address components, coordinates), or when you need domain-specific behavior (calculations, validations, formatting).
+
+Value Objects transform your codebase from a collection of loosely related primitives into a rich vocabulary of domain concepts that express business intent clearly.
+
+**When to Extract from Java Beans:**
+- Replace primitive obsession with domain-specific types
+- Group related fields into cohesive value objects  
+- Add domain-specific behavior and validation
+- Enforce business rules through type safety
 
 ### 3. Domain Services: Complex Business Logic
 
@@ -173,9 +172,29 @@ public class OrderPricingService {
 
 Domain services coordinate between entities and value objects while keeping complex business logic organized and testable.
 
+**When to Extract Business Rules/Behavior from Entities to Services**
+
+While entities should contain their core business logic, certain rules belong in domain services:
+
+- **Multi-entity operations**: Logic that involves multiple aggregates or entities. For example, transferring inventory between warehouses involves multiple `Warehouse` aggregates and should be handled by an `InventoryTransferService`.
+
+- **External system integration**: Rules that require data from external services. A `CreditCheckService` might validate a customer's creditworthiness by calling an external credit bureau API before allowing large orders.
+
+- **Complex calculations involving multiple contexts**: Pricing logic that considers customer tier, product categories, seasonal discounts, and regional taxes might be too complex for a single entity and better suited for a `PricingService`.
+
+- **Domain policies that change frequently**: Rules that are likely to change based on business conditions. A `ShippingPolicyService` might determine delivery options based on current carrier availability and business rules that change seasonally.
+
+- **Performance-sensitive operations**: Calculations that require caching, batch processing, or specialized algorithms. A `RecommendationService` might use machine learning models that are too heavy for individual entities.
+
+The key principle: keep entities focused on their core identity and immediate business rules, while using services for coordination, integration, and complex cross-cutting concerns.
+
 ### 4. Aggregates: Consistency Boundaries
 
-Aggregates define consistency boundaries in your domain. They ensure that business invariants are maintained across related entities.
+An aggregate is a cluster of related entities and value objects that are treated as a single unit for data changes. Think of it as a consistency boundary—everything inside the aggregate must remain consistent, while the aggregate itself is the only way external code can modify this cluster.
+
+The aggregate has one designated "root" entity that serves as the gatekeeper. External objects can only reference and modify the aggregate through its root, never by directly accessing internal entities. This ensures that business rules are always enforced and the aggregate never ends up in an invalid state.
+
+So, aggregates define consistency boundaries in your domain. They ensure that business invariants are maintained across related entities.
 
 ```java
 public class Order { // Aggregate Root
