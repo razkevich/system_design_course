@@ -20,6 +20,7 @@
 
 * Requirements gathering (see `Hands-On Software Architecture with Java`, Design it!)
 * [Domain Driven Design](1.2_architectural_patterns/DDD.md)
+* [Tactical DDD: Beyond Java Beans](1.2_architectural_patterns/tactical_ddd.md)
 * Modern architectural styles
 * Modular monoliths
 * Microservices and its cousins (SOA, macroservices and miniservices)
