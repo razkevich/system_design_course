@@ -9,7 +9,6 @@
 - Models for documentation
 - System design principles
 	- [Decomposition and boundaries](decomposition_boundaries.md)
-	- [Dependency management and flow](dependency_management_flow.md)
 	- [Trade-offs in software architecture](architecture_tradeoffs.md)
 	- [Evolution and change management](evolution_change_management.md)
 	- [Quality attributes and constraints](quality_attributes_constraints.md)
