@@ -13,7 +13,6 @@
 	- [Evolution and change management](evolution_change_management.md)
 	-  Requirements gathering (see `Hands-On Software Architecture with Java`, Design it!)
 	- [Quality attributes and constraints](quality_attributes_constraints.md)
-	- [Data and state management](data_state_management.md)
 	- [Communication patterns](communication_patterns.md) 
 
 ### 1.2 Modern architectural styles, patterns and design
