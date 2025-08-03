@@ -128,26 +128,6 @@ The workshop is particularly valuable when quality requirements are unclear, sta
 
 6. **Refinement** - High-priority scenarios are detailed using the six-part scenario format: source, stimulus, environment, artifact, response, and response measure. This creates testable specifications for architectural evaluation.
 
-## Architecture Trade-off Analysis Method (ATAM)
-
-The Architecture Trade-off Analysis Method is an evaluation technique developed by Rick Kazman, Mark Klein, and Paul Clements at the Software Engineering Institute. ATAM helps architects and stakeholders understand how architectural decisions support or hinder quality attribute goals, explicitly surfacing the trade-offs inherent in any architecture.
-
-ATAM is particularly valuable for complex systems where quality attributes conflict, when multiple architectural options exist, or when the consequences of architectural decisions are unclear. The method provides structured analysis of architectural trade-offs before major commitments are made, potentially saving significant rework costs.
-
-**The ATAM Process:**
-
-1. **Present architecture** - Architects present key architectural decisions, design rationale, and known issues. This establishes a shared understanding of the current or proposed architecture.
-
-2. **Identify approaches** - The team catalogs architectural styles, patterns, and tactics used in the system. This creates a vocabulary for discussing how design decisions affect quality attributes.
-
-3. **Generate quality tree** - Quality attributes are organized hierarchically, from general attributes like "performance" down to specific measures like "average response time under normal load." This clarifies what quality means for this system.
-
-4. **Analyze scenarios** - High-priority quality scenarios from stakeholders are mapped against architectural approaches. This reveals how specific design decisions contribute to or detract from quality goals.
-
-5. **Identify trade-offs** - The analysis explicitly documents where architectural decisions benefit some quality attributes while compromising others. These are the fundamental tensions that architects must manage.
-
-6. **Identify risks** - Potential architectural problems are surfaced, particularly where quality attribute requirements might not be met or where architectural decisions create brittleness or complexity.
-
 ## Conclusion: Quality Attributes in System Evolution
 
 Quality attributes are not static requirements—they evolve as systems mature and business contexts change. Understanding this evolution helps architects make appropriate trade-offs at each stage of a system's lifecycle.
