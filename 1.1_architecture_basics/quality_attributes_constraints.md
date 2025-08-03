@@ -94,50 +94,10 @@ Regulatory requirements create architectural obligations that can't be ignored o
 
 The most successful architects work within constraints rather than fighting them, finding creative solutions that achieve quality goals while respecting the real-world limitations that shape every system.
 
-## Measuring Quality Attributes
+## Conclusion
 
-Site Reliability Engineering (SRE) provides a practical framework for measuring and managing quality attributes in production systems. The SRE approach bridges the gap between development and operations by applying engineering principles to reliability challenges.
+Quality attributes and constraints form the foundation of all architectural decision-making. While functional requirements define what a system does, quality attributes determine how well it performs under real-world conditions, and constraints shape the boundaries within which solutions must operate.
 
-**Service Level Indicators (SLIs)** are specific, measurable metrics that reflect the health of a service from the user's perspective. For performance, this might be the 95th percentile of request latency. For availability, it could be the ratio of successful requests to total requests. SLIs should be chosen carefully—they become the foundation for all reliability discussions and decisions.
+The key to successful architecture lies in understanding that these elements work together as a system. Quality attributes often conflict with each other, constraints limit available options, and business context determines which trade-offs are acceptable. Rather than seeking perfect solutions, effective architects focus on making explicit, conscious decisions that align with business priorities while positioning systems for future evolution.
 
-**Service Level Objectives (SLOs)** set specific targets for SLIs over defined time periods. An SLO might specify that 99.9% of requests should complete within 500ms over a rolling 28-day window. SLOs translate quality attributes into concrete, measurable goals that teams can track and optimize against.
-
-**Service Level Agreements (SLAs)** are external commitments to users, typically with contractual consequences for non-compliance. SLAs are usually less stringent than SLOs to provide operational buffer. If your SLO targets 99.9% availability, your SLA might guarantee 99.5%.
-
-**Error budgets** quantify how much unreliability is acceptable within SLO constraints. If your availability SLO is 99.9%, you have a 0.1% error budget—roughly 43 minutes of downtime per month. This budget balances reliability against the velocity of feature development. When error budget is consumed, teams focus on reliability improvements. When budget is healthy, teams can take more risks with new features.
-
-## Quality Attribute Workshop (QAW)
-
-The Quality Attribute Workshop is a structured method developed by Rick Kazman and the Software Engineering Institute for identifying and prioritizing quality attribute requirements early in the development process. QAW helps bridge the communication gap between business stakeholders and technical teams by translating business concerns into specific, testable architectural requirements.
-
-Unlike traditional requirements gathering methods that focus on functional requirements—what the system should do—QAW specifically targets non-functional requirements that define how well the system should perform its functions. While functional requirements discovery uses techniques like user interviews, use case analysis, and story mapping to understand business processes and user workflows, QAW employs scenario-based analysis to uncover quality concerns that might otherwise remain implicit until system deployment.
-
-The workshop is particularly valuable when quality requirements are unclear, stakeholders have different priorities, or the system faces significant non-functional challenges. It ensures that architectural decisions align with actual business needs rather than assumed requirements.
-
-**The QAW Process:**
-
-1. **Business presentation** - Stakeholders present the business context, goals, and key drivers. This establishes why the system exists and what success looks like from a business perspective.
-
-2. **Architecture presentation** - The technical team presents the current or proposed architecture, highlighting key design decisions and their rationale. This gives stakeholders context for quality discussions.
-
-3. **Scenario brainstorming** - All participants generate quality attribute scenarios reflecting their concerns. A scenario might be "1000 concurrent users submit search queries during peak load, and 95% of queries return results within 500ms."
-
-4. **Scenario consolidation** - Similar scenarios are merged to eliminate duplication and create a manageable set of distinct quality concerns.
-
-5. **Prioritization** - Participants vote on scenario importance, typically using dot voting or similar techniques. This reveals which quality attributes matter most to different stakeholders.
-
-6. **Refinement** - High-priority scenarios are detailed using the six-part scenario format: source, stimulus, environment, artifact, response, and response measure. This creates testable specifications for architectural evaluation.
-
-## Conclusion: Quality Attributes in System Evolution
-
-Quality attributes are not static requirements—they evolve as systems mature and business contexts change. Understanding this evolution helps architects make appropriate trade-offs at each stage of a system's lifecycle.
-
-**Startup phase** systems typically prioritize speed to market above other concerns. Technical debt is acceptable if it enables faster validation of business hypotheses. Performance and scalability requirements are often minimal, but the architecture should avoid decisions that make future scaling prohibitively expensive.
-
-**Growth phase** systems must balance performance improvements with maintainability. User bases expand, creating performance pressures, but the system must remain modifiable as business requirements evolve rapidly. This phase often involves the most complex trade-off decisions.
-
-**Scale phase** systems focus heavily on reliability, performance, and operational efficiency. Large user bases make availability critical, and performance problems become expensive. Maintainability remains important, but operational stability takes higher priority.
-
-**Mature phase** systems optimize for cost efficiency and regulatory compliance. Feature velocity slows, but operational costs and compliance requirements become primary concerns. Legacy integration and long-term supportability drive architectural decisions.
-
-Successful architects anticipate these evolutionary pressures, designing systems that can adapt their quality attribute priorities over time. This requires conscious trade-offs, explicit quality attribute measurement, and regular reassessment of architectural decisions as business contexts evolve.
+Remember that both quality attributes and constraints evolve over time. What works for a startup may be inappropriate for a mature enterprise. The most successful architects anticipate these changes, designing systems that can adapt their quality attribute priorities and work creatively within changing constraints as business needs evolve.

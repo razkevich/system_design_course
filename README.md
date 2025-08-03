@@ -4,22 +4,22 @@
 
 ### 1.1 Architecture and System Design basics
 
-- What is architecture and system design
-- Architectural views
+- [What is architecture and system design](1.1_architecture_basics/what_is_architecture_system_design.md)
+- [Architectural views](1.1_architecture_basics/architectural_views.md) <---tbd
 - Models for documentation
 - System design fundamentals
-	- [Decomposition and boundaries](decomposition_boundaries.md)
-	- [Trade-offs in software architecture](architecture_tradeoffs.md)
-	- [Evolution and change management](evolution_change_management.md)
-	-  Requirements gathering (see `Hands-On Software Architecture with Java`, Design it!)
-	- [Quality attributes and constraints](quality_attributes_constraints.md)
-	- [Communication patterns](communication_patterns.md) 
+	- [Decomposition and boundaries](1.1_architecture_basics/decomposition_boundaries.md)
+	- [Trade-offs in software architecture](1.1_architecture_basics/architecture_tradeoffs.md)
+	- [Evolution and change management](1.1_architecture_basics/evolution_change_management.md)
+	- [Requirements gathering](1.1_architecture_basics/requirements.md)
+	- [Quality attributes and constraints](1.1_architecture_basics/quality_attributes_constraints.md)
+	- [Communication patterns](1.1_architecture_basics/communication_patterns.md)
 
 ### 1.2 Modern architectural styles, patterns and design
 
 * [Domain Driven Design](1.2_architectural_patterns/DDD.md)
 * [Tactical DDD](1.2_architectural_patterns/tactical_ddd.md)
-* Strategic DDD
+* [Strategic DDD](1.2_architectural_patterns/strategic_ddd.md) <--- check it
 * Modern architectural styles
 * Modular monoliths
 * Microservices and its cousins (SOA, macroservices and miniservices)
