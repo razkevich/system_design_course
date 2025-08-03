@@ -7,7 +7,7 @@
 - What is architecture and system design
 - Architectural views
 - Models for documentation
-- System design principles
+- System design fundamentals
 	- [Decomposition and boundaries](decomposition_boundaries.md)
 	- [Trade-offs in software architecture](architecture_tradeoffs.md)
 	- [Evolution and change management](evolution_change_management.md)
