@@ -11,15 +11,16 @@
 	- [Decomposition and boundaries](decomposition_boundaries.md)
 	- [Trade-offs in software architecture](architecture_tradeoffs.md)
 	- [Evolution and change management](evolution_change_management.md)
+	-  Requirements gathering (see `Hands-On Software Architecture with Java`, Design it!)
 	- [Quality attributes and constraints](quality_attributes_constraints.md)
 	- [Data and state management](data_state_management.md)
 	- [Communication patterns](communication_patterns.md) 
 
 ### 1.2 Modern architectural styles, patterns and design
 
-* Requirements gathering (see `Hands-On Software Architecture with Java`, Design it!)
 * [Domain Driven Design](1.2_architectural_patterns/DDD.md)
-* [Tactical DDD: Beyond Java Beans](1.2_architectural_patterns/tactical_ddd.md)
+* [Tactical DDD](1.2_architectural_patterns/tactical_ddd.md)
+* Strategic DDD
 * Modern architectural styles
 * Modular monoliths
 * Microservices and its cousins (SOA, macroservices and miniservices)
