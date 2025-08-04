@@ -6,7 +6,6 @@
 
 - [What is architecture and system design](1.1_architecture_basics/what_is_architecture_system_design.md)
 - [Architectural views](1.1_architecture_basics/architectural_views.md) <---tbd
-- Models for documentation
 - System design fundamentals
 	- [Decomposition and boundaries](1.1_architecture_basics/decomposition_boundaries.md)
 	- [Trade-offs in software architecture](1.1_architecture_basics/architecture_tradeoffs.md)
