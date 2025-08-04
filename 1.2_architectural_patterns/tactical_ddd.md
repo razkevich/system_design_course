@@ -4,6 +4,8 @@
 
 ---
 
+Strategic design helps us identify bounded contexts and understand how they relate to each other across the enterprise. But once we've established these boundaries, the question becomes: how do we implement rich domain models within each bounded context? This is where tactical design comes into play.
+
 If you've been writing enterprise Java applications, chances are you've created countless classes that look like this:
 
 ```java
@@ -20,7 +22,7 @@ public class Order {
 
 These "Java Bean" style objects feel natural—they're simple, familiar, and work well with frameworks. But there's a problem: they don't capture the rich behavior and business rules that make your domain unique. Instead, all the interesting logic gets pushed into service classes, creating what Domain-Driven Design calls "anemic domain models."
 
-I think many experienced developers unknowingly follow the principles of DDD Tactical Design because it just often makes sense, but I also think many are not and conscious of their insights. This article explores tactical DDD patterns that can transform the way we write java classes by comprehending and making use of the mental model that DDD provides.
+While strategic DDD focuses on the big picture—identifying domains, defining bounded contexts, and managing relationships between them—tactical DDD provides the building blocks for implementing expressive domain models within those contexts. These patterns help transform simple data holders into rich objects that truly represent your business domain.
 
 ## The Problem with Anemic Domain Models
 
@@ -52,7 +54,7 @@ While functional, this design separates business rules from the data they operat
 
 Tactical DDD provides patterns for creating domain objects that encapsulate both data and behavior. The goal isn't to eliminate all services, but to place business logic where it naturally belongs—close to the data it operates on.
 
-From the DDD perspective, Java Beans can be either Entities or Value Objects. Both can benefit from encapsulating business logic and taking more ownership of their state.
+Within a bounded context, we can transform Java Beans into rich domain objects using tactical patterns. These objects can be either Entities or Value Objects, both of which benefit from encapsulating business logic and taking ownership of their state.
 
 ### 1. Entities: Objects with Identity
 
@@ -108,9 +110,7 @@ public class Order {
 }
 ```
 
-Notice how the business rules are now embedded within the entity. The order knows how to validate its own state transitions and maintain its invariants.
-
-In section 3 we'll talk about when it's actually preferential to keep business logic and behavior away from Entities to Services.
+Notice how the business rules are now embedded within the entity. The order knows how to validate its own state transitions and maintain its invariants. This is the essence of tactical DDD—moving from passive data holders to active domain objects that understand and enforce business rules.
 
 ### 2. Value Objects: Transforming How You Work with Data
 
@@ -190,11 +190,11 @@ The key principle: keep entities focused on their core identity and immediate bu
 
 ### 4. Aggregates: Consistency Boundaries
 
-An aggregate is a cluster of related entities and value objects that are treated as a single unit for data changes. Think of it as a consistency boundary—everything inside the aggregate must remain consistent, while the aggregate itself is the only way external code can modify this cluster.
+An aggregate is a cluster of related entities and value objects that are treated as a single unit for data changes. Within a bounded context, aggregates define consistency boundaries—everything inside the aggregate must remain consistent, while the aggregate itself is the only way external code can modify this cluster.
 
 The aggregate has one designated "root" entity that serves as the gatekeeper. External objects can only reference and modify the aggregate through its root, never by directly accessing internal entities. This ensures that business rules are always enforced and the aggregate never ends up in an invalid state.
 
-So, aggregates define consistency boundaries in your domain. They ensure that business invariants are maintained across related entities.
+Aggregates are one of the most important tactical patterns because they define consistency boundaries within your domain. They ensure that business invariants are maintained across related entities while keeping the complexity manageable.
 
 ```java
 public class Order { // Aggregate Root
@@ -271,9 +271,9 @@ Rich domain models offer several advantages:
 
 ## Conclusion
 
-Tactical DDD isn't about following patterns religiously—it's about creating domain models that reflect the complexity and richness of your business domain. By moving beyond simple Java beans and embracing entities, value objects, and domain services, you can create code that not only works but truly expresses the language and concepts of your domain.
+Tactical DDD isn't about following patterns religiously—it's about creating domain models that reflect the complexity and richness of your business domain. While strategic design helps us understand the big picture and define boundaries, tactical design gives us the tools to implement expressive models within those boundaries.
 
-The transition takes time and practice, but the result is code that's more maintainable, testable, and aligned with how domain experts think about the business. Your future self (and your teammates) will thank you for the investment.
+By moving beyond simple Java beans and embracing entities, value objects, aggregates, and domain services, you can create code that not only works but truly expresses the language and concepts of your domain. The transition takes time and practice, but the result is code that's more maintainable, testable, and aligned with how domain experts think about the business.
 
 ---
 

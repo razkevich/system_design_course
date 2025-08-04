@@ -4,9 +4,11 @@
 
 ---
 
-Strategic DDD is where the rubber meets the road in large-system architecture. You've identified your domains and subdomains, but now comes the hard part: **How do you actually organize multiple teams and systems around these business realities?** Strategic DDD provides the tools to go from domain understanding to running software systems.
+The foundational concepts of Domain-Driven Design establish the distinction between problem and solution spaces, the role of subdomains and bounded contexts, and how ubiquitous language bridges business and technical concerns. Building on this foundation, strategic DDD focuses on the practical challenges of large-system architecture.
 
-This isn't about defining concepts—it's about making architectural decisions that align with how your business actually operates, evolves, and scales.
+Strategic DDD is where the rubber meets the road in large-system architecture. You understand the conceptual framework: domains contain subdomains (core, supporting, and generic), and we address these through bounded contexts in the solution space. But now comes the hard part: **How do you actually organize multiple teams and systems around these business realities?** Strategic DDD provides the tools to go from domain understanding to running software systems.
+
+This isn't about defining concepts—it's about making architectural decisions that align with how your business actually operates, evolves, and scales. While the foundational concepts show us *what* these building blocks are, strategic design shows us *how* to use them effectively in complex, real-world systems.
 
 ## The Central Challenge: Multiple Models, One Business
 
@@ -18,7 +20,9 @@ The strategic challenge isn't unifying these models—it's managing their relati
 
 ## Context Mapping: The Architecture Emerges
 
-Once you have bounded contexts, the next question is: how do they relate? Context mapping isn't just about technical integration—it reveals power dynamics, dependencies, and evolution patterns in your architecture.
+Once you have bounded contexts defined (software boundaries within which a domain model is defined), the next question is: how do they relate? This is where context mapping becomes crucial—it's not just about technical integration, but about revealing the organizational dynamics, dependencies, and evolution patterns that will shape your architecture.
+
+Context maps provide a visual representation of bounded context relationships and integration patterns. Let's explore these integration patterns in detail and understand how they emerge from business realities.
 
 ### Partnership: When Teams Rise or Fall Together
 Two contexts where both teams must coordinate closely because their success is interdependent. This often happens when business processes are tightly coupled.
@@ -64,9 +68,11 @@ A well-documented shared language that enables integration across organizations,
 
 ## Discovery: From Business Reality to Software Boundaries
 
+This is where we bridge the problem space (business domain analysis) and solution space (software architecture). The goal is to discover the natural boundaries that exist in your business domain and translate them into effective bounded contexts.
+
 ### Event Storming: The Business Process X-Ray
 
-Event Storming reveals how work actually flows through your organization, not how org charts say it should flow. It's particularly powerful for discovering boundaries because it focuses on business events—things that matter to domain experts.
+Event Storming reveals how work actually flows through your organization, not how org charts say it should flow. It's particularly powerful for discovering boundaries because it focuses on domain events—things that matter to domain experts and represent significant business moments.
 
 **The Magic Moment**: Boundaries often emerge where you need different types of experts to understand what's happening. If you need both a marketing expert and a fulfillment expert to understand an event, you've likely found a boundary.
 
@@ -118,6 +124,8 @@ Contexts aren't permanent fixtures—they evolve as your business evolves. Under
 ## Implementation: From Boundaries to Running Systems
 
 Once you've identified contexts and their relationships, you need to implement the integration. The context mapping patterns inform your technical choices, but don't dictate them completely.
+
+Strategic design focuses on the relationships *between* bounded contexts, while tactical design focuses on the implementation patterns *within* each bounded context. Here we're dealing with the between-context integration—how different domain models communicate while maintaining their boundaries.
 
 ### Event-Driven Integration
 
@@ -257,9 +265,11 @@ Strategic DDD's power lies in creating software architecture that naturally alig
 
 Instead of fighting business complexity by forcing it into technical abstractions, strategic DDD embraces that complexity and provides tools for managing it effectively. The result is software that grows with the business rather than constraining it.
 
+This connects directly back to the foundational understanding: we start with the problem space (understanding the domain and its subdomains), use strategic design to map these to the solution space (bounded contexts and their relationships), and then apply tactical design patterns within each context to implement rich domain models.
+
 The key insight: **architecture isn't about organizing code—it's about organizing people, knowledge, and capabilities in service of business outcomes.**
 
-When your bounded contexts map to business capabilities, when your integration patterns reflect actual business relationships, and when your domain models speak the language of domain experts, you've achieved something rare: software architecture that truly serves the business it was built to support.
+When your bounded contexts map to business capabilities, when your integration patterns reflect actual business relationships, and when your domain models speak the ubiquitous language of domain experts, you've achieved something rare: software architecture that truly serves the business it was built to support.
 
 ---
 
