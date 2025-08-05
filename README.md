@@ -27,7 +27,7 @@
 * Event driven architectures, CQRS and Sagas
 * Reactive programming
 * Big Data Systems
-* Serverless
+* [Serverless](1.2_architectural_patterns/serverless.md)
 * Testing cloud based applications
 
 ### 1.3 Networking & Communication
