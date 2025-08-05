@@ -71,7 +71,9 @@
 
 - Redundancy
 - [Rate limiting](1.6_fault_tolerance/rate_limiting.md)
-- Circuit breakers, Bulkheads, Retry strategies
+- [Circuit breakers](1.6_fault_tolerance/circuit_breakers.md)
+- [Bulkheads](1.6_fault_tolerance/bulkheads.md) <--one todo
+- [Supplementary resilience patterns](1.6_fault_tolerance/resilience_patterns_supplementary.md)
 - [Distributed locks: Coordination patterns and pitfalls](1.4_distributed_systems/Locks.md)
 - Caching
 
