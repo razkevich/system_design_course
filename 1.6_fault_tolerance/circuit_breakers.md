@@ -107,9 +107,9 @@ Circuit breakers can be implemented at different architectural layers, each with
 
 ```mermaid
 graph LR
-    A[Application Code] --> CB[Circuit Breaker Library]
-    CB --> API[External API]
-    CB -.->|Circuit Open| FB[Fallback Response]
+    A[Application<br>Code] --> CB[Circuit<br>Breaker<br>Library]
+    CB --> API[External<br>API]
+    CB -.->|Circuit<br>Open| FB[Fallback<br>Response]
     
     style CB fill:#e1f5fe
     style FB fill:#fff3e0
@@ -165,7 +165,7 @@ graph LR
 ```mermaid
 graph LR
     E[Event Source] --> L[Lambda Function]
-    L -.->|Repeated Failures| DLQ[Dead Letter Queue]
+    L -.->|Repeated Failures| DLQ[Dead<br>Letter<br>Queue]
 
     
     style L fill:#ffecb3
@@ -183,12 +183,12 @@ Cloud platforms provide built-in circuit breaker functionality in their serverle
 
 ```mermaid
 graph LR
-    A[Application] --> CP[Connection Pool]
+    A[Application] --> CP[Connection<br>Pool]
     CP --> DB[(Database)]
-    CP -.->|Connection Failure| R[Replica DB]
+    CP -.->|Connection Failure| R[Replica<br>DB]
     
-    A2[Producer] --> K[Kafka Broker]
-    K -.->|Broker Down| K2[Backup Broker]
+    A2[Producer] --> K[Kafka<br>Broker]
+    K -.->|Broker Down| K2[Backup<br>Broker]
     
     style CP fill:#e3f2fd
     style K fill:#e3f2fd
