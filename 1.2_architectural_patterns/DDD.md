@@ -2,7 +2,11 @@
 
 Let's get our head around the _Domain of DDD_. I've always found it to be a valuable concept that offers a systematic approach to analyzing business problems and modeling solutions in software. However, I've consistently struggled with the top books on DDD (such as Eric Evans's "Domain-Driven Design: Tackling Complexity in the Heart of Software" or Vaughn Vernon's **"Implementing Domain-Driven Design"**). The multitude of notions and concepts feels overwhelming, and what's missing is a disambiguation section that brings all these terms together to "set the stage" for deeper discussion.
 
-So I invested some effort in building a mental map of these concepts, and I'm satisfied with the result. DDD is largely split into two parts: strategic design and tactical design. Strategic design focuses on the real-world problem (the Domain) and how we model a software solution to address it. Tactical design focuses on the implementation patterns and building blocks within bounded contexts. Let me walk through both to show how they complement each other.
+So I invested some effort in building a mental map of these concepts, and I'm satisfied with the result. DDD is largely split into two parts: strategic design and tactical design. Strategic design focuses on the real-world problem (the Domain) and how we model a software solution to address it. Tactical design focuses on the implementation patterns and building blocks within bounded contexts.
+
+**Key insight**: Strategic DDD's purpose is to discover the *boundaries* between contexts and manage the *relationships* between them, while tactical DDD defines what goes *inside* each bounded context. Strategic design answers: Where should context boundaries be? How should different contexts integrate? Tactical design answers: How do we implement rich domain models within each context?
+
+Let me walk through both to show how they complement each other.
 
 > Of course, the article presents a somewhat idealized view of the process. In practice, the boundary between problem and solution spaces can be blurrier, and strategic decisions are often more constrained by existing systems and organizational realities.
 

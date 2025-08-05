@@ -6,7 +6,9 @@
 
 The foundational concepts of Domain-Driven Design establish the distinction between problem and solution spaces, the role of subdomains and bounded contexts, and how ubiquitous language bridges business and technical concerns. Building on this foundation, strategic DDD focuses on the practical challenges of large-system architecture.
 
-Strategic DDD is where the rubber meets the road in large-system architecture. You understand the conceptual framework: domains contain subdomains (core, supporting, and generic), and we address these through bounded contexts in the solution space. But now comes the hard part: **How do you actually organize multiple teams and systems around these business realities?** Strategic DDD provides the tools to go from domain understanding to running software systems.
+Strategic DDD is where the rubber meets the road in large-system architecture. You understand the conceptual framework: domains contain subdomains (core, supporting, and generic), and we address these through bounded contexts in the solution space. But now comes the hard part: **How do you actually organize multiple teams and systems around these business realities?** 
+
+Strategic DDD's purpose is to discover the *boundaries* between contexts and manage the *relationships* between them. It answers: Where should context boundaries be? How should different contexts integrate? How do team structures align with these boundaries? Strategic DDD provides the tools to go from domain understanding to running software systems.
 
 This isn't about defining concepts—it's about making architectural decisions that align with how your business actually operates, evolves, and scales. While the foundational concepts show us *what* these building blocks are, strategic design shows us *how* to use them effectively in complex, real-world systems.
 
