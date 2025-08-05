@@ -18,7 +18,7 @@
 
 * [Domain Driven Design](1.2_architectural_patterns/DDD.md)
 * [Tactical DDD](1.2_architectural_patterns/tactical_ddd.md)
-* [Strategic DDD](1.2_architectural_patterns/strategic_ddd.md) <--- check it
+* [Strategic DDD](1.2_architectural_patterns/strategic_ddd.md)
 * Modern architectural styles
 * Modular monoliths
 * Microservices and its cousins (SOA, macroservices and miniservices)
