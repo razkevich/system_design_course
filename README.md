@@ -68,7 +68,7 @@
 - Big Data and MapReduce
 - Data pipelines and ETL architectures
 - Kafka deep dive
-### 1.6 Fault Tolerance and scalability
+### 1.6 Fault Tolerance, Scalability and Observability
 
 - [Redundancy](1.6_fault_tolerance/redundancy.md)<--check
 - [Rate limiting](1.6_fault_tolerance/rate_limiting.md)
