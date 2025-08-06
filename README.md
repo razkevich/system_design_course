@@ -70,7 +70,7 @@
 - Kafka deep dive
 ### 1.6 Fault Tolerance, Scalability and Observability
 
-- [Redundancy](1.6_fault_tolerance/redundancy.md)<--check
+- [Redundancy](1.6_fault_tolerance/redundancy.md)
 - [Rate limiting](1.6_fault_tolerance/rate_limiting.md)
 - [Circuit breakers](1.6_fault_tolerance/circuit_breakers.md)
 - [Bulkheads](1.6_fault_tolerance/bulkheads.md)
