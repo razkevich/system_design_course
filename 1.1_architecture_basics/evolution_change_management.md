@@ -143,7 +143,19 @@ Evolving architecture safely requires more than good patterns—it requires infr
 
 Your testing strategy should match the risks of architectural change. Unit tests verify business logic stays correct, integration tests ensure service boundaries work as expected, and end-to-end tests confirm that critical user journeys still function. Each layer catches different types of problems, and you need all three for confidence in architectural changes.
 
-Deployment strategies become critical when you're evolving systems that can't afford downtime. Blue-green deployments let you switch traffic instantly between old and new versions. Canary releases gradually shift traffic to new implementations while monitoring for problems. Feature flags provide selective activation that can be controlled independently of deployment.
+Deployment strategies become critical when you're evolving systems that can't afford downtime. 
+
+**Rolling updates** are the default Kubernetes deployment strategy, replacing instances gradually while maintaining service availability. The system creates new pods with the updated version, waits for them to become ready, then terminates old pods. This approach minimizes downtime but means both versions run simultaneously during the transition. Configure `maxUnavailable` and `maxSurge` to control the rollout pace—aggressive settings deploy faster but use more resources, while conservative settings prioritize stability.
+
+**Recreate deployments** shut down all existing pods before creating new ones, causing brief downtime but ensuring only one version runs at a time. This strategy works well for applications that can't handle multiple versions simultaneously or when resource constraints prevent running both versions concurrently.
+
+**Blue-green deployments** maintain two identical production environments, switching traffic instantly between them. This approach enables immediate rollbacks and thorough testing of the new environment before switching traffic, but requires double the infrastructure resources.
+
+**Canary releases** gradually shift traffic to new implementations while monitoring for problems. Start with 5-10% of traffic, monitor key metrics, then increase exposure as confidence grows. This provides early detection of issues with minimal user impact.
+
+**ArgoCD sync strategies** add GitOps-specific deployment patterns. Automatic sync deploys changes immediately when detected in Git, while manual sync requires explicit approval for each deployment. Sync waves coordinate complex deployments across multiple resources using annotations to control ordering—databases before applications, configurations before services. Sync hooks enable custom actions during deployment phases, such as running database migrations before starting new application versions.
+
+**Feature flags** provide selective activation that can be controlled independently of deployment, enabling progressive rollouts and instant rollbacks without redeployment.
 
 The pipeline itself should encourage safe evolution: build → test → deploy to staging → automated acceptance tests → deploy to production with monitoring. Each stage should have clear success criteria and automatic rollback triggers. The goal is making architectural changes feel routine rather than risky.
 

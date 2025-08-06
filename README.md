@@ -76,6 +76,7 @@
 - [Bulkheads](1.6_fault_tolerance/bulkheads.md)
 - [Distributed locks: Coordination patterns and pitfalls](1.4_distributed_systems/Locks.md)
 - Caching
+- [Observability and SRE](1.6_fault_tolerance/observability_and_sre.md)
 
 ### 1.7 Security and data protection
 
@@ -83,7 +84,3 @@
 - Zero-trust architecture principles
 - Encryption at rest and in transit
 - Multi-tenancy
-### 1.8 Observability
-
-- Metrics, logs, and traces
-- SRE: SLIs, SLOs, and error budgets
