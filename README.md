@@ -21,8 +21,7 @@
 * [Strategic DDD](1.2_architectural_patterns/strategic_ddd.md)
 * Modern architectural styles
 * Modular monoliths
-* Microservices and its cousins (SOA, macroservices and miniservices)
-* Microservices Decomposition (see Microservices patterns by Richardson)
+* [Microservices](1.2_architectural_patterns/microservices.md)
 * Choreography and orchestration
 * Event driven architectures, CQRS and Sagas
 * Reactive programming
