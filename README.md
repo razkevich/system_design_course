@@ -20,7 +20,7 @@
 * [Tactical DDD](1.2_architectural_patterns/tactical_ddd.md)
 * [Strategic DDD](1.2_architectural_patterns/strategic_ddd.md)
 * Modern architectural styles
-* Modular monoliths
+* [Modular monoliths](1.2_architectural_patterns/modular_monoliths.md) <--- check
 * [Microservices](1.2_architectural_patterns/microservices.md)
 * Choreography and orchestration
 * Event driven architectures, CQRS and Sagas
