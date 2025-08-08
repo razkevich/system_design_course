@@ -19,7 +19,7 @@
 - [Domain Driven Design](1.2_architectural_patterns/DDD.md)
 - [Tactical DDD](1.2_architectural_patterns/tactical_ddd.md)
 - [Strategic DDD](1.2_architectural_patterns/strategic_ddd.md)
-- Modern architectural styles
+- [Modern architectural styles](1.2_architectural_patterns/modern_architectural_styles.md)
 - [Modular monoliths](1.2_architectural_patterns/modular_monoliths.md)
 - [Microservices](1.2_architectural_patterns/microservices.md)
 - [Event driven architectures, CQRS and Sagas](1.2_architectural_patterns/eda.md)
