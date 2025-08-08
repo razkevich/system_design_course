@@ -12,7 +12,7 @@ Welcome to your journey through the intricate world of system design! This cours
 
 **Foundation Concepts**
 - [📖 What is Architecture and System Design?](1.1_architecture_basics/what_is_architecture_system_design.md)
-- [🔍 Architectural Views](1.1_architecture_basics/architectural_views.md) *- Coming Soon*
+- 🔍 Architectural Views *- Coming Soon*
 
 **Core Principles**
 - [🔧 Decomposition and Boundaries](1.1_architecture_basics/decomposition_boundaries.md)
@@ -34,8 +34,8 @@ Welcome to your journey through the intricate world of system design! This cours
 - [🏢 Modular Monoliths](1.2_architectural_patterns/modular_monoliths.md)
 - [🔀 Microservices](1.2_architectural_patterns/microservices.md)
 - [⚡ Event-Driven Architecture, CQRS & Sagas](1.2_architectural_patterns/eda.md)
-- [🌊 Reactive Programming](1.2_architectural_patterns/reactive_programming.md) *- Coming Soon*
-- [📊 Big Data Systems](1.2_architectural_patterns/big_data.md) *- Coming Soon*
+- 🌊 Reactive Programming *- Coming Soon*
+- 📊 Big Data Systems *- Coming Soon*
 - [⚡ Serverless](1.2_architectural_patterns/serverless.md)
 
 ### 🌐 1.3 Networking & Communication
@@ -43,46 +43,46 @@ Welcome to your journey through the intricate world of system design! This cours
 - [📡 Protocols and OSI Model](1.3_network_and_communication/protocols_osi_model.md)
 - [🔧 Key Network Components](1.3_network_and_communication/network_components.md)
 - [🕸️ Service Meshes](1.3_network_and_communication/service_meshes.md)
-- [🚀 API Architecture](1.3_network_and_communication/api_architecture.md) *- See Mastering API Architecture*
+- 🚀 API Architecture *- Coming soon, See Mastering API Architecture*
 - [☁️ Network in AWS](1.3_network_and_communication/network_aws.md)
 - [☸️ Kubernetes Networking](1.3_network_and_communication/kubernetes_networking.md)
 
 ### 🔗 1.4 Distributed Systems Essentials
 
 **Core Concepts**
-- [🌍 Distributed Systems Overview](1.4_distributed_systems/overview.md) *- Coming Soon*
-- [⚡ Concurrent Programming Essentials](1.4_distributed_systems/concurrency.md) *- Coming Soon*
+- 🌍 Distributed Systems Overview *- Coming Soon*
+- ⚡ Concurrent Programming Essentials *- Coming Soon*
 
 **Data Distribution**
 - [📊 Sharding and Replication](1.4_distributed_systems/sharding_replication.md)
 - [⚖️ CAP Theorem and Practical Implications](1.4_distributed_systems/cap.md)
-- [🔄 Consistency Models](1.4_distributed_systems/consistency.md) *- Coming Soon*
+- 🔄 Consistency Models *- Coming Soon*
 - [🗂️ Partitioning and Replication Strategies](1.4_distributed_systems/DBs.md)
 
 **Coordination & Infrastructure**
-- [🤝 Consensus Basics](1.4_distributed_systems/consensus.md) *- See Database Internals by Alex Petrov*
+- 🤝 Consensus Basics *- See Database Internals by Alex Petrov*
 - [🔒 Distributed Coordination and Locking](1.4_distributed_systems/Locks.md)
 - [☸️ Kubernetes Deep Dive](1.4_distributed_systems/kubernetes_architecture.md)
 - [📊 Kubernetes Resource Hierarchy](1.4_distributed_systems/kubernetes_resource_hierarchy_guide.md)
 - [☁️ AWS Resource Hierarchy](1.4_distributed_systems/aws_resource_hierarchy_guide.md)
-- [⚡ Apache Spark Deep Dive](1.4_distributed_systems/spark.md) *- Coming Soon*
+- ⚡ Apache Spark Deep Dive *- Coming Soon*
 
 ### 💾 1.5 Data Storage & Processing
 
 **Database Design**
-- [🗄️ Database Types and Data Modeling](1.5_data_storage/database_types.md) *- Coming Soon*
+- 🗄️ Database Types and Data Modeling *- Coming Soon*
 - [📈 Scalability in Databases](1.5_data_storage/scalability_db.md)
 - [⚖️ ACID vs BASE Trade-offs](1.5_data_storage/acid_base.md)
 - [🔒 Transaction Isolation Levels](1.5_data_storage/isolation_levels.md)
 
 **Messaging & Processing**
-- [🔍 Distributed Search](1.5_data_storage/search.md) *- Coming Soon*
+- 🔍 Distributed Search *- Coming Soon*
 - [📨 Message Queue Systems](1.5_data_storage/message_brokers.md)
 - [✅ Exactly-Once Semantics](1.5_data_storage/exactly_once.md)
-- [⚡ Batch vs Stream Processing](1.5_data_storage/processing.md) *- Coming Soon*
-- [🐘 Big Data and MapReduce](1.5_data_storage/mapreduce.md) *- Coming Soon*
-- [🔄 Data Pipelines and ETL](1.5_data_storage/etl.md) *- Coming Soon*
-- [📊 Kafka Deep Dive](1.5_data_storage/kafka.md) *- Coming Soon*
+- ⚡ Batch vs Stream Processing *- Coming Soon*
+- 🐘 Big Data and MapReduce *- Coming Soon*
+- 🔄 Data Pipelines and ETL *- Coming Soon*
+- 📊 Kafka Deep Dive *- Coming Soon*
 
 ### 🛡️ 1.6 Fault Tolerance, Scalability & Observability
 
@@ -92,7 +92,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [⚡ Circuit Breakers](1.6_fault_tolerance/circuit_breakers.md)
 - [🚧 Bulkheads](1.6_fault_tolerance/bulkheads.md)
 - [📦 Outbox Pattern](1.6_fault_tolerance/outbox_pattern.md)
-- [💾 Caching](1.6_fault_tolerance/caching.md) *- Coming Soon*
+- 💾 Caching *- Coming Soon*
 
 **Monitoring & Operations**
 - [👁️ Observability and SRE](1.6_fault_tolerance/observability_and_sre.md)
@@ -100,8 +100,8 @@ Welcome to your journey through the intricate world of system design! This cours
 ### 🔐 1.7 Security & Data Protection
 
 - [🔑 Authentication and Authorization](1.7_security_and_data_protection/auth.md)
-- [🛡️ Zero-Trust Architecture](1.7_security_and_data_protection/zero_trust.md) *- Coming Soon*
-- [🔒 Encryption at Rest and in Transit](1.7_security_and_data_protection/encryption.md) *- Coming Soon*
+- 🛡️ Zero-Trust Architecture *- Coming Soon*
+- 🔒 Encryption at Rest and in Transit *- Coming Soon*
 - [🏢 Multi-tenancy](1.7_security_and_data_protection/multitenancy.md)
 
 ---
