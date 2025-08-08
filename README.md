@@ -30,9 +30,8 @@
 ### 1.3 Networking & Communication
 
 - [Protocols and OSI model](1.3_network_and_communication/protocols_osi_model.md)
-- Securing API communications
 - [Key network components](1.3_network_and_communication/network_components.md)
-- Service Meshes
+- [Service Meshes](1.3_network_and_communication/service_meshes.md)<---check
 - API architecture (see Mastering API Architecture)
 - [Network in AWS](1.3_network_and_communication/network_aws.md)
 - [Kubernetes Networking](1.3_network_and_communication/kubernetes_networking.md)
