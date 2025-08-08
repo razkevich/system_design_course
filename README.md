@@ -10,7 +10,7 @@ Welcome to your journey through the intricate world of system design! This cours
 
 **Foundation Concepts**
 - [📖 What is Architecture and System Design?](1_architecture_basics/what_is_architecture_system_design.md)
-- 🔍 Architectural Views *- Coming Soon*
+- [🔍 Architectural Views](1_architecture_basics/architectural_views.md)
 
 **Core Principles**
 - [🔧 Decomposition and Boundaries](1_architecture_basics/decomposition_boundaries.md)

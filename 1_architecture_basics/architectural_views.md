@@ -34,7 +34,7 @@ The physical view describes the mapping of software to hardware and shows the ph
 The physical view maps software elements to hardware infrastructure, showing deployment topology, network connections, hardware specifications, and resource allocation. This view is crucial for capacity planning, performance optimization, disaster recovery planning, and infrastructure management.
 
 ## C4 Model: Modern Architectural Visualization
-![[Pasted image 20250808224825.png]]
+![[c4.png]]
 
 The C4 model provides "views" from a different perspective. It's a hierarchical approach to software architecture diagrams, consisting of four levels of abstraction:
 
@@ -68,17 +68,17 @@ Architecture documentation must also capture how the system behaves dynamically.
 
 **Sequence Diagrams** show interaction flows over time between system components. They capture the temporal ordering of messages, method calls, and responses, making them ideal for documenting use cases, API interactions, and complex workflows. These diagrams help developers understand the flow of control and data through the system during specific scenarios.
 
-![[Pasted image 20250808230300.png]]
+![[sequence.png]]
 *Figure: UML sequence diagram showing component interactions over time*
 
 **Activity Diagrams** illustrate business processes and workflows, showing the flow of activities, decision points, parallel processing, and synchronization. They're particularly useful for documenting complex business logic, user journeys, and system processes that involve multiple actors and conditional flows.
-![[Pasted image 20250808230338.png]]
+![[activity.png]]
 
 ### Comprehensive Documentation
 
 **State Machine Diagrams** model element behavior and state transitions, showing how system components change state in response to events. They're essential for documenting reactive systems, user interface behavior, protocol implementations, and any component with complex lifecycle management. These diagrams clarify valid state transitions and help prevent invalid system states.
 
-![[Pasted image 20250808230729.png]]
+![[state_machine.png]]
 
 ## Combining Views
 
