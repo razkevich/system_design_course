@@ -20,7 +20,7 @@
 * [Tactical DDD](1.2_architectural_patterns/tactical_ddd.md)
 * [Strategic DDD](1.2_architectural_patterns/strategic_ddd.md)
 * Modern architectural styles
-* [Modular monoliths](1.2_architectural_patterns/modular_monoliths.md) <--- check
+* [Modular monoliths](1.2_architectural_patterns/modular_monoliths.md)
 * [Microservices](1.2_architectural_patterns/microservices.md)
 * Choreography and orchestration
 * Event driven architectures, CQRS and Sagas
@@ -82,4 +82,4 @@
 - [Authentication and authorization protocols](1.7_security_and_data_protection/auth.md)
 - Zero-trust architecture principles
 - Encryption at rest and in transit
-- Multi-tenancy
+- [Multi-tenancy](1.7_security_and_data_protection/multitenancy.md)<--- check
