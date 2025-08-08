@@ -65,40 +65,7 @@ The challenge with synchronous communication is **coupling and cascading failure
 
 Popular tools like **Apache Kafka**, **RabbitMQ**, and cloud-managed services like **AWS SQS/SNS** provide the infrastructure for reliable message delivery. The key insight is that many business processes don't actually require immediate consistency—they require eventual consistency with excellent user experience.
 
-### Event-Driven Architecture: Services as Reactive Systems
-
-Event-driven architecture (EDA) treats services as reactive systems that respond to events rather than direct commands. When a user completes a purchase, instead of the order service directly calling the inventory service, payment service, and notification service, it publishes an "OrderCompleted" event.
-
-This approach offers several advantages: **loose coupling** between services, **scalability** (services can process events at their own pace), and **auditability** (events provide a natural audit log of what happened in your system).
-
-However, EDA introduces challenges around **message ordering**, **duplicate processing**, and **event schema evolution**. When you publish an "OrderCompleted" event, you need to ensure all interested services can process it, even as the event structure evolves over time.
-
-### CQRS and Event Sourcing: Rethinking Data Flow
-
-When microservices embrace event-driven architectures, traditional CRUD operations often become a bottleneck. **CQRS (Command Query Responsibility Segregation)** and **Event Sourcing** emerge as natural patterns that complement both microservices autonomy and event-driven communication.
-
-**CQRS** separates read and write operations, often using different data models for each. In a microservices context, this might mean having separate services for handling commands (writes) and queries (reads). This separation allows read services to optimize for complex queries and reporting without impacting the performance of write operations.
-
-**Event Sourcing** takes this further by storing events as the source of truth rather than current state. Instead of storing "John's account balance is $500," you store "John deposited $1000, then withdrew $500." The current balance is derived by replaying events.
-
-These patterns synergize powerfully with microservices and event-driven architectures. Event sourcing naturally produces the events that drive inter-service communication, while CQRS enables services to maintain their own optimized views of data from other services. A single business transaction might generate events consumed by multiple services, each building their own read models optimized for their specific needs. This eliminates the need for complex joins across service boundaries while maintaining data consistency through eventual consistency patterns.
-
-### Handling Distributed Transactions with Sagas
-
-In a monolithic application, you can use database transactions to ensure consistency. In microservices, data is spread across multiple databases owned by different services. This is where **Saga patterns** come in.
-
-A saga is a sequence of local transactions where each service publishes events or sends commands to trigger the next step. If any step fails, compensating transactions undo the work of completed steps.
-
-Consider an e-commerce order process:
-1. Order service reserves inventory
-2. Payment service charges the customer
-3. Shipping service schedules delivery
-
-If payment fails, the saga triggers compensation: the order service releases the inventory reservation, and the shipping service cancels the delivery.
-
-**Choreography-based sagas** use events—each service listens for events and decides what to do next. **Orchestration-based sagas** use a central coordinator that manages the transaction flow. Each approach has trade-offs in complexity, coupling, and failure handling.
-
-The key insight is that distributed transactions in microservices aren't about achieving ACID properties across services—they're about achieving business consistency through carefully designed compensation flows.
+For more complex inter-service communication patterns including event-driven architecture, CQRS, and distributed transaction management with Sagas, see our dedicated [Event-Driven Architecture guide](./eda.md).
 
 ## Decomposition: The Art and Science of Service Boundaries
 
@@ -261,11 +228,6 @@ This isn't compromise—it's engineering wisdom. Different parts of your system 
 
 For certain types of workloads, especially event-driven and infrequently accessed services, serverless can provide the granularity and independence of microservices with much lower operational complexity.
 
-### Event Streaming as Architecture
-
-**Event streaming platforms** like Kafka are enabling new architectural patterns that combine benefits of both monoliths and microservices. Instead of direct service-to-service communication, systems publish events to streams that other services can consume.
-
-This **event-driven architecture** allows for loose coupling between services while maintaining data consistency through event sourcing and CQRS patterns. Services can be independently developed and deployed but share state through well-defined event schemas.
 
 ### Micro-Frontends: Extending Microservices to the UI
 
