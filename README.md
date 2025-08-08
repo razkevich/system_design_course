@@ -22,7 +22,6 @@
 - Modern architectural styles
 - [Modular monoliths](1.2_architectural_patterns/modular_monoliths.md)
 - [Microservices](1.2_architectural_patterns/microservices.md)
-- Choreography and orchestration
 - [Event driven architectures, CQRS and Sagas](1.2_architectural_patterns/eda.md)
 - Reactive programming
 - Big Data Systems
