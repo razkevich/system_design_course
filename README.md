@@ -6,7 +6,7 @@ Welcome to your journey through the intricate world of system design! This cours
 
 ---
 
-### 🎯 1 Architecture & System Design Basics
+## 🎯 1 Architecture & System Design Basics
 
 **Foundation Concepts**
 - [📖 What is Architecture and System Design?](1_architecture_basics/what_is_architecture_system_design.md)
@@ -20,7 +20,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [🎯 Quality Attributes and Constraints](1_architecture_basics/quality_attributes_constraints.md)
 - [💬 Communication Patterns](1_architecture_basics/communication_patterns.md)
 
-### 🏛️ 2 Modern Architectural Styles & Patterns
+## 🏛️ 2 Modern Architectural Styles & Patterns
 
 **Domain-Driven Design**
 - [🎯 Domain Driven Design](2_architectural_patterns/DDD.md)
@@ -36,7 +36,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - 📊 Big Data Systems *- Coming Soon*
 - [⚡ Serverless](2_architectural_patterns/serverless.md)
 
-### 🌐 3 Networking & Communication
+## 🌐 3 Networking & Communication
 
 - [📡 Protocols and OSI Model](3_network_and_communication/protocols_osi_model.md)
 - [🔧 Key Network Components](3_network_and_communication/network_components.md)
@@ -45,7 +45,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [☁️ Network in AWS](3_network_and_communication/network_aws.md)
 - [☸️ Kubernetes Networking](3_network_and_communication/kubernetes_networking.md)
 
-### 🔗 4 Distributed Systems Essentials
+## 🔗 4 Distributed Systems Essentials
 
 **Core Concepts**
 - 🌍 Distributed Systems Overview *- Coming Soon*
@@ -65,7 +65,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [☁️ AWS Resource Hierarchy](4_distributed_systems/aws_resource_hierarchy_guide.md)
 - ⚡ Apache Spark Deep Dive *- Coming Soon*
 
-### 💾 5 Data Storage & Processing
+## 💾 5 Data Storage & Processing
 
 **Database Design**
 - 🗄️ Database Types and Data Modeling *- Coming Soon*
@@ -82,7 +82,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - 🔄 Data Pipelines and ETL *- Coming Soon*
 - 📊 Kafka Deep Dive *- Coming Soon*
 
-### 🛡️ 6 Fault Tolerance, Scalability & Observability
+## 🛡️ 6 Fault Tolerance, Scalability & Observability
 
 **Resilience Patterns**
 - [🔄 Redundancy](6_fault_tolerance/redundancy.md)
@@ -95,7 +95,7 @@ Welcome to your journey through the intricate world of system design! This cours
 **Monitoring & Operations**
 - [👁️ Observability and SRE](6_fault_tolerance/observability_and_sre.md)
 
-### 🔐 7 Security & Data Protection
+## 🔐 7 Security & Data Protection
 
 - [🔑 Authentication and Authorization](7_security_and_data_protection/auth.md)
 - 🛡️ Zero-Trust Architecture *- Coming Soon*
