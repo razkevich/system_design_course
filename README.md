@@ -72,6 +72,7 @@
 - [Bulkheads](1.6_fault_tolerance/bulkheads.md)
 - [Distributed locks: Coordination patterns and pitfalls](1.4_distributed_systems/Locks.md)
 - Caching
+- [Outbox Pattern](1.6_fault_tolerance/outbox_pattern.md)
 - [Observability and SRE](1.6_fault_tolerance/observability_and_sre.md)
 
 ### 1.7 Security and data protection
