@@ -16,17 +16,17 @@
 
 ### 1.2 Modern architectural styles, patterns and design
 
-* [Domain Driven Design](1.2_architectural_patterns/DDD.md)
-* [Tactical DDD](1.2_architectural_patterns/tactical_ddd.md)
-* [Strategic DDD](1.2_architectural_patterns/strategic_ddd.md)
-* Modern architectural styles
-* [Modular monoliths](1.2_architectural_patterns/modular_monoliths.md)
-* [Microservices](1.2_architectural_patterns/microservices.md)
-* Choreography and orchestration
-* [Event driven architectures, CQRS and Sagas](1.2_architectural_patterns/eda.md)
-* Reactive programming
-* Big Data Systems
-* [Serverless](1.2_architectural_patterns/serverless.md)
+- [Domain Driven Design](1.2_architectural_patterns/DDD.md)
+- [Tactical DDD](1.2_architectural_patterns/tactical_ddd.md)
+- [Strategic DDD](1.2_architectural_patterns/strategic_ddd.md)
+- Modern architectural styles
+- [Modular monoliths](1.2_architectural_patterns/modular_monoliths.md)
+- [Microservices](1.2_architectural_patterns/microservices.md)
+- Choreography and orchestration
+- [Event driven architectures, CQRS and Sagas](1.2_architectural_patterns/eda.md)
+- Reactive programming
+- Big Data Systems
+- [Serverless](1.2_architectural_patterns/serverless.md)
 
 ### 1.3 Networking & Communication
 
