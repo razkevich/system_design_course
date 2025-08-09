@@ -33,23 +33,6 @@ The physical view describes the mapping of software to hardware and shows the ph
 
 The physical view maps software elements to hardware infrastructure, showing deployment topology, network connections, hardware specifications, and resource allocation. This view is crucial for capacity planning, performance optimization, disaster recovery planning, and infrastructure management.
 
-## C4 Model: Modern Architectural Visualization
-![[c4.png]]
-
-The C4 model provides "views" from a different perspective. It's a hierarchical approach to software architecture diagrams, consisting of four levels of abstraction:
-
-### Level 1: System Context
-Shows the software system you are building and how it fits into the world in terms of the people who use it and the other software systems it interacts with. This diagram focuses on people (actors, roles, personas, etc.) and software systems rather than technologies, protocols, and other low-level details. It answers the question "What is this system and how does it fit into the world?"
-
-### Level 2: Container Diagram
-Zooms into the software system and shows the containers (applications, data stores, microservices, etc.) that make up that software system. Technology decisions are also a key part of this diagram. A container represents an application or data store and is something that needs to be running in order for the overall software system to work. This level shows the overall shape of the architecture and technology decisions.
-
-### Level 3: Component Diagram
-Zooms into an individual container to show the components inside it. These components should map to real abstractions (e.g., a grouping of code) in your codebase. Components are the major structural building blocks of your code - think of them as a collection of functionality behind a well-defined interface. This diagram identifies the major structural building blocks and their interactions within a specific container.
-
-### Level 4: Code Diagram
-Zooms into an individual component to show how that component is implemented at the code level, showing the code elements (interfaces, classes, etc.) that make up the component. This level provides the implementation details that developers need, though it's often better to generate these automatically from IDEs rather than maintain them manually.
-
 ## Quality Views: Cross-Cutting Concerns
 
 Beyond structural views and C4, quality views address specific stakeholder concerns by focusing on particular quality attributes or non-functional requirements. While the 4+1 model covers the core structural aspects of a system, quality views overlay additional perspectives that cut across multiple structural elements.
@@ -85,6 +68,26 @@ Architecture documentation must also capture how the system behaves dynamically.
 Documenting architecture through separate views provides a divide-and-conquer approach, but since all structures serve the same purpose, they often have strong associations that architects must manage.
 
 When views are closely related, **combined views** can effectively show these associations by merging elements and relations from multiple views. The simplest approach is creating **overlays** that combine information from two separate views while preserving original element and relation types. This works best when views have tight relationships and strong associations between elements, making the combined structure easier to understand than viewing them separately. However, avoid overloading combined views with too many mappings.
+
+## C4 Model: Modern Architectural Visualization
+
+While the C4 model is not precisely about architectural 'views' in the traditional sense, it's a complementary documentation method that's highly relevant because it provides a standardized, hierarchical approach to visualizing software architecture at different levels of abstraction. It bridges the gap between high-level system context and detailed implementation, offering a practical framework that can be used alongside or integrated with the 4+1 architectural views.
+
+![[c4.png]]
+
+The C4 model consists of four levels of abstraction:
+
+### Level 1: System Context
+Shows the software system you are building and how it fits into the world in terms of the people who use it and the other software systems it interacts with. This diagram focuses on people (actors, roles, personas, etc.) and software systems rather than technologies, protocols, and other low-level details. It answers the question "What is this system and how does it fit into the world?"
+
+### Level 2: Container Diagram
+Zooms into the software system and shows the containers (applications, data stores, microservices, etc.) that make up that software system. Technology decisions are also a key part of this diagram. A container represents an application or data store and is something that needs to be running in order for the overall software system to work. This level shows the overall shape of the architecture and technology decisions.
+
+### Level 3: Component Diagram
+Zooms into an individual container to show the components inside it. These components should map to real abstractions (e.g., a grouping of code) in your codebase. Components are the major structural building blocks of your code - think of them as a collection of functionality behind a well-defined interface. This diagram identifies the major structural building blocks and their interactions within a specific container.
+
+### Level 4: Code Diagram
+Zooms into an individual component to show how that component is implemented at the code level, showing the code elements (interfaces, classes, etc.) that make up the component. This level provides the implementation details that developers need, though it's often better to generate these automatically from IDEs rather than maintain them manually.
 
 ## Conclusion
 
