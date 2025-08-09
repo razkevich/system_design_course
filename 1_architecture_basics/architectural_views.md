@@ -89,6 +89,9 @@ Zooms into an individual container to show the components inside it. These compo
 ### Level 4: Code Diagram
 Zooms into an individual component to show how that component is implemented at the code level, showing the code elements (interfaces, classes, etc.) that make up the component. This level provides the implementation details that developers need, though it's often better to generate these automatically from IDEs rather than maintain them manually.
 
+
+**C4 + DDD Integration** works particularly well together - System Context maps to domain boundaries, Container diagrams show bounded contexts as deployable units, and Component diagrams reveal domain aggregates and services within each context. **Event Storming** provides a collaborative workshop approach to discover domain boundaries, aggregates, and bounded contexts through business event mapping. This directly informs the Logical View by revealing natural functional decomposition based on domain events. **Context Mapping** offers strategic design patterns for defining relationships between bounded contexts (Shared Kernel, Customer/Supplier, Anti-corruption Layer), which directly translates to Process View documentation showing how different domain services interact.
+
 ## Enterprise Architecture Frameworks: Comprehensive View Systems
 
 While the 4+1 model and C4 provide foundational approaches, several enterprise architecture frameworks offer comprehensive, standardized view systems out of the box:
