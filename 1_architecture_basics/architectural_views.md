@@ -89,6 +89,24 @@ Zooms into an individual container to show the components inside it. These compo
 ### Level 4: Code Diagram
 Zooms into an individual component to show how that component is implemented at the code level, showing the code elements (interfaces, classes, etc.) that make up the component. This level provides the implementation details that developers need, though it's often better to generate these automatically from IDEs rather than maintain them manually.
 
+## Enterprise Architecture Frameworks: Comprehensive View Systems
+
+While the 4+1 model and C4 provide foundational approaches, several enterprise architecture frameworks offer comprehensive, standardized view systems out of the box:
+
+**ArchiMate** (The Open Group) is the most comprehensive, providing a structured modeling language with predefined layers and viewpoints:
+- **Three Core Layers**: Business (processes, actors, services), Application (components, interfaces), Technology (infrastructure, networks)
+- **Cross-cutting Aspects**: Motivation (goals, requirements), Strategy (capabilities, resources), Implementation & Migration
+- **25+ Standard Viewpoints**: Service Realization, Process Cooperation, Application Usage, Infrastructure Usage, etc.
+
+**TOGAF ADM** provides the Architecture Development Method with standard architectural domains: Business, Data, Application, and Technology Architecture.
+
+**DoDAF/MODAF** (Defense frameworks) offer comprehensive viewpoint systems:
+- **Operational Viewpoints**: Mission, processes, activities
+- **Systems Viewpoints**: Systems, interfaces, functionality  
+- **Technical Standards Viewpoints**: Standards, rules, criteria
+
+These frameworks eliminate ad-hoc architectural documentation by providing standardized vocabularies, notation systems, and predefined view structures. ArchiMate, in particular, offers the most mature "out of the box" solution for organizations requiring comprehensive architectural modeling with minimal setup overhead.
+
 ## Conclusion
 
 Architectural views are communication tools that enable effective collaboration across development organizations. By mastering the 4+1 model, leveraging C4 diagrams, and documenting both structure and behavior, you'll create architecture documentation that truly serves stakeholders.
