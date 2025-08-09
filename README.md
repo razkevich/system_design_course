@@ -98,8 +98,8 @@ Welcome to your journey through the intricate world of system design! This cours
 ## 🔐 7 Security & Data Protection
 
 - [🔑 Authentication and Authorization](7_security_and_data_protection/auth.md)
-- 🛡️ Zero-Trust Architecture *- Coming Soon*
-- 🔒 Encryption at Rest and in Transit *- Coming Soon*
+- [🛡️ Zero Trust Architecture](7_security_and_data_protection/zero_trust_architecture.md)
+- [🔒 Encryption at Rest and in Transit](7_security_and_data_protection/encryption_rest_transit.md)
 - [🏢 Multi-tenancy](7_security_and_data_protection/multitenancy.md)
 
 ---
