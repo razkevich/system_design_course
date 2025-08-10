@@ -64,6 +64,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [📊 Kubernetes Resource Hierarchy](4_distributed_systems/kubernetes_resource_hierarchy_guide.md)
 - [☁️ AWS Resource Hierarchy](4_distributed_systems/aws_resource_hierarchy_guide.md)
 - ⚡ Apache Spark Deep Dive *- Coming Soon*
+- Data architecture (data lakes etc)
 
 ## 💾 5 Data Storage & Processing
 
