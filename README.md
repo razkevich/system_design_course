@@ -94,7 +94,7 @@ Welcome to your journey through the intricate world of system design! This cours
 
 - [🔑 Authentication and Authorization](7_security_and_data_protection/auth.md)
 - [🛡️ Securing cloud-native applications](7_security_and_data_protection/securing.md) <-- todo
-- [🔒 Securing Data at Rest and in Transit](7_security_and_data_protection/securing_rest_transit.md) <-- todo
+- [🔒 Securing Data at Rest and in Transit](7_security_and_data_protection/securing_rest_transit.md)
 - [Compliance frameworks, audits and standards](7_security_and_data_protection/compliance.md)
 - [🏢 Multi-tenancy](7_security_and_data_protection/multitenancy.md)
 
