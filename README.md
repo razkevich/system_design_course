@@ -45,7 +45,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [☸️ Kubernetes Networking](3_network_and_communication/kubernetes_networking.md)
 
 ## 🔗 4 Distributed Systems Essentials
-- [Distributed Systems Overview](4_distributed_systems/overview.md) <-- todo
+- [Distributed Systems Overview](4_distributed_systems/overview.md)
 **Data Distribution**
 - [📊 Sharding and Replication](4_distributed_systems/sharding_replication.md)
 - [⚖️ CAP Theorem and Practical Implications](4_distributed_systems/cap.md)
@@ -95,7 +95,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [🔑 Authentication and Authorization](7_security_and_data_protection/auth.md)
 - [🛡️ Securing cloud-native applications](7_security_and_data_protection/securing.md) <-- todo
 - [🔒 Securing Data at Rest and in Transit](7_security_and_data_protection/securing_rest_transit.md) <-- todo
-- [Compliance frameworks, audits and standards](7_security_and_data_protection/compliance.md) <-- todo
+- [Compliance frameworks, audits and standards](7_security_and_data_protection/compliance.md)
 - [🏢 Multi-tenancy](7_security_and_data_protection/multitenancy.md)
 
 ---
