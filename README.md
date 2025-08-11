@@ -32,7 +32,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [🏢 Modular Monoliths](2_architectural_patterns/modular_monoliths.md)
 - [🔀 Microservices](2_architectural_patterns/microservices.md)
 - [⚡ Event-Driven Architecture, CQRS & Sagas](2_architectural_patterns/eda.md)
-- 🌊 [Reactive Programming](2_architectural_patterns/reactive.md) <-- todo
+- 🌊 [Reactive Programming](2_architectural_patterns/reactive.md)
 - [⚡ Serverless](2_architectural_patterns/serverless.md)
 
 ## 🌐 3 Networking & Communication
