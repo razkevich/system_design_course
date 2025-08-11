@@ -32,8 +32,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [🏢 Modular Monoliths](2_architectural_patterns/modular_monoliths.md)
 - [🔀 Microservices](2_architectural_patterns/microservices.md)
 - [⚡ Event-Driven Architecture, CQRS & Sagas](2_architectural_patterns/eda.md)
-- 🌊 Reactive Programming *- Coming Soon*
-- 📊 Big Data Systems *- Coming Soon*
+- 🌊 [Reactive Programming](2_architectural_patterns/reactive.md) <-- todo
 - [⚡ Serverless](2_architectural_patterns/serverless.md)
 
 ## 🌐 3 Networking & Communication
@@ -46,15 +45,10 @@ Welcome to your journey through the intricate world of system design! This cours
 - [☸️ Kubernetes Networking](3_network_and_communication/kubernetes_networking.md)
 
 ## 🔗 4 Distributed Systems Essentials
-
-**Core Concepts**
-- 🌍 Distributed Systems Overview *- Coming Soon*
-- ⚡ Concurrent Programming Essentials *- Coming Soon*
-
+- [Distributed Systems Overview](4_distributed_systems/overview.md) <-- todo
 **Data Distribution**
 - [📊 Sharding and Replication](4_distributed_systems/sharding_replication.md)
 - [⚖️ CAP Theorem and Practical Implications](4_distributed_systems/cap.md)
-- 🔄 Consistency Models *- Coming Soon*
 - [🗂️ Partitioning and Replication Strategies](4_distributed_systems/DBs.md)
 
 **Coordination & Infrastructure**
@@ -64,7 +58,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [📊 Kubernetes Resource Hierarchy](4_distributed_systems/kubernetes_resource_hierarchy_guide.md)
 - [☁️ AWS Resource Hierarchy](4_distributed_systems/aws_resource_hierarchy_guide.md)
 - ⚡ Apache Spark Deep Dive *- Coming Soon*
-- Data architecture (data lakes etc)
+- Data architecture (data lakes etc), pipelines and ETL
 
 ## 💾 5 Data Storage & Processing
 
@@ -78,9 +72,8 @@ Welcome to your journey through the intricate world of system design! This cours
 - 🔍 Distributed Search *- Coming Soon*
 - [📨 Message Queue Systems](5_data_storage/message_brokers.md)
 - [✅ Exactly-Once Semantics](5_data_storage/exactly_once.md)
-- ⚡ Batch vs Stream Processing *- Coming Soon*
+- ⚡ Batch and Stream Processing *- Coming Soon*
 - 🐘 Big Data and MapReduce *- Coming Soon*
-- 🔄 Data Pipelines and ETL *- Coming Soon*
 - 📊 Kafka Deep Dive *- Coming Soon*
 
 ## 🛡️ 6 Fault Tolerance, Scalability & Observability
@@ -92,7 +85,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [🚧 Bulkheads](6_fault_tolerance/bulkheads.md)
 - [📦 Outbox Pattern](6_fault_tolerance/outbox_pattern.md)
 - 💾 Caching *- Coming Soon*
-- Cost optimization
+- [Cost optimization](6_fault_tolerance/cost_optimization.md)
 
 **Monitoring & Operations**
 - [👁️ Observability and SRE](6_fault_tolerance/observability_and_sre.md)
@@ -100,8 +93,9 @@ Welcome to your journey through the intricate world of system design! This cours
 ## 🔐 7 Security & Data Protection
 
 - [🔑 Authentication and Authorization](7_security_and_data_protection/auth.md)
-- [🛡️ Zero Trust Architecture](7_security_and_data_protection/zero_trust_architecture.md)
-- [🔒 Encryption at Rest and in Transit](7_security_and_data_protection/encryption_rest_transit.md)
+- [🛡️ Securing cloud-native applications](7_security_and_data_protection/securing.md) <-- todo
+- [🔒 Securing Data at Rest and in Transit](7_security_and_data_protection/securing_rest_transit.md) <-- todo
+- [Compliance frameworks, audits and standards](7_security_and_data_protection/compliance.md) <-- todo
 - [🏢 Multi-tenancy](7_security_and_data_protection/multitenancy.md)
 
 ---

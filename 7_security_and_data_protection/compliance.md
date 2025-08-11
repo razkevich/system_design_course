@@ -1,0 +1,6 @@
+(todo write a medium.com style article , all in a professional natural human-like tone/style)
+
+
+todo find a title to lure readers to read this medium.com article slightly click-bait-ish but not too much. The article has to be in the context of System Design for Cloud-Native SaaS Systems. all in a professional natural human-like tone/style. i'll outline the structure and give hints how to fill the sections. it has to have a structure but also not robotic and too structured, it has to be human like, like it's written by a human senior engineer, in a consistent and coherent way. feel free to modify / augment the structure if you think it brings value
+
+todo i'm not an expert here but i guess this topics unites gdpr, soc2, ccpa and others. for each i want a dedicated section and there i want an explanation. i also want an intro explaining compliance and these frameworks etc from the high level, conceptually. explain what is required from all stakeholders of each one, and mention what technology or tools / services empower that. we can discuss it holistically, from different angles, but apparently the focus has to be on the implications of how to design Cloud-Native SaaS Systems to meet the requirements.
