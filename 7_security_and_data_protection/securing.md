@@ -79,7 +79,7 @@ AWS security starts with **Identity and Access Management (IAM)**. The fundament
 
 ### Application-Level Security: Java/Spring and Go
 
-**Spring Security** provides comprehensive security services for Java applications. Its declarative security model allows you to secure methods and URLs without cluttering business logic:
+**Spring Security** provides comprehensive security services for Java applications. Its declarative security model allows you to secure methods and URLs without cluttering business logic: 
 
 ```java
 @Configuration
@@ -153,7 +153,7 @@ Understanding the threat landscape is crucial for building effective defenses. T
 
 **Cross-Site Scripting (XSS)** attacks inject malicious scripts into web applications. AWS WAF includes XSS protection rules, but application-level defenses are essential: output encoding, Content Security Policy headers, and input sanitization.
 
-**Supply Chain Attacks** target dependencies and third-party components. The SolarWinds attack highlighted this risk. Mitigation strategies include dependency scanning, software composition analysis, and container image vulnerability scanning. Tools like AWS Inspector, Snyk, or GitHub's Dependabot help identify vulnerable dependencies.
+**Supply Chain Attacks** target dependencies and third-party components (Todo clearly but concicely explain what this is, here and other attacks). The SolarWinds attack highlighted this risk. Mitigation strategies include dependency scanning, software composition analysis, and container image vulnerability scanning. Tools like AWS Inspector, Snyk, or GitHub's Dependabot help identify vulnerable dependencies.
 
 **Container Escape** attacks attempt to break out of container isolation to access the host system. Prevention includes running containers as non-root users, using read-only filesystems where possible, and employing runtime security tools like Falco or AWS GuardDuty.
 
