@@ -62,8 +62,7 @@ Welcome to your journey through the intricate world of system design! This cours
 ## 💾 5 Data Storage & Processing
 
 **Database Design**
-- 🗄️ Database Types and Data Modeling *- Coming Soon*
-- [📈 Scalability in Databases](5_data_storage/scalability_db.md)
+- [📈 Scalability and Data Modelling in Databases](5_data_storage/scalability_db.md)
 - [⚖️ ACID vs BASE Trade-offs](5_data_storage/acid_base.md)
 - [🔒 Transaction Isolation Levels](5_data_storage/isolation_levels.md)
 
