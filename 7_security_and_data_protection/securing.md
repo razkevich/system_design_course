@@ -9,22 +9,9 @@ Let me start with a sobering reality check. In 2019, Capital One's cloud infrast
 What do these incidents have in common? They all involved cloud-native or SaaS systems where traditional perimeter-based security models simply didn't work. The attackers didn't break down the front door—they found the unlocked window in a system that was designed to be open, scalable, and accessible from anywhere.
 
 Security in cloud-native environments requires a fundamentally different approach than traditional security models. The following sections outline the practical, proven approaches that separate successful cloud-native systems from those that become security statistics.
-
-## Compliance: The Non-Negotiable Foundation
-
-Before we dive into the technical implementation, let's address the elephant in the room: compliance. If you're building a SaaS product that handles customer data (and honestly, what modern application doesn't?), compliance isn't optional—it's table stakes.
-
-**SOC 2 Type II** is your entry ticket to enterprise customers. This audit framework, developed by the AICPA, focuses on five trust principles: security, availability, processing integrity, confidentiality, and privacy. For SaaS companies, SOC 2 compliance is often the difference between landing that million-dollar enterprise deal and watching it walk away. The audit typically takes 6-12 months and requires demonstrating consistent security controls over time.
-
-**GDPR** isn't just for European companies anymore. If your application has even a single European user, you're subject to GDPR requirements. The regulation demands explicit consent for data processing, the right to be forgotten, data portability, and breach notification within 72 hours. Non-compliance can result in fines up to 4% of global annual revenue—a company-ending penalty for most startups.
-
-**CCPA and its successor CPRA** apply to companies that collect personal information from California residents and meet certain thresholds (annual revenue over $25 million, or handling data from 50,000+ consumers annually). Given California's economic significance, most growing SaaS companies eventually fall under these regulations.
-
-Compliance isn't a one-time achievement—it's an ongoing operational requirement that must be built into system architecture from day one. Attempting to add compliance retroactively often results in expensive architectural overhauls and delayed product launches.
-
 ## Access Control Evolution: From Chaos to Clarity
 
-Access control systems typically evolve through several stages. Most organizations begin with primitive access control—a simple username and password, possibly with a basic admin flag. This approach works for small teams but becomes unmanageable as organizations scale.
+Access control systems typically evolve through several stages. Many organizations begin with primitive access control—a simple username and password, possibly with a basic admin flag. This approach works for small teams but becomes unmanageable as organizations scale.
 
 The first evolution is **Role-Based Access Control (RBAC)**. Instead of assigning permissions directly to users, you create roles (like "admin," "editor," "viewer") and assign permissions to roles. Users then get one or more roles. This approach scales better and makes permission management more predictable. In a typical SaaS application, you might have:
 
