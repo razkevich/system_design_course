@@ -46,7 +46,6 @@ Welcome to your journey through the intricate world of system design! This cours
 
 ## 🔗 4 Distributed Systems Essentials
 - [Distributed Systems Overview](4_distributed_systems/overview.md)
-**Data Distribution**
 - [📊 Sharding and Replication](4_distributed_systems/sharding_replication.md)
 - [⚖️ CAP Theorem and Practical Implications](4_distributed_systems/cap.md)
 - [🗂️ Partitioning and Replication Strategies](4_distributed_systems/DBs.md)
@@ -93,7 +92,7 @@ Welcome to your journey through the intricate world of system design! This cours
 ## 🔐 7 Security & Data Protection
 
 - [🔑 Authentication and Authorization](7_security_and_data_protection/auth.md)
-- [🛡️ Securing cloud-native applications](7_security_and_data_protection/securing.md) <-- todo
+- [🛡️ Securing cloud-native applications](7_security_and_data_protection/securing.md)
 - [🔒 Securing Data at Rest and in Transit](7_security_and_data_protection/securing_rest_transit.md)
 - [Compliance frameworks, audits and standards](7_security_and_data_protection/compliance.md)
 - [🏢 Multi-tenancy](7_security_and_data_protection/multitenancy.md)
