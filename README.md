@@ -40,7 +40,6 @@ Welcome to your journey through the intricate world of system design! This cours
 - [📡 Protocols and OSI Model](3_network_and_communication/protocols_osi_model.md)
 - [🔧 Key Network Components](3_network_and_communication/network_components.md)
 - [🕸️ Service Meshes](3_network_and_communication/service_meshes.md)
-- 🚀 API Architecture *- Coming soon, See Mastering API Architecture*
 - [☁️ Network in AWS](3_network_and_communication/network_aws.md)
 - [☸️ Kubernetes Networking](3_network_and_communication/kubernetes_networking.md)
 
