@@ -55,7 +55,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [☸️ Kubernetes Deep Dive](4_distributed_systems/kubernetes_architecture.md)
 - [📊 Kubernetes Resource Hierarchy](4_distributed_systems/kubernetes_resource_hierarchy_guide.md)
 - [☁️ AWS Resource Hierarchy](4_distributed_systems/aws_resource_hierarchy_guide.md)
-- ⚡ Apache Spark Deep Dive *- Coming Soon*
+- ⚡ Apache Spark Deep Dive
 - Data architecture (data lakes etc), pipelines and ETL
 
 ## 💾 5 Data Storage & Processing
@@ -66,12 +66,12 @@ Welcome to your journey through the intricate world of system design! This cours
 - [🔒 Transaction Isolation Levels](5_data_storage/isolation_levels.md)
 
 **Messaging & Processing**
-- 🔍 Distributed Search *- Coming Soon*
+- 🔍 Distributed Search
 - [📨 Message Queue Systems](5_data_storage/message_brokers.md)
 - [✅ Exactly-Once Semantics](5_data_storage/exactly_once.md)
-- ⚡ Batch and Stream Processing *- Coming Soon*
-- 🐘 Big Data and MapReduce *- Coming Soon*
-- 📊 Kafka Deep Dive *- Coming Soon*
+- ⚡ Batch and Stream Processing
+- 🐘 Big Data and MapReduce
+- 📊 Kafka Deep Dive
 
 ## 🛡️ 6 Fault Tolerance, Scalability & Observability
 
@@ -81,7 +81,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [⚡ Circuit Breakers](6_fault_tolerance/circuit_breakers.md)
 - [🚧 Bulkheads](6_fault_tolerance/bulkheads.md)
 - [📦 Outbox Pattern](6_fault_tolerance/outbox_pattern.md)
-- 💾 Caching *- Coming Soon*
+- 💾 Caching
 - [Cost optimization](6_fault_tolerance/cost_optimization.md)
 
 **Monitoring & Operations**
