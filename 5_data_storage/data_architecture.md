@@ -167,18 +167,13 @@ Data doesn't live forever, nor should it. Effective data lifecycle management ba
 - **AWS Athena**: Serverless SQL queries on data lake files for lightweight transformations
 - **Orchestration**: Airflow, Prefect, Temporal handle complex workflows
 
-**Schema evolution and versioning**:
-- **Forward/backward compatibility**: Schema changes don't break existing consumers
-- **Schema registry**: Centralized management (Confluent Schema Registry, AWS Glue)
-- **Data contracts**: Explicit agreements between producers and consumers
-
 ## ML/AI Data Architecture Considerations
 
 Machine learning introduces unique requirements to data architecture that go beyond traditional analytics. The key challenge is maintaining consistency between training and serving environments—what data scientists call the "training/serving skew" problem.
 
 **Feature Stores** act as the central nervous system for ML data. They provide a consistent interface for feature engineering, storing both online features (for real-time inference) and offline features (for training). This ensures the same feature definitions are used in both environments. Popular systems include Feast, Tecton, and cloud-native options like AWS SageMaker Feature Store.
 
-**Vector Databases** enable similarity search capabilities crucial for modern AI applications. They store high-dimensional embeddings that power recommendation engines, semantic search, and retrieval-augmented generation (RAG) systems. Systems like Pinecone, Weaviate, and Chroma specialize in vector operations, while traditional databases like PostgreSQL (with pgvector) now support vector workloads.
+**Vector Databases** enable similarity search capabilities crucial for modern LLM applications. They store high-dimensional embeddings that power recommendation engines, semantic search, and retrieval-augmented generation (RAG) systems. Systems like Pinecone, Weaviate, and Chroma specialize in vector operations, while traditional databases like PostgreSQL (with pgvector) now support vector workloads.
 
 **Model Versioning and Lineage** become critical for reproducibility and compliance. Every model needs to be traceable to its exact training data, feature definitions, and hyperparameters. This requires extending data lineage tracking to include model artifacts, experiment metadata, and inference logs.
 
