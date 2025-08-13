@@ -48,7 +48,6 @@ Welcome to your journey through the intricate world of system design! This cours
 - [📊 Sharding and Replication](4_distributed_systems/sharding_replication.md)
 - [⚖️ CAP Theorem and Practical Implications](4_distributed_systems/cap.md)
 - [🗂️ Partitioning and Replication Strategies](4_distributed_systems/DBs.md)
-- [Data architecture](4_distributed_systems/data_architecture.md)
 
 **Coordination & Infrastructure**
 - 🤝 Consensus Basics *- See Database Internals by Alex Petrov*
@@ -57,11 +56,12 @@ Welcome to your journey through the intricate world of system design! This cours
 - [📊 Kubernetes Resource Hierarchy](4_distributed_systems/kubernetes_resource_hierarchy_guide.md)
 - [☁️ AWS Resource Hierarchy](4_distributed_systems/aws_resource_hierarchy_guide.md)
 - ⚡ Apache Spark Deep Dive
-- Data architecture (data lakes etc), pipelines and ETL
+- [Data architecture](data_architecture.md)
 
 ## 💾 5 Data Storage & Processing
 
 **Database Design**
+- [Data architecture](5_data_storage/data_architecture.md)
 - [📈 Scalability and Data Modelling in Databases](5_data_storage/scalability_db.md)
 - [⚖️ ACID vs BASE Trade-offs](5_data_storage/acid_base.md)
 - [🔒 Transaction Isolation Levels](5_data_storage/isolation_levels.md)
@@ -70,7 +70,6 @@ Welcome to your journey through the intricate world of system design! This cours
 - 🔍 Distributed Search
 - [📨 Message Queue Systems](5_data_storage/message_brokers.md)
 - [✅ Exactly-Once Semantics](5_data_storage/exactly_once.md)
-- ⚡ Batch and Stream Processing
 - 🐘 Big Data and MapReduce
 - 📊 Kafka Deep Dive
 
