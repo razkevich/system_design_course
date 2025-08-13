@@ -48,6 +48,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [📊 Sharding and Replication](4_distributed_systems/sharding_replication.md)
 - [⚖️ CAP Theorem and Practical Implications](4_distributed_systems/cap.md)
 - [🗂️ Partitioning and Replication Strategies](4_distributed_systems/DBs.md)
+- [Data architecture](4_distributed_systems/data_architecture.md)
 
 **Coordination & Infrastructure**
 - 🤝 Consensus Basics *- See Database Internals by Alex Petrov*
