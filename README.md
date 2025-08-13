@@ -55,7 +55,6 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Kubernetes Deep Dive](4_distributed_systems/kubernetes_architecture.md)
 - [Kubernetes Resource Hierarchy](4_distributed_systems/kubernetes_resource_hierarchy_guide.md)
 - [AWS Resource Hierarchy](4_distributed_systems/aws_resource_hierarchy_guide.md)
-- Apache Spark Deep Dive
 - [Data architecture](data_architecture.md)
 
 ## 5 Data Storage & Processing
@@ -71,6 +70,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Message Queue Systems](5_data_storage/message_brokers.md)
 - [Exactly-Once Semantics](5_data_storage/exactly_once.md)
 - Big Data and MapReduce
+- Apache Spark Deep Dive
 - Kafka Deep Dive
 
 ## 6 Fault Tolerance, Scalability & Observability
