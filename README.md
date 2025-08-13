@@ -74,7 +74,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Message Queue Systems](5_data_storage/message_brokers.md)
 - [Exactly-Once Semantics](5_data_storage/exactly_once.md)
 - Big Data and MapReduce
-- Kafka Deep Dive
+- [Kafka Deep Dive](5_data_storage/kafka_deep_dive.md) <-- review
 
 ## 6 Fault Tolerance, Scalability & Observability
 
