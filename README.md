@@ -34,6 +34,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Event-Driven Architecture, CQRS & Sagas](2_architectural_patterns/eda.md)
 - [Reactive Programming](2_architectural_patterns/reactive.md)
 - [Serverless](2_architectural_patterns/serverless.md)
+- [Multi-tenancy](2_architectural_patterns/multitenancy.md)
 
 ## 3 Networking & Communication
 
@@ -41,9 +42,10 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Key Network Components](3_network_and_communication/network_components.md)
 - [Service Meshes](3_network_and_communication/service_meshes.md)
 - [Network in AWS](3_network_and_communication/network_aws.md)
-- [Kubernetes Networking](3_network_and_communication/kubernetes_networking.md)
 
 ## 4 Distributed Systems Essentials
+
+**Core Concepts**
 - [Distributed Systems Overview](4_distributed_systems/overview.md)
 - [Sharding and Replication](4_distributed_systems/sharding_replication.md)
 - [CAP Theorem and Practical Implications](4_distributed_systems/cap.md)
@@ -52,15 +54,17 @@ Welcome to your journey through the intricate world of system design! This cours
 **Coordination & Infrastructure**
 - Consensus Basics *- See Database Internals by Alex Petrov*
 - [Distributed Coordination and Locking](4_distributed_systems/Locks.md)
+- [AWS Resource Hierarchy](4_distributed_systems/aws_resource_hierarchy_guide.md)
+- [Data Architecture, Pipelines, and ETL](4_distributed_systems/data_architecture.md)
+
+**Kubernetes & Container Orchestration**
 - [Kubernetes Deep Dive](4_distributed_systems/kubernetes_architecture.md)
 - [Kubernetes Resource Hierarchy](4_distributed_systems/kubernetes_resource_hierarchy_guide.md)
-- [AWS Resource Hierarchy](4_distributed_systems/aws_resource_hierarchy_guide.md)
-- [Data architecture](data_architecture.md)
+- [Kubernetes Networking](4_distributed_systems/kubernetes_networking.md)
 
 ## 5 Data Storage & Processing
 
 **Database Design**
-- [Data architecture](5_data_storage/data_architecture.md)
 - [Scalability and Data Modelling in Databases](5_data_storage/scalability_db.md)
 - [ACID vs BASE Trade-offs](5_data_storage/acid_base.md)
 - [Transaction Isolation Levels](5_data_storage/isolation_levels.md)
@@ -70,7 +74,6 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Message Queue Systems](5_data_storage/message_brokers.md)
 - [Exactly-Once Semantics](5_data_storage/exactly_once.md)
 - Big Data and MapReduce
-- Apache Spark Deep Dive
 - Kafka Deep Dive
 
 ## 6 Fault Tolerance, Scalability & Observability
@@ -93,4 +96,3 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Securing cloud-native applications](7_security_and_data_protection/securing.md)
 - [Securing Data at Rest and in Transit](7_security_and_data_protection/securing_rest_transit.md)
 - [Compliance frameworks, audits and standards](7_security_and_data_protection/compliance.md)
-- [Multi-tenancy](7_security_and_data_protection/multitenancy.md)
