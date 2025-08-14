@@ -70,11 +70,11 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Transaction Isolation Levels](5_data_storage/isolation_levels.md)
 
 **Messaging & Processing**
-- Distributed Search
+- [Distributed Search](5_data_storage/distributed_search.md)
 - [Message Queue Systems](5_data_storage/message_brokers.md)
 - [Exactly-Once Semantics](5_data_storage/exactly_once.md)
 - Big Data and MapReduce
-- [Kafka Deep Dive](5_data_storage/kafka_deep_dive.md) <-- review
+- [Kafka Deep Dive](5_data_storage/kafka_deep_dive.md)
 
 ## 6 Fault Tolerance, Scalability & Observability
 
