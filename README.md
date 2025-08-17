@@ -84,7 +84,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Circuit Breakers](6_fault_tolerance/circuit_breakers.md)
 - [Bulkheads](6_fault_tolerance/bulkheads.md)
 - [Outbox Pattern](6_fault_tolerance/outbox_pattern.md)
-- Caching
+- [Caching](6_fault_tolerance/cache.md) <- todo: download images 
 - [Cost optimization](6_fault_tolerance/cost_optimization.md)
 
 **Monitoring & Operations**
