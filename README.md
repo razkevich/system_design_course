@@ -52,7 +52,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Partitioning and Replication Strategies](4_distributed_systems/DBs.md)
 
 **Coordination & Infrastructure**
-- Consensus Basics *- See Database Internals by Alex Petrov*
+- [Distributed Consensus](4_distributed_systems/consensus.md) <-- finalize
 - [Distributed Coordination and Locking](4_distributed_systems/Locks.md)
 - [AWS Resource Hierarchy](4_distributed_systems/aws_resource_hierarchy_guide.md)
 - [Data Architecture, Pipelines, and ETL](5_data_storage/data_architecture.md)
