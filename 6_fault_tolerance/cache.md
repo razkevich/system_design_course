@@ -15,9 +15,9 @@ This is where two key problems lie:
 
 This can even be formalized:
 
-Press enter or click to view image in full size
-
-![](https://miro.medium.com/v2/resize:fit:1400/1*NISbg4v1JwEmPzBkvZFEOQ.png)
+```
+AverageTime = DataAccessTime × CacheMissRate + CacheAccessTime
+```
 
 Let’s examine the variables in more detail:
 
@@ -25,15 +25,17 @@ Let’s examine the variables in more detail:
 - _DataAccessTime:_ average data access time — how much time is needed to retrieve data without cache.
 - _CacheMissRate:_ the ratio of cache misses to the total number of cache requests. It shows how often the needed data is absent from the cache.
 
-Press enter or click to view image in full size
 
-![](https://miro.medium.com/v2/resize:fit:1400/1*E3AYU52oVBL6D01jF9JEvg.png)
+```
+Cache Miss Rate = Number of Cache Misses / Total Number of Cache Accesses
+```
 
 In the ideal case, if the number of cache misses equals 0, then _CacheMissRate_ also equals zero. According to our formula, this means that data access equals the cache access time:
 
-Press enter or click to view image in full size
 
-![](https://miro.medium.com/v2/resize:fit:1400/1*goM8ew-pVEPYAqgpdyDbjA.png)
+```
+AverageTime = DataAccessTime × 0 + CacheAccessTime = CacheAccessTime
+```
 
 In practice, this rarely happens.
 
@@ -48,11 +50,17 @@ If cache is not used, access time is always = 100 ms.
 
 Therefore, cache is effective if:
 
-![](https://miro.medium.com/v2/resize:fit:1262/1*qzWM52NHBjRFyYVisH42xw.png)
+```
+AverageTime(withcache) < DataAccessTime(nocache) = 100
+```
 
 Let’s substitute:
 
-![](https://miro.medium.com/v2/resize:fit:1048/1*_pA_OwBpGsFx0yy4k7z5Uw.png)
+```
+100 × CacheMissRate + 20 < 100
+100 × CacheMissRate < 80
+CacheMissRate < 0.8
+```
 
 Accordingly, if **CacheMissRate** ≥ 0.8, then the cache is ineffective.
 
@@ -115,7 +123,12 @@ When a user first requests a resource:
 
 In Push CDN, you manually upload (push) files to the CDN. Content is already stored on the CDN’s edge servers before user requests.
 
-![](https://miro.medium.com/v2/resize:fit:1212/1*adFOHJ6b8t-svykaToyx-g.png)
+| Characteristic | Pull CDN | Push CDN |
+|---|---|---|
+| Content loading | Automatically from origin | Manually or via CI/CD |
+| First access | Slow (if not in cache) | Fast (content already there) |
+| File management | Simple | Requires more control |
+| Used for | Static sites, APIs, PWAs | Videos, large files, releases |
 
 Which approach to choose? As always, it depends, but I’ve tried to make a simple comparison table that might help.
 
@@ -160,7 +173,7 @@ Object-level caching stores individual data objects or records retrieved from th
 
 The caching mechanism is multi-layered. Each layer is important and protects the next one from having to process the request. Competent design of multi-layered caching is key to performance and scalability.
 
-![](https://miro.medium.com/v2/resize:fit:1200/1*zyaAeuPt40T2NTcJYZ4JvA.png)
+![Caching Layers](caching_layers.png)
 
 # Cache Invalidation
 
@@ -189,7 +202,12 @@ There’s also a less obvious problem — identical **TTL** for all entries. I
 
 Another similar situation is the **Thundering Herd Problem**. It occurs when multiple requests simultaneously access a key whose lifetime has expired. All these requests begin to compute the same value for the cache in parallel, which can drastically reduce system performance. If you encounter this problem, it’s worth considering alternative strategies for managing lifetime and updating data in the cache.
 
-![](https://miro.medium.com/v2/resize:fit:1400/1*3FU2HHWwYNv_c2DUNWE97Q.png)
+| Component | TTL | Typical TTL | What to cache | Jitter | Features |
+|---|---|---|---|---|---|
+| Browser | Via HTTP headers (`Cache-Control`, `Expires`) | 5 minutes – several days | Static: CSS, JS, images; sometimes API responses | Not applied | |
+| CDN | Via `Cache-Control`, can be set forcibly | 5 minutes – several hours | HTML, JSON, media files | Usually not needed | |
+| Proxy server | Configured manually | 1–30 minutes | HTML, API responses, auth tokens | Optional | Can use `stale-while-revalidate` strategy |
+| Application server | Fully customizable | From seconds to days | DB results, calculations, authorizations, sessions | Recommended | Jitter is especially important for mass reading of cached data |
 
 ## Event-Based Invalidation
 
@@ -213,9 +231,11 @@ In practice, the **refresh** strategy is more common, however in some cases de
 
 **Event Delivery Options**
 
-Press enter or click to view image in full size
 
-![](https://miro.medium.com/v2/resize:fit:1400/1*1-dnVxdc-s4QoZyxtmersw.png)
+| Approach | Mechanism | Usage Example | Technologies / Tools |
+|---|---|---|---|
+| Direct synchronous call | When updating an object, the application immediately calls cache invalidation | Updating user profile immediately clears cache | — |
+| Asynchronous call (Pub/Sub) | Service A updates data and publishes event `userUpdated(id=123)`. Service B invalidates cache upon receiving event | User update → event invalidates cache in third-party service | Kafka, RabbitMQ, Redis PubSub, AWS SNS/SQS |
 
 ## Cache Versioning
 
@@ -582,9 +602,22 @@ LIRS dynamically moves elements between LIR and HIR depending on actual access p
 
 ## Cheat-sheet
 
-Press enter or click to view image in full size
-
-![](https://miro.medium.com/v2/resize:fit:1400/1*OTIJjKd_0JGcTCWIS7foqg.png)
+| Algorithm | Frequency | Recency | TTL | Complexity | Notes |
+|---|---|---|---|---|---|
+| FIFO | ✗ | ✗ | ✗ | Simple | Simple, but blind to relevance |
+| LRU | ✗ | ✓ | ✗ | Medium | Widely applicable |
+| LFU | ✓ | ✗ | ✗ | Medium | Often retains "old" data |
+| MRU | ✗ | ✓ | ✗ | Simple | Unique use cases |
+| RR | ✗ | ✗ | ✗ | Simple | Minimal resources |
+| Second Chance | ✗ | ✓ | ✗ | Medium | FIFO improvement |
+| Clock | ✗ | ✓ | ✗ | Medium | Memory efficient |
+| 2Q | ✓ | ✓ | ✗ | Complex | Resistant to cycles |
+| SLRU | ✓ | ✓ | ✗ | Complex | Segmented LRU |
+| TLRU | ✗ | ✓ | ✓ | Medium | Considers lifetime |
+| LRU-K | ✓ | ✓ | ✗ | Complex | Considers multiple accesses |
+| ARC | ✓ | ✓ | ✗ | High | Adaptive and balanced |
+| LIRS | ✓ | ✓ | ✗ | High | High accuracy |
+| OPT | ✓ | ✓ | ✗ | Theory | Benchmark, not implementable |
 
 # Caching Strategies
 
@@ -597,7 +630,7 @@ The optimal strategy directly depends on the nature of the workload. In real sys
 
 Understanding which type of load dominates allows choosing a strategy that will provide optimal balance between performance, consistency, and operation cost. Next, we’ll examine how different approaches work under predominantly read or write conditions.
 
-![](https://miro.medium.com/v2/resize:fit:1200/1*rR-m9snzKgGkTQK_Q15oUQ.png)
+![Caching Strategies](caching_strategies.png)
 
 # Read-intensive
 

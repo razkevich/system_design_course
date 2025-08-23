@@ -52,7 +52,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Partitioning and Replication Strategies](4_distributed_systems/DBs.md)
 
 **Coordination & Infrastructure**
-- [Distributed Consensus](4_distributed_systems/consensus.md) <-- finalize
+- [Distributed Consensus](4_distributed_systems/consensus.md)
 - [Distributed Coordination and Locking](4_distributed_systems/Locks.md)
 - [AWS Resource Hierarchy](4_distributed_systems/aws_resource_hierarchy_guide.md)
 - [Data Architecture, Pipelines, and ETL](5_data_storage/data_architecture.md)
@@ -84,7 +84,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Circuit Breakers](6_fault_tolerance/circuit_breakers.md)
 - [Bulkheads](6_fault_tolerance/bulkheads.md)
 - [Outbox Pattern](6_fault_tolerance/outbox_pattern.md)
-- [Caching](6_fault_tolerance/cache.md) <- todo: download images 
+- [Caching](6_fault_tolerance/cache.md)
 - [Cost optimization](6_fault_tolerance/cost_optimization.md)
 
 **Monitoring & Operations**
