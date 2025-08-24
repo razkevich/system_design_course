@@ -23,7 +23,7 @@ Welcome to your journey through the intricate world of system design! This cours
 ## 2 Modern Architectural Styles & Patterns
 
 **Domain-Driven Design**
-- [Domain Driven Design](2_architectural_patterns/DDD.md)
+- [Domain Driven Design](2_architectural_patterns/domain_driven_design.md)
 - [Tactical DDD](2_architectural_patterns/tactical_ddd.md)
 - [Strategic DDD](2_architectural_patterns/strategic_ddd.md)
 
