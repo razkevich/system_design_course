@@ -1,8 +1,6 @@
-# The Outbox Pattern: Solving the Dual-Write Problem
+# The Outbox Pattern
 
-When you need to update a database and publish an event in a distributed system, you face what's known as the dual-write problem. Consider placing an order: you update the orders table and need to publish an "OrderCreated" event for other services. But what happens if the database update succeeds and the event publishing fails? You end up with inconsistent state across your system.
-
-The well-known solution is surprisingly simple: store the events in the same database as your business data, within the same transaction. This is the essence of the Outbox Pattern.
+The dual-write problem occurs when systems must atomically update a database and publish an event to a message broker. The outbox pattern solves this challenge by storing events in the same database as business data within a single transaction, ensuring consistency without requiring distributed transactions.
 
 ```mermaid
 sequenceDiagram

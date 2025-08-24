@@ -1,24 +1,26 @@
-How many times have you tried to get your head around and memorize transaction isolation levels? It's a topic that would pop up in almost every single book on DBs or architecture. Are you able to replay and describe those levels at any random moment? Good for you if you can, but for many people it's a topic one would rehearse before system design interviews or when faced with a peculiar problem that directly relates to it (once in a lifetime probably if ever). Worst case scenario, engineers would drill it together with a billion of buzzwords and acronyms just for the sake of being ready to answer interview questions (superficially) or hold a conversation about DBs. But in fact, neglecting to understand the underlying mechanisms behind actual transactions and corresponding concurrency problems (sometimes called anomalies) can lead to serious problem in production code.
+# Transaction Isolation Levels: A Systematic Approach
 
-## The Recipe: Build Understanding from the Ground Up
+Transaction isolation levels represent one of the most fundamental concepts in database systems, appearing in virtually every database and architecture resource. However, superficial memorization of isolation level tables without understanding underlying mechanisms can lead to production issues in concurrent systems.
 
-So I have a recipe. Instead of trying to memorize the isolation levels and what problems they solve, let's build the understanding from the ground up. We'll briefly talk about how transactions work in modern RDBMSs, which will help us understand how it results in those anomalies and finally build the understanding of what guarantees are provided by different isolation levels.
+## Building Understanding from Fundamentals
 
-This approach works because when you understand the *why* behind each isolation level, the *what* becomes obvious. You'll naturally remember that Read Committed prevents dirty reads because you understand what dirty reads are and why they're problematic. No more cramming tables of check marks and X's.
+This analysis takes a ground-up approach to understanding transaction isolation. Rather than memorizing isolation levels and their properties, this systematic method examines how transactions operate in modern RDBMSs, explores the resulting concurrency anomalies, and derives the guarantees provided by each isolation level.
+
+This approach proves effective because understanding the underlying causes of each anomaly naturally reveals why specific isolation levels prevent certain problems. Comprehensive understanding eliminates the need to memorize abstract comparison tables.
 
 ## The Central Tension: Serial Execution vs Performance
 
-### What Transactions Promise
+### Transaction Guarantees
 
-I'll assume the reader has some basic understanding of what transactions are and that they separate groups of commands into atomic, consistent, isolated and durable (ACID) chunks that execute against user data.
+Transactions provide ACID guarantees (Atomicity, Consistency, Isolation, Durability) for groups of database operations. In the context of isolation levels, the critical expectation is serial execution semantics: developers expect transactions to behave as if they execute sequentially, without interference from concurrent transactions.
 
-What's important about transactions in this context is that when a developer begins a transaction, they expect serial execution guarantees. The most straightforward approach to provide such guarantees would be to indeed enforce serial execution: no transactions would overlap in time (if transaction A is in progress, the DB would wait for it to finish before allowing any other operations to proceed).
+True serial execution would enforce strict ordering: no transaction overlap would be permitted, with each transaction completing entirely before the next begins.
 
 ### The Reality: Performance Demands Compromise
 
-Some DBs indeed implement such isolation level and call it SERIALIZABLE, like PostgreSQL, SQL Server, and CockroachDB, however some DBs consider it too ineffective and do something else under its name (Oracle implements Snapshot Isolation instead of true Serializable). So, as mentioned, it would be too slow to enforce each transaction to be serially executed in the DB (one but not the only reason is that transactions can be long running). That's the reason why modern DBs allow executing transactions in parallel to radically improve performance at the expense of occasionally producing visibility issues.
+While some databases implement true SERIALIZABLE isolation (PostgreSQL, SQL Server, CockroachDB), others compromise by implementing weaker guarantees under the same name (Oracle uses Snapshot Isolation rather than true Serializability). Serial execution proves too restrictive for performance requirements, particularly with long-running transactions.
 
-This tension between correctness and performance is what creates our isolation levels - each one represents a different point on the spectrum of "how much correctness am I willing to trade for speed?"
+Modern databases enable parallel transaction execution to achieve acceptable performance, accepting occasional consistency anomalies as a trade-off. This performance-correctness tension creates the isolation level spectrum, where each level represents a specific balance between consistency guarantees and execution efficiency.
 
 ## Quick Reference: Isolation Levels and Anomaly Prevention
 
@@ -62,7 +64,7 @@ There are two ways to implement this guarantee:
 
 **The Trade-off:** **Non-repeatable Reads** - the same query can return different values within a single transaction.
 
-**Real Example:** Hotel booking: let's say a transaction reads room_price = $100 and shows this to the customer. The customer fills out their info. Meanwhile, another transaction updates the price to $150 and commits. When our transaction completes the booking, it reads and charges the new price of $150. The customer sees they were charged $150 for a room they were quoted at $100 - they'll rightfully complain.
+**Example:** Hotel booking scenario: Transaction A reads room_price = $100 and displays this to the customer. During form completion, Transaction B updates the price to $150 and commits. When Transaction A completes the booking, it reads the updated price of $150. The customer receives a charge of $150 for a room quoted at $100, creating a business logic violation.
 
 **Implementation Notes:** This is way better than Read Uncommitted, and in fact, it's the default isolation level in PostgreSQL. There are many use cases where Dirty Reads mentioned above are not acceptable but Non-repeatable Reads are OK. For example, in e-commerce we would want customers to see only products that were committed, or we don't want to send an email to an address that is being changed by another transaction but might still be rolled back.
 
@@ -80,7 +82,7 @@ Again, it can be implemented in two ways:
 
 **Lost Updates:** An interesting note is that PostgreSQL uses pure MVCC for this isolation level, while MySQL uses a combination of MVCC and locks. That's why PostgreSQL allows **Lost Updates** (thus violating the standard), but MySQL doesn't. That's one example where the line between transaction isolation levels gets blurry and implementations differ from the standard.
 
-**Real Example for Lost Updates:** Two people check their shared bank account at the same time and both see $1000. Person A deposits $200 (calculating $1000 + $200 = $1200) and Person B also deposits $200 (calculating $1000 + $200 = $1200). Whichever transaction completes last overwrites the first one, so the account ends up with $1200 instead of the correct $1400 - one of the $200 deposits vanished into thin air.
+**Lost Update Example:** Two concurrent transactions read a shared bank account balance of $1000. Transaction A calculates a deposit: $1000 + $200 = $1200. Transaction B performs the same calculation: $1000 + $200 = $1200. The last committed transaction overwrites the first, resulting in a final balance of $1200 instead of the correct $1400. One deposit is effectively lost.
 
 Note: that wouldn't happen if the account is updated in one statement because all operations are atomic in most databases (e.g. `UPDATE accounts SET balance = balance + 200 WHERE id = 1;`), but if balance is read and then updated in two operations then it would be an issue.
 
@@ -88,7 +90,7 @@ Note: that wouldn't happen if the account is updated in one statement because al
 
 **Write Skew:** This occurs when two transactions read overlapping data sets, make decisions based on what they read, and then write to disjoint data sets, but the writes violate a constraint that should be maintained across both sets.
 
-**Real Example for Write Skew:** An on-call scheduling system where there must always be at least one doctor on call. Two transactions might each read that there are currently 2 doctors on call, and each decides it's safe for "their" doctor to go off-call, resulting in 0 doctors on call - violating the business rule.
+**Write Skew Example:** An on-call scheduling system requires at least one doctor on call at all times. Two concurrent transactions each read the current state (2 doctors on call). Based on this information, each transaction allows its respective doctor to go off-call. The result: 0 doctors remain on call, violating the business constraint.
 
 **Implementation Notes:** So the solution here is to use locks (with something like `SELECT FOR UPDATE` to mitigate Lost Update, or lock on another special lock table or use advisory locks to mitigate **Phantom Reads** and **Write Skew**). Alternatively, we can use the strictest isolation level we'll review below.
 
@@ -110,7 +112,7 @@ Modern databases implement serializable isolation in clever ways that avoid the 
 
 **The Oracle Exception:**
 
-Here's a critical point for the reader: **Oracle's SERIALIZABLE is not actually serializable**. It implements snapshot isolation, which prevents most anomalies but can still suffer from Write Skew. We won't get into the detail here (we refer you to this [blog post](https://www.dbi-services.com/blog/oracle-serializable-is-not-serializable/) for more information), but it's important to be mindful of that fact if you're using Oracle.
+**Critical Implementation Note:** Oracle's SERIALIZABLE isolation level does not provide true serializable guarantees. It implements snapshot isolation, which prevents most anomalies but remains vulnerable to Write Skew scenarios. This implementation variance highlights the importance of understanding database-specific isolation level implementations.
 
 **The Trade-offs:**
 
@@ -126,9 +128,9 @@ Here's a critical point for the reader: **Oracle's SERIALIZABLE is not actually 
 - Increased transaction aborts requiring retry logic
 - Potential for false positives where transactions are aborted unnecessarily
 
-## Practical Advice: How to Get Your Head Around and Memorize Anomalies, Isolation Levels and Transactions
+## Practical Framework for Understanding Isolation Levels
 
-Here's a mental framework to help you remember isolation levels and their trade-offs:
+A systematic mental framework for analyzing isolation levels and their trade-offs:
 
 ### Start with the Problems, Not the Levels
 
@@ -159,4 +161,4 @@ Here's a mental framework to help you remember isolation levels and their trade-
 - Remember the doctor on-call example for write skew
 - Think "more isolation = fewer anomalies = slower performance"
 
-Most importantly, **understand your database's specific implementation**. PostgreSQL's Repeatable Read allows lost updates while MySQL's doesn't. Oracle's "Serializable" isn't actually serializable. These implementation differences matter more in production than the theoretical standard.
+**Critical Consideration:** Database-specific implementation details often supersede theoretical standards. PostgreSQL's Repeatable Read permits lost updates while MySQL's implementation prevents them. Oracle's "Serializable" lacks true serializability. These implementation variations have significant production implications beyond theoretical specifications.

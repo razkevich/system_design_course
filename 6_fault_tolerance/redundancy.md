@@ -1,4 +1,4 @@
-# Building Redundant Cloud-Native SaaS Systems: Beyond Basic Replication
+# Redundancy in Distributed Systems
 
 Redundancy goes far beyond having a backup server—it's about systematically eliminating single points of failure across every layer of your stack. The challenge for SaaS architects is balancing the cost and complexity of redundancy against business requirements while maintaining operational sanity.
 

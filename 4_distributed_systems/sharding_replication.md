@@ -1,8 +1,8 @@
-# Sharding vs Replication: The Mental Model You'll Actually Understand
+# Sharding and Replication: Fundamental Patterns in Distributed Data Management
 
-After consuming numerous books, videos, courses and solving real production problems all related to distributed systems, I think I've come to a conclusion how to better present the fundamental ideas of distributed computing, so that it clicks in one's mind and starts to make sense. What we want is to have a mental model of these ideas that can be applied to various problems, from choosing the right DB for a problem at hand, to distributed caches, designing rate limiting system or anything that seem unrelated, but in fact rely on the same fundamental principles and ideas from the perspective of designing these components for reliability, scalability and availability.
+Understanding distributed data management requires developing mental models that apply consistently across various system design problems. Whether selecting appropriate databases, designing distributed caches, implementing rate limiting systems, or architecting other distributed components, the same fundamental principles govern reliability, scalability, and availability decisions.
 
-So below we'll progress from a system that has no replication or sharding whatsoever where all data and processing happens inside a single instance. We'll modify it by adding replication, more instances to handle writes and sharding - to see what we get from different perspectives, what are the tradeoffs and what systems actually implement those configurations.
+This analysis progresses systematically from single-instance systems through various distributed configurations, examining replication and sharding patterns. Each configuration presents distinct trade-offs, implementation strategies, and practical applications that inform architectural decision-making for distributed systems.
 
 ## Single instance system
 
