@@ -1,9 +1,9 @@
-Networking forms the foundation of cloud infrastructure, with virtually every service depending on it for communication and connectivity. While many engineers assume networking is solely the domain of system administrators or DevOps teams, this perspective can severely limit their effectiveness. Understanding cloud networking fundamentals is essential for troubleshooting complex production issues, designing scalable architectures, and making informed technical decisions. Without this knowledge, engineers often struggle to diagnose problems that span multiple services or optimize systems for performance and reliability.
+# AWS Cloud Networking Architecture
 
-We'll take AWS as a concrete cloud provider to review cloud networking.
-# AWS Basics
+Cloud networking forms the foundation of distributed system infrastructure, enabling communication and connectivity between services, applications, and users. Understanding cloud networking fundamentals is essential for troubleshooting production issues, designing scalable architectures, and making informed technical decisions.
 
-We first need to consider AWS basics because there are part of the bigger picture.
+This section examines AWS networking services and architecture patterns as a comprehensive example of cloud networking principles.
+## AWS Infrastructure Hierarchy
 
 **AWS Account** serves as the highest-level container in AWS, encompassing all resources and services within a single billing and administrative boundary. Think of it as your organization's dedicated space in the AWS cloud, where you can provision compute instances, storage, networking components, and other services. The account manages billing, access controls, usage monitoring, and security policies for all resources within it. This centralized approach allows organizations to maintain clear oversight of their cloud infrastructure while establishing consistent governance across all AWS services.
 
@@ -24,11 +24,11 @@ Multi-account setup ensures clear separation of resources, and guarantee that ac
 
 **Edge Locations** are AWS's global content delivery network (CDN) points of presence, numbering in the hundreds worldwide. They cache content close to users for services like CloudFront and Route 53, dramatically reducing latency for static content delivery.
 
-# AWS Networking services
+## AWS Networking Services
 
-## AWS VPC
+### Virtual Private Cloud (VPC)
 
-AWS VPC stands for Virtual Private Cloud. Think of it as your own isolated network environment within AWS, similar to a traditional data center but virtualized in the cloud. Resources within a VPC can communicate with each other using private IP addresses, while being logically separated from other customers' resources. Each AWS account comes with one default VPC per region, providing immediate connectivity for resources. Users can create up to 5 additional VPCs per region, though this limit can be increased through AWS support. 
+AWS VPC provides an isolated network environment within AWS, similar to a traditional data center but virtualized in the cloud. Resources within a VPC communicate using private IP addresses while being logically separated from other customers' resources. Each AWS account includes one default VPC per region, with the ability to create up to 5 additional VPCs per region (expandable through AWS support). 
 
 Each VPC is assigned a **CIDR block** (Classless Inter-Domain Routing), which defines the range of IP addresses available within that VPC. For example, a CIDR block of `10.0.0.0/16` provides 65,536 IP addresses (from 10.0.0.0 to 10.0.255.255). When creating a VPC, you must specify this CIDR block, and all subnets within the VPC will use portions of this address space. It's important to plan CIDR blocks carefully to avoid conflicts with other networks you may need to connect to later.
 
@@ -39,7 +39,7 @@ Key properties of AWS VPCs include:
 * **Multiple Availability Zone support** - Subnets can span different AZs for high availability
 * **Scalable architecture** - Can accommodate thousands of resources across multiple subnets
 
-## Subnets
+### Subnets
 
 Subnets are subdivisions of a VPC that allow you to group resources and apply different networking rules. Each subnet exists within a single Availability Zone and uses a portion of the VPC's CIDR block. Organizations create multiple subnets for several reasons:
 
@@ -50,9 +50,9 @@ Subnets are subdivisions of a VPC that allow you to group resources and apply di
 
 By default, each VPC contains one subnet per Availability Zone in the region.
 
-# Internet connectivity
+## Internet Connectivity
 
-## Route tables, Security Groups and NACLs
+### Route Tables, Security Groups, and NACLs
 
 ![AWS Networking Hierarchy](aws_networking_hierarchy.svg)
 
@@ -91,11 +91,11 @@ These three networking components work in layers to provide comprehensive traffi
 
 This layered approach enables both broad network routing and fine-grained security controls. For example, a route table might direct web traffic to a public subnet, a NACL might block suspicious IP ranges at the subnet level, and security groups might restrict database access to only specific application servers. This defense-in-depth strategy ensures robust network security and proper traffic flow.
 
-## Amazon VPC-to-Internet Connectivity
+### VPC-to-Internet Connectivity
 
-### Internet Gateway
+#### Internet Gateway
 
-An Internet Gateway (IGW) serves as the bridge between your VPC and the public internet. Think of it as the front door to your virtual data center - it allows resources in public subnets to communicate with the internet while maintaining security through route tables and security groups.
+Internet Gateway (IGW) serves as the bridge between VPCs and the public internet, enabling resources in public subnets to communicate with the internet while maintaining security through route tables and security groups.
 
 Key characteristics:
 * **Bidirectional connectivity** - Enables both inbound and outbound internet traffic
@@ -103,7 +103,7 @@ Key characteristics:
 * **Public IP requirement** - Resources need either an Elastic IP or public IP to communicate through the IGW
 * **Route table integration** - Requires explicit routes (0.0.0.0/0 → IGW) in subnet route tables to enable internet access
 
-### NAT Gateway
+#### NAT Gateway
 
 Network Address Translation (NAT) Gateway enables resources in private subnets to access the internet for outbound connections while preventing inbound internet traffic from reaching them. This is essential for private resources that need to download updates, access APIs, or communicate with external services.
 
@@ -117,38 +117,38 @@ Key characteristics:
 
 *This diagram illustrates how Internet Gateway enables bidirectional communication for public subnets, while NAT Gateway provides secure outbound-only internet access for private subnets.*
 
-## Connectivity Between Amazon VPCs
+### VPC-to-VPC Connectivity
 
 AWS provides several methods to connect VPCs, each designed for different use cases and scale requirements:
 
-### VPC Peering
+#### VPC Peering
 VPC Peering creates a direct, private network connection between two VPCs, allowing resources to communicate as if they were in the same network. It works within the same region or across regions, enabling simple point-to-point connectivity. However, peering connections don't support transitive routing - if VPC A peers with VPC B, and VPC B peers with VPC C, VPC A cannot automatically reach VPC C.
 
-### AWS Transit Gateway
+#### AWS Transit Gateway
 Transit Gateway acts as a network hub, simplifying connectivity between multiple VPCs, on-premises networks, and AWS services. Instead of creating individual peering connections between each VPC pair, all networks connect to the Transit Gateway, which handles routing between them. This hub-and-spoke model dramatically reduces complexity and supports transitive routing, making it ideal for large-scale network architectures.
 
-### AWS PrivateLink
+#### AWS PrivateLink
 PrivateLink enables private connectivity between VPCs and AWS services or third-party services without traversing the public internet. It creates VPC endpoints that allow secure access to services like S3, DynamoDB, or SaaS applications. Traffic flows through AWS's private network backbone, ensuring high security and performance while eliminating internet gateway dependencies.
 
-### VPC Lattice
+#### VPC Lattice
 VPC Lattice is a newer service that provides application-layer networking, allowing secure communication between services across VPCs and accounts. It operates at the application level rather than the network level, offering features like service discovery, load balancing, and access controls. Lattice simplifies service-to-service communication in microservices architectures spanning multiple VPCs.
 
 ![VPC Connectivity Methods](vpc_connectivity.svg)
-## VPNs
+### VPN Connectivity
 
 AWS provides VPN solutions to securely connect external networks and devices to your VPC over the internet. These encrypted connections extend your private network infrastructure into the cloud.
 
-### Site-to-Site VPN
+#### Site-to-Site VPN
 Site-to-Site VPN connects entire networks, such as your corporate data center, to AWS VPCs. This enables hybrid cloud architectures where on-premises systems can securely communicate with cloud resources. For example, a company might keep their legacy database servers in their data center while running new applications in AWS, with Site-to-Site VPN providing seamless connectivity between both environments.
 
-### Client VPN
+#### Client VPN
 Client VPN allows individual devices to connect securely to VPC resources. Remote employees can access private applications, databases, or development environments hosted in AWS as if they were physically in the office. This is particularly valuable for accessing internal tools, databases, or applications that shouldn't be exposed to the public internet.
 
 Both VPN types use IPsec encryption to ensure data security during transmission and integrate with AWS routing and security controls, maintaining the same level of security as internal VPC traffic.
 
 ![VPN Connectivity](vpn_connectivity.svg)
 
-# Amazon Route 53 and CloudFront
+## Global Services: Route 53 and CloudFront
 
 These global AWS services optimize content delivery and domain name resolution to improve application performance and user experience.
 
@@ -156,7 +156,7 @@ These global AWS services optimize content delivery and domain name resolution t
 
 **Amazon CloudFront** is AWS's content delivery network (CDN) that caches content at edge locations worldwide. It reduces latency by serving static content (images, videos, CSS files) from locations closest to users rather than from origin servers. CloudFront also accelerates dynamic content through optimized network paths and supports features like SSL termination, custom error pages, and real-time metrics. It works particularly well with S3 for static websites and with Route 53 for global traffic management.
 
-## Network components
+## Network Components
 
 AWS provides several managed network components that handle traffic distribution, API management, and application connectivity:
 
@@ -179,7 +179,7 @@ API Gateway is a fully managed service for creating, publishing, and managing AP
 * **AWS Cloud Map** - Service discovery for cloud applications, enabling services to find and communicate with each other
 * **Elastic Network Interfaces (ENI)** - Virtual network interfaces that can be attached to EC2 instances for additional networking capabilities
 
-# Summary
+## Summary
 
 AWS networking provides a comprehensive foundation for building scalable, secure cloud architectures. The hierarchical structure—from accounts and regions down to subnets and individual resources—enables precise control over network topology and security.
 

@@ -1,6 +1,6 @@
 # Distributed Search Systems: The Architecture Powering Modern Applications
 
-Every time you search for a product on Amazon, look up a restaurant on DoorDash, or query your company's knowledge base, you're interacting with a distributed search system processing millions of similar requests simultaneously. These systems have evolved far beyond simple keyword matching—today's architectures combine traditional text search with semantic understanding, all while maintaining sub-second response times at global scale.
+Product searches on Amazon, restaurant lookups on DoorDash, and corporate knowledge base queries all rely on distributed search systems processing millions of similar requests simultaneously. These systems have evolved far beyond simple keyword matching—today's architectures combine traditional text search with semantic understanding, all while maintaining sub-second response times at global scale.
 
 The landscape of search has transformed dramatically in recent years. Traditional keyword-based systems are rapidly evolving into platforms that understand intent, not just words. Serverless architectures are eliminating operational overhead. Vector databases are enabling entirely new search paradigms. This technical deep dive examines the architectures, algorithms, and trade-offs that power modern search at scale.
 

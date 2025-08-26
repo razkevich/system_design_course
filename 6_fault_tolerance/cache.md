@@ -1,17 +1,17 @@
-# Into CACHE: A Practical Guide on How, Where, and What to Cache
-# Introduction
+# Caching: Strategic Implementation Patterns and Trade-offs
 
+## Introduction
 
-In this article, we’ll briefly cover the key aspects of the vast topic of caching, motivate the reader to approach this task more carefully, and also outline growth points — topics that are worth exploring in greater depth.
+Caching represents one of the most fundamental performance optimization strategies in distributed systems, yet its implementation requires careful consideration of trade-offs between performance, consistency, and complexity. This comprehensive examination covers the essential aspects of caching strategy, including decision frameworks, implementation patterns, and architectural considerations that determine caching effectiveness at scale.
 
-# Should Everything Be Cached?
+## Caching Decision Framework
 
-I’ll start with a non-obvious, and to some perhaps even silly, question. “Of course it should,” someone might say — and they’d be wrong. At its core, caching is about retrieving pre-prepared data and serving it faster… provided that the data is actually in the cache.
+Caching effectiveness depends fundamentally on cache hit ratios and access patterns. While caching appears universally beneficial, inappropriate caching strategies can degrade system performance rather than improve it. Caching provides value only when data retrieval from cache is significantly faster than source retrieval and when cache hit rates justify the overhead.
 
-This is where two key problems lie:
+Two fundamental challenges affect caching effectiveness:
 
-- If the cache doesn’t contain the needed data, you still have to get the result the usual way, which increases response time by the cache lookup time plus the computation time for the result.
-- If the data isn’t there, someone has to put it there, and that’s additional work.
+- Cache misses introduce additional latency overhead from cache lookup operations before falling back to primary data sources
+- Cache population requires additional computational and storage resources that must be justified by performance improvements
 
 This can even be formalized:
 
@@ -19,7 +19,7 @@ This can even be formalized:
 AverageTime = DataAccessTime × CacheMissRate + CacheAccessTime
 ```
 
-Let’s examine the variables in more detail:
+Variable definitions:
 
 - _AverageTime:_ average response time from our service.
 - _DataAccessTime:_ average data access time — how much time is needed to retrieve data without cache.
@@ -39,7 +39,7 @@ AverageTime = DataAccessTime × 0 + CacheAccessTime = CacheAccessTime
 
 In practice, this rarely happens.
 
-Now let’s consider an example. Let’s define:
+Consider a performance analysis with defined parameters:
 
 - DataAccessTime = 100ms
 - CacheAccessTime = 20ms
@@ -64,14 +64,14 @@ CacheMissRate < 0.8
 
 Accordingly, if **CacheMissRate** ≥ 0.8, then the cache is ineffective.
 
-What conclusions can be drawn from this:
+Key insights from this analysis:
 
 - Caching is not always able to increase performance
 - Calculate your system’s metrics before deciding caching
 
-# Caching Mechanisms
+## Caching Layer Architecture
 
-Now let’s examine what can actually be cached and where. As an example, let’s take a web application, since this example will be familiar to most readers.
+Modern web applications implement caching at multiple architectural layers, each serving distinct performance optimization objectives. Understanding these layers enables strategic caching decisions that maximize performance benefits while minimizing complexity overhead.
 
 ## Client-Side Caching
 
@@ -111,7 +111,7 @@ A typical example: static files (images, JS, CSS, videos, fonts) are cached on C
 - Reduce load on the main server (origin)
 - Ensure fault tolerance and scaling
 
-It should be noted that there are two main approaches to how content gets into a CDN: push CDN and pull CDN.
+CDN implementations utilize two primary content distribution strategies: push CDN and pull CDN architectures.
 
 Pull CDN itself “pulls” content from the origin server as needed.
 
@@ -130,15 +130,15 @@ In Push CDN, you manually upload (push) files to the CDN. Content is already sto
 | File management | Simple | Requires more control |
 | Used for | Static sites, APIs, PWAs | Videos, large files, releases |
 
-Which approach to choose? As always, it depends, but I’ve tried to make a simple comparison table that might help.
+Selection criteria depend on specific use cases and operational requirements:
 
 ## Reverse Proxy Caching
 
 Reverse proxy caching is implemented at the reverse proxy level — before the request reaches the application. The goal is to reduce or eliminate request processing by the application if the response was already formed earlier and hasn’t changed.
 
-Let’s say Nginx sits in front of the backend and caches responses to `/products/123`.
+Consider a typical implementation where Nginx sits in front of the backend and caches responses to `/products/123`.
 
-If this response was recently generated, it’s already in the cache and Nginx serves it, without stressing the application.
+When responses are recently generated and cached, Nginx serves them directly without forwarding requests to the application layer.
 
 Suitable for:
 
@@ -157,7 +157,7 @@ The application itself determines what, when, and how to cache.
 
 ## DB Caching
 
-It’s worth noting here that all modern databases cache a lot under the hood (Buffer Pool / Page Cache / Query Plan Cache, etc.), but this won’t be covered in this article. Instead, I suggest recalling the caching of frequently requested data or query results.
+Modern databases implement extensive internal caching mechanisms (Buffer Pool, Page Cache, Query Plan Cache), which operate transparently. This section focuses on application-level database caching strategies for frequently accessed data and query results.
 
 This mechanism can be implemented at two levels.
 
@@ -175,11 +175,9 @@ The caching mechanism is multi-layered. Each layer is important and protects the
 
 ![Caching Layers](caching_layers.png)
 
-# Cache Invalidation
+## Cache Invalidation Strategies
 
-Invalidation is a key component of the entire caching architecture. It’s not enough to put data in the cache — you need to be able to delete or update it correctly, especially if it has changed.
-
-Let’s consider approaches to invalidation and their applicability at each level.
+Invalidation strategies determine when and how cached data becomes stale and requires refresh or removal. Effective invalidation ensures data consistency while maintaining performance benefits across distributed caching layers.
 
 ## TTL
 
@@ -285,13 +283,7 @@ Tagging minimizes invalidation errors and improves performance — no need to ma
 
 # Cache Eviction Algorithms
 
-In addition to invalidation algorithms, one of the main problems in caching is data eviction in the cache, since cache size is obviously limited.
-
-When overflow occurs, it’s necessary to remove (evict) some data to make room for new data. Eviction algorithms determine which data will be deleted and have a critical impact on system performance.
-
-This is not as simple a problem as it might seem at first glance. Deleting data is easy, but how can we maximize cache hits while minimizing cache misses?
-
-Let’s consider the main approaches.
+Cache capacity limitations require systematic approaches to data eviction when storage limits are reached. Eviction algorithms determine which cached data to remove, directly impacting cache hit ratios and overall system performance. Optimal eviction strategies balance cache hit maximization with implementation complexity.
 
 ## FIFO (First-In, First-Out)
 
