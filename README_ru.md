@@ -96,7 +96,7 @@
 - [Аутентификация и Авторизация](7_security_and_data_protection/auth_ru.md)
 - [Защита cloud-native приложений](7_security_and_data_protection/securing_ru.md)
 - [Защита Данных в Покое и в Движении](7_security_and_data_protection/securing_rest_transit_ru.md)
-- [Фреймворки Соответствия, Аудит и Стандарты](7_security_and_data_protection/compliance_ru.md)
+- [Фреймворки Комплаенса, Аудит и Стандарты](7_security_and_data_protection/compliance_ru.md)
 
 ---
 
