@@ -38,6 +38,7 @@ Welcome to your journey through the intricate world of system design! This cours
 
 ## 3 Networking & Communication
 
+- [API Architecture Patterns](3_network_and_communication/api_architecture.md)
 - [Protocols and OSI Model](3_network_and_communication/protocols_osi_model.md)
 - [Key Network Components](3_network_and_communication/network_components.md)
 - [Service Meshes](3_network_and_communication/service_meshes.md)
@@ -96,3 +97,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Securing cloud-native applications](7_security_and_data_protection/securing.md)
 - [Securing Data at Rest and in Transit](7_security_and_data_protection/securing_rest_transit.md)
 - [Compliance frameworks, audits and standards](7_security_and_data_protection/compliance.md)
+
+---
+
+**Russian version:** [README_ru.md](README_ru.md)
