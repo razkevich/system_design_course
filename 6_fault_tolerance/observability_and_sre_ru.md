@@ -30,21 +30,20 @@ Observability состоит из четырех основных инструм
 
 ```mermaid
 graph LR
-A[<b>Малый</b><br/>1-10 RPS<br/>P95 < 500 мс<br/>0,5-1% ошибок<br/>Оповещение при 70%]
- 
-
-B[<b>Средний</b><br/>10-1K RPS<br/>P95 < 200 мс<br/>0,1-0,5% ошибок<br/>Оповещение при 60%]
-
-C[<b>Большой</b><br/>1K-100K RPS<br/>P95 < 100 мс<br/>0,01-0,1% ошибок<br/>Оповещение при 50%]
-
-D[<b>Глобальный</b><br/>100K+ RPS<br/>P95 < 50 мс<br/>&lt;0,01% ошибок<br/>Оповещение при 40%]
-
-A --> B --> C --> D
-
-стиль A заливка:#e1f5fe
-стиль B заливка:#f3e5f5
-стиль C заливка:#fff3e0
-стиль D заливка:#f1f8e9
+    A[<b>Small</b><br/>1-10 RPS<br/>P95 < 500ms<br/>0.5-1% errors<br/>Alert at 70%] 
+    
+    B[<b>Medium</b><br/>10-1K RPS<br/>P95 < 200ms<br/>0.1-0.5% errors<br/>Alert at 60%]
+    
+    C[<b>Large</b><br/>1K-100K RPS<br/>P95 < 100ms<br/>0.01-0.1% errors<br/>Alert at 50%]
+    
+    D[<b>Global</b><br/>100K+ RPS<br/>P95 < 50ms<br/>&lt;0.01% errors<br/>Alert at 40%]
+    
+    A --> B --> C --> D
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#fff3e0
+    style D fill:#f1f8e9
 ```
 
 **Примеры использования:**
