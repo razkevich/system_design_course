@@ -30,13 +30,13 @@ Observability состоит из четырех основных инструм
 
 ```mermaid
 graph LR
-    A[<b>Small</b><br/>1-10 RPS<br/>P95 < 500ms<br/>0.5-1% errors<br/>Alert at 70%] 
+    A["<b>Малый</b><br/>1-10 RPS<br/>P95 < 500ms<br/>0.5-1% ошибки<br/>Оповещение при 70%"] 
     
-    B[<b>Medium</b><br/>10-1K RPS<br/>P95 < 200ms<br/>0.1-0.5% errors<br/>Alert at 60%]
+    B["<b>Средний</b><br/>10-1K RPS<br/>P95 < 200ms<br/>0.1-0.5% ошибки<br/>Оповещение при 60%"]
     
-    C[<b>Large</b><br/>1K-100K RPS<br/>P95 < 100ms<br/>0.01-0.1% errors<br/>Alert at 50%]
+    C["<b>Крупный</b><br/>1K-100K RPS<br/>P95 < 100ms<br/>0.01-0.1% ошибки<br/>Оповещение при 50%"]
     
-    D[<b>Global</b><br/>100K+ RPS<br/>P95 < 50ms<br/>&lt;0.01% errors<br/>Alert at 40%]
+    D["<b>Глобальный</b><br/>100K+ RPS<br/>P95 < 50ms<br/>&lt;0.01% ошибки<br/>Оповещение при 40%"]
     
     A --> B --> C --> D
     

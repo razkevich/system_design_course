@@ -21,27 +21,27 @@ DaemonSets представляют собой совершенно иную п�
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
-    subgraph "🔴 Core Workloads"
+    subgraph "🔴 Основные рабочие нагрузки"
         
-        subgraph "Core Workload Hierarchy"
-            Deployment["🔄 Deployment<br/>Stateless apps"]
-            StatefulSet["📊 StatefulSet<br/>Stateful apps"]
-            DaemonSet["🌐 DaemonSet<br/>Node-level services"]
+        subgraph "Базовая иерархия рабочих нагрузок"
+            Deployment["🔄 Deployment<br/>Приложения без состояния"]
+            StatefulSet["📊 StatefulSet<br/>Приложения с состоянием"]
+            DaemonSet["🌐 DaemonSet<br/>Службы уровня узла"]
             
-            ReplicaSet["📋 ReplicaSet<br/>Replica management"]
-            Pod["📦 Pod<br/>Basic execution unit"]
+            ReplicaSet["📋 ReplicaSet<br/>Управление репликами"]
+            Pod["📦 Pod<br/>Базовая единица выполнения"]
             
-            Deployment -->|"creates & manages"| ReplicaSet
-            StatefulSet -->|"creates & manages"| Pod
-            DaemonSet -->|"creates on each node"| Pod
-            ReplicaSet -->|"maintains replicas of"| Pod
+            Deployment -->|"создает и управляет"| ReplicaSet
+            StatefulSet -->|"создает и управляет"| Pod
+            DaemonSet -->|"создает на каждом узле"| Pod
+            ReplicaSet -->|"поддерживает реплики"| Pod
         end
         
-        subgraph "Auto-scaling Controllers"
-            PodAutoscalers["📈 Pod Autoscalers<br/>HPA: Scale replicas<br/>VPA: Scale resources"]
+        subgraph "Контроллеры автомасштабирования"
+            PodAutoscalers["📈 Автомасштабировщики Pod<br/>HPA: Масштабирование реплик<br/>VPA: Масштабирование ресурсов"]
             
-            PodAutoscalers -.->|"scales/adjusts"| Deployment
-            PodAutoscalers -.->|"scales/adjusts"| StatefulSet
+            PodAutoscalers -.->|"масштабирует/настраивает"| Deployment
+            PodAutoscalers -.->|"масштабирует/настраивает"| StatefulSet
         end
     end
     
@@ -101,13 +101,13 @@ NetworkPolicies обеспечивают микросегментацию на �
 ```mermaid
 %%{init: {"theme":'base', "themeVariables": { "primaryTextColor": "#000", "fontSize": "11px"}}}%%
 flowchart TD
-subgraph "🔵 Core Networking"
+subgraph "🔵 Основные сети"
 
-subgraph "Traffic Flow Hierarchy"
-Ingress["🌐 Ingress<br/>HTTP/HTTPS routing"]
-IngressController["🎛️ Ingress Controller<br/>Traffic management"]
-Service["⚖️ Service<br/>Load balancing"]
-EndpointSlice["📋 EndpointSlice<br/>Scalable endpoints"]
+subgraph "Иерархия потока трафика"
+Ingress["🌐 Ingress<br/>Маршрутизация HTTP/HTTPS"]
+IngressController["🎛️ Контроллер Ingress<br/>Управление трафиком"]
+Service["⚖️ Service<br/>Балансировка нагрузки"]
+EndpointSlice["📋 EndpointSlice<br/>Масштабируемые конечные точки"]
 NetworkPod["📦 Pod<br/>Целевая рабочая нагрузка"]
 
 IngressController -.->|"наблюдает и реализует"| Ingress
@@ -116,14 +116,14 @@ Service -->|"обнаруживает цели через"| EndpointSlice
 EndpointSlice -->|"указывает"| NetworkPod
 end
 
-подграф "Сетевая безопасность"
+subgraph "Сетевая безопасность"
 NetworkPolicy["🛡️ NetworkPolicy<br/>Фильтрация трафика"]
 NetworkPolicy -.->|"контролирует"| NetworkPod
 end
-конец
+end
 
-стиль NetworkPod заливка:#e8f4fd,штрих:#1976d2,ширина штриха:2px,цвет:#000
-стиль Service заливка:#e3f2fd,штрих:#1565c0,ширина штриха:2px,цвет:#000
+style NetworkPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
+style Service fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
 style Ingress fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
 style IngressController fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
 style EndpointSlice fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
@@ -151,22 +151,22 @@ end
 subgraph "Служба NodePort"
 NodePort["🌐 NodePort Service<br/>Доступ на уровне узла"]
 NodePort -->|"маршруты к"| ClusterIP
-конец
+end
 
-подграфик "LoadBalancer Service"
+subgraph "LoadBalancer Service"
 LoadBalancer["☁️ LoadBalancer Service<br/>Облачный балансировщик нагрузки"]
 LoadBalancer -->|"маршруты к"| NodePort
-конец
+end
 
-подграф "Ingress Layer"
+subgraph "Ingress Layer"
 IngressRoute["🌐 Ingress<br/>HTTP/HTTPS routing"]
 IngressRoute -->|"маршруты к"| ClusterIP
 IngressRoute -->|"может маршрутизировать к"| NodePort
-конец
+end
 
-подграф "Headless"
+subgraph "Headless"
 HeadlessService["🔍 Бесглавая служба<br/>Обнаружение на основе DNS"]
-конец
+end
 
 %% Бесглавый сервис ссылается на существующий под
 HeadlessService -.->|"DNS resolution"| P1
@@ -200,7 +200,7 @@ VirtualService["🔀 VirtualService<br/>Правила маршрутизаци�
 DestinationRule["🎯 DestinationRule<br/>Политики балансировки нагрузки"]
 end
 
-подграфик "Конечные точки службы"
+subgraph "Конечные точки службы"
 MeshService["⚖️ Сервис<br/>Конечная точка с поддержкой Mesh"]
 MeshPod["📦 Pod<br/>С прокси-самоходкой"]
 end
@@ -249,22 +249,22 @@ PVC -->|"binds to"| PV
 StoragePod -->|"mounts"| PVC
 end
 
-подграф "Иерархия защиты данных"
+subgraph "Иерархия защиты данных"
 VolumeSnapshotClass["📷 VolumeSnapshotClass<br/>Политика создания моментальных снимков"]
 VolumeSnapshot["📸 VolumeSnapshot<br/>Копия на определенный момент времени"]
 
 VolumeSnapshotClass -.->|"creates"| VolumeSnapshot
 VolumeSnapshot -->|"snapshots"| PVC
-конец
-конец
+end
+end
 
-стиль StoragePod заливка:#e8f4fd,штрих:#1976d2,ширина штриха:2px,цвет:#000
-стиль PV заливка:#fff3e0,штрих:#f57c00,ширина штриха:2px,цвет:#000
-стиль PVC заливка:#fce4ec,штрих:#c2185b,stroke-width:2px,color:#000
+style StoragePod заливка:#e8f4fd,штрих:#1976d2,ширина штриха:2px,цвет:#000
+style PV заливка:#fff3e0,штрих:#f57c00,ширина штриха:2px,цвет:#000
+style PVC заливка:#fce4ec,штрих:#c2185b,stroke-width:2px,color:#000
 style StorageClass fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
 style CSI fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,цвет:#000
-стиль VolumeSnapshotClass заливка:#e0f2f1,штрих:#00695c,ширина штриха:2px,цвет:#000
-стиль VolumeSnapshot заливка:#e0f7fa,штрих:#0097a7,ширина штриха:2px,цвет:#000
+style VolumeSnapshotClass заливка:#e0f2f1,штрих:#00695c,ширина штриха:2px,цвет:#000
+style VolumeSnapshot заливка:#e0f7fa,штрих:#0097a7,ширина штриха:2px,цвет:#000
 ```
 
 ## 🟡 Конфигурация и секреты
@@ -297,10 +297,10 @@ ConfigSources -->|"предоставляет данные как"| EnvVar
 ConfigSources -->|"предоставляет данные как"| VolumeMount
 EnvVar -->|"используется"| ConfigPod
 VolumeMount -->|"подключено в"| ConfigPod
-конец
-конец
+end
+end
 
-стиль ConfigPod заливка:#e8f4fd,штрих:#1976d2,ширина штриха:2px,цвет:#000
+style ConfigPod заливка:#e8f4fd,штрих:#1976d2,ширина штриха:2px,цвет:#000
 style ConfigSources fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#000
 style EnvVar fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
 style VolumeMount fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#000
@@ -322,24 +322,24 @@ subgraph "🔐 Авторизация RBAC"
 
 subgraph "Источники идентификаторов"
 Идентичность["👤 Идентичность<br/>Пользователи и учетные записи служб"]
-конец
+end
 
-подграфик "Определения разрешений"
+subgraph "Определения разрешений"
 Типы ролей["📋 Роли<br/>Разрешения роли и кластерной роли"]
-конец
+end
 
-подграфик "Привязки авторизации"
+subgraph "Привязки авторизации"
 Привязки["🔗 Привязки<br/>RoleBinding и ClusterRoleBinding"]
-конец
+end
 
-подграф "Защищенные ресурсы"
+subgraph "Защищенные ресурсы"
 SecurityPod["📦 Pod<br/>Доступ контролируется"]
-конец
+end
 
 Идентичность -->|"связано через"| Связи
 Типы ролей -->|"определяет разрешения для"| Связи
 Связи -->|"предоставляет доступ к"| SecurityPod
-конец
+end
 
 style SecurityPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
 style Identity fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
@@ -365,11 +365,11 @@ end
 
 subgraph "Безопасность во время выполнения"
 SecurityContext["🔒 Контекст безопасности<br/>Настройки безопасности контейнера"]
-конец
+end
 
-подграфик "Целевые рабочие нагрузки"
+subgraph "Целевые рабочие нагрузки"
 EnforcedPod["📦 Pod<br/>Применена безопасность"]
-конец
+end
 
 AdmissionController -.->|"проверяет запросы на"| EnforcedPod
 PodSecurityStandard -.->|"применяет политики к"| EnforcedPod
@@ -407,7 +407,7 @@ Node["💻 Узел<br/>Рабочая машина"]
 ControlPlane -.->|"управляет"| Node
 end
 
-подграфик "Логическая организация"
+subgraph "Логическая организация"
 Namespace["🏪 Namespace<br/>Виртуальные кластеры"]
 ResourceQuota["📊 ResourceQuota<br/>Ограничения пространства имен"]
 LimitRange["📏 LimitRange<br/>Ограничения объектов"]
@@ -416,7 +416,7 @@ Namespace -->|"contains"| ResourceQuota
 Namespace -->|"contains"| LimitRange
 end
 
-подграф "Иерархия планирования"
+subgraph "Иерархия планирования"
 PriorityClass["⬆️ PriorityClass<br/>Приоритет планирования"]
 RuntimeClass["⚙️ RuntimeClass<br/>Время выполнения контейнера"]
 InfraPod["📦 Pod<br/>Запланированная рабочая нагрузка"]
@@ -426,8 +426,8 @@ PriorityClass -.->|"приоритезирует"| InfraPod
 RuntimeClass -.->|"конфигурирует"| InfraPod
 ResourceQuota -.->|"ограничивает"| InfraPod
 LimitRange -.->|"ограничивает"| InfraPod
-конец
-конец
+end
+end
 
 style InfraPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
 style Node fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
@@ -465,23 +465,23 @@ end
 subgraph "Уровень сбора"
 MetricsServer["📊 Сервер метрик<br/>API метрик ресурсов"]
 DatadogAgent["🐕 Агент DataDog<br/>Сборщик метрик DaemonSet"]
-конец
+end
 
-подграфик "Хранение и запросы"
+subgraph "Хранение и запросы"
 DatadogCloud["☁️ DataDog Cloud<br/>Платформа мониторинга SaaS"]
-конец
+end
 
 MonitoredPod -.->|"предоставляет метрики"| DatadogAgent
 NodeMetrics -.->|"системные метрики"| MetricsServer
 NodeMetrics -.->|"системные метрики"| DatadogAgent
 DatadogAgent -->|"отправляет метрики в"| DatadogCloud
-конец
+end
 
 style MonitoredPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
 style NodeMetrics fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
 style MetricsServer fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
 style DatadogAgent fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
-стиль DatadogCloud fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
+style DatadogCloud fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
 ```
 
 ### Стек регистрации
@@ -500,17 +500,17 @@ subgraph "Уровень сбора"
 DatadogLogAgent["🐕 DataDog Agent<br/>Сборщик журналов DaemonSet"]
 end
 
-подграфик "Обработка и хранение"
+subgraph "Обработка и хранение"
 DatadogLogCloud["☁️ DataDog Cloud<br/>Обработка и хранение журналов"]
-конец
+end
 
 AppPod -.->|"stdout/stderr"| DatadogLogAgent
 SystemLogs -.->|"системные журналы"| DatadogLogAgent
 DatadogLogAgent -->|"потоки журналов в"| DatadogLogCloud
-конец
+end
 
-стиль AppPod заливка:#e8f4fd,штрих:#1976d2,ширина штриха:2px,цвет:#000
-стиль SystemLogs заливка:#f3e5f5,штрих:#7b1fa2,ширина штриха:2px,цвет:#000
+style AppPod заливка:#e8f4fd,штрих:#1976d2,ширина штриха:2px,цвет:#000
+style SystemLogs заливка:#f3e5f5,штрих:#7b1fa2,ширина штриха:2px,цвет:#000
 style DatadogLogAgent fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
 style DatadogLogCloud fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
 ```
@@ -523,15 +523,15 @@ flowchart TD
 subgraph "🛠️ Расширения API Kubernetes"
 
 subgraph "Расширение API"
-CRD["🛠️ CustomResourceDefinition<br/>Extends Kubernetes API"]
+CRD["🛠️ CustomResourceDefinition<br/>Расширяет API Kubernetes"]
 end
 
 subgraph "Custom Resources"
-CustomResource["📋 Custom Resource<br/>User-defined objects"]
+CustomResource["📋 Custom Resource<br/>Объекты, определяемые пользователем"]
 end
 
 subgraph "Control Logic"
-Controller["🎮 Controller<br/>Reconciliation loop"]
+Controller["🎮 Controller<br/>Цикл согласования"]
 Operator["🤖 Оператор<br/>Автоматизация для конкретной области"]
 end
 
@@ -550,8 +550,8 @@ end
 
 style CustomResource fill:#fff8e1,stroke:#f57f17,stroke-width:2px,color:#000
 style CRD fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
-стиль Controller fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#000
-стиль Operator fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
+style Controller fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#000
+style Operator fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
 style ManagedPod fill:#e8f4fd,stroke:#1976d2,stroke-width:2px,color:#000
 style ManagedService fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
 ```

@@ -27,7 +27,7 @@ flowchart TB
 
         subgraph ZK ["🐘 Кластер ZooKeeper"]
             ZK1["ZooKeeper 1"]
-            ZK2["ZooKeeper 2"]
+            ZK2["ZooKeeper 2"]  
             ZK3["ZooKeeper 3"]
         end
 

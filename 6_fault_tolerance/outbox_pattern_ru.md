@@ -4,29 +4,29 @@
 
 ```mermaid
 sequenceDiagram
-    participant App as Application
-    participant DB as Database<br/>(Orders + Outbox Tables)
-    participant OP as Outbox Processor
-    participant MB as Message Broker
-    participant Cons as Downstream Services
+    participant App as Приложение
+    participant DB as База данных<br/>(Заказы + Таблицы Outbox)
+    participant OP as Процессор Outbox
+    participant MB as Брокер сообщений
+    participant Cons as Нижестоящие сервисы
 
-    Note over App,DB: 1. Transactional Write
-    App->>DB: BEGIN TRANSACTION
-    App->>DB: INSERT business data
-    App->>DB: INSERT event to outbox table
-    App->>DB: COMMIT
+    Note over App,DB: 1. Транзакционная запись
+    App->>DB: НАЧАТЬ ТРАНЗАКЦИЮ
+    App->>DB: ВСТАВИТЬ бизнес-данные
+    App->>DB: ВСТАВИТЬ событие в таблицу outbox
+    App->>DB: ЗАФИКСИРОВАТЬ
 
-    Note over OP,MB: 2. Outbox Processing
-    loop Polling Interval
-        OP->>DB: Query outbox for unpublished events
-        DB-->>OP: Return pending events
-        OP->>MB: Publish events
-        MB-->>OP: Acknowledge
-        OP->>DB: Mark events as published
+    Note over OP,MB: 2. Обработка Outbox
+    loop Интервал опроса
+        OP->>DB: Запросить outbox на неопубликованные события
+        DB-->>OP: Вернуть ожидающие события
+        OP->>MB: Опубликовать события
+        MB-->>OP: Подтверждение
+        OP->>DB: Отметить события как опубликованные
     end
 
-    Note over MB,Cons: 3. Event Delivery
-    MB->>Cons: Deliver events to subscribers
+    Note over MB,Cons: 3. Доставка событий
+    MB->>Cons: Доставить события подписчикам
 ```
 
 ## Как это работает

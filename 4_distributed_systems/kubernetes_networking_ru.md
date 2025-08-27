@@ -77,18 +77,18 @@ CNI предоставляет стандарт сетевого взаимод�
 %%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TB
 subgraph N1 ["Node 1"]
-CNI1["CNI Bridge"]
-PA["Pod A - Frontend"]
-PB["Pod B - Cache"]
+CNI1["Мост CNI"]
+PA["Pod A - Фронтенд"]
+PB["Pod B - Кэш"]
 end
 
 subgraph N2 ["Node 2"]
-CNI2["CNI Bridge"]
-PC["Pod C - Backend"]
-PD["Pod D - Database"]
+CNI2["Мост CNI"]
+PC["Pod C - Бэкенд"]
+PD["Pod D - База данных"]
 end
 
-subgraph NET ["Network Infrastructure"]
+subgraph NET ["Сетевая инфраструктура"]
 INFRA["Базовая сеть"]
 end
 
@@ -131,20 +131,20 @@ kube-proxy функционирует как диспетчер трафика, 
 %%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TB
 subgraph N1 ["Node 1"]
-CNI1["CNI Bridge"]
+CNI1["Мост CNI"]
 IPT1["iptables/IPVS rules<br/>(created by kube-proxy)"]
-PA["Pod A - Frontend"]
-PB["Pod B - Cache"]
+PA["Pod A - Фронтенд"]
+PB["Pod B - Кэш"]
 end
 
 subgraph N2 ["Node 2"]
-CNI2["CNI Bridge"]
-PC["Pod C - Backend"]
-PD["Pod D - Database"]
+CNI2["Мост CNI"]
+PC["Pod C - Бэкенд"]
+PD["Pod D - База данных"]
 end
 
-subgraph NET ["Network Infrastructure"]
-INFRA["Underlying Network"]
+subgraph NET ["Сетевая инфраструктура"]
+INFRA["Основная сеть"]
 end
 
 subgraph SVC ["Уровень сервиса"]
@@ -257,7 +257,7 @@ P2["Pod"] --> D2["CoreDNS"]
 D2 -.-> Pod3["Pod 1"]
 D2 -.-> Pod4["Pod 2"]
 
-subgraph "Normal Service"
+subgraph "Обычный сервис"
 P
 D
 S
@@ -265,7 +265,7 @@ Pod1
 Pod2
 end
 
-subgraph "Headless Service"
+subgraph "Бесголовый сервис"
 P2
 D2
 Pod3

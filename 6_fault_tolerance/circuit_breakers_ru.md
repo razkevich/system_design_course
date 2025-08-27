@@ -32,8 +32,8 @@ style B fill:#ffffcc,stroke:#ffaa00,stroke-width:2px
 
 ```mermaid
 graph TD
-E[E-commerce Service<br/>✅ → ❌] --- R[Reviews API<br/>❌]
-E --- I[Inventory API<br/>✅ → ❌]
+E[Сервис электронной коммерции<br/>✅ → ❌] --- R[API отзывов<br/>❌]
+E --- I[API товарных запасов<br/>✅ → ❌]
 
 style E fill:#ffeeee,stroke:#ff6666,stroke-width:2px
 style R fill:#ffcccc,stroke:#ff3333,stroke-width:2px
@@ -53,9 +53,9 @@ style I fill:#ffeeee,stroke:#ff6666,stroke-width:2px
 ```mermaid
 graph TD
 W[Веб-сервис] --> DB[База данных пользователей<br/>⚠️ → ❌]
-M[Мобильный API] --> БД
-A[Панель администратора] --> БД
-B[Фоновые задания] --> БД
+M[Мобильный API] --> DB
+A[Панель администратора] --> DB
+B[Фоновые задания] --> DB
 
 style DB fill:#ffcccc,stroke:#ff3333,stroke-width:2px
 style W fill:#cccccc
@@ -108,9 +108,9 @@ Circuit Breaker'ы могут быть реализованы на разных 
 
 ```mermaid
 graph LR
-A[Приложение<br>Код] --> CB[Circuit Breaker<br>Библиотека]
-CB --> API[Внешний<br>API]
-CB -.->|Цепь<br>Открыта| FB[Резервный<br>Ответ]
+A[Приложение<br/>Код] --> CB[Circuit Breaker<br/>Библиотека]
+CB --> API[Внешний<br/>API]
+CB -.->|Цепь<br/>Открыта| FB[Резервный<br/>Ответ]
 
 style CB fill:#e1f5fe
 style FB fill:#fff3e0
@@ -131,7 +131,7 @@ graph LR
 A[Сервис A] --> P1[Прокси Sidecar]
 P1 --> P2[Прокси Sidecar]
 P2 --> B[Сервис B]
-P1 -.->|Цепь открыта| FB[503 Response]
+P1 -.->|Цепь открыта| FB[Ответ 503]
 
 style P1 fill:#f3e5f5
 style P2 fill:#f3e5f5
@@ -150,7 +150,7 @@ graph LR
 C[Клиент] --> GW[API-шлюз]
 GW --> S1[Сервис 1]
 GW --> S2[Сервис 2]
-GW -.->|Circuit Open| FB[Error Response]
+GW -.->|Цепь Открыта| FB[Ответ с ошибкой]
 
 style GW fill:#e8f5e8
 style FB fill:#fff3e0
@@ -166,11 +166,9 @@ style FB fill:#fff3e0
 ```mermaid
 graph LR
 E[Источник события] --> L[Функция Lambda]
-L -.->|Повторные сбои| DLQ[Dead<br>Letter<br>Queue]
-
+L -.->|Повторные сбои| DLQ[Очередь<br/>Мертвых<br/>Писем]
 
 style L fill:#ffecb3
-
 style DLQ fill:#fff3e0
 
 ```
@@ -184,12 +182,12 @@ style DLQ fill:#fff3e0
 
 ```mermaid
 graph LR
-A[Приложение] --> CP[Пул соединений<br>]
+A[Приложение] --> CP[Пул соединений]
 CP --> DB[(База данных)]
-CP -.->|Сбой соединения| R[Реплика<br>БД]
+CP -.->|Сбой соединения| R[Реплика<br/>БД]
 
-A2[Производитель] --> K[Kafka<br>Брокер]
-K -.->|Брокер не работает| K2[Резервный<br>Брокер]
+A2[Производитель] --> K[Kafka<br/>Брокер]
+K -.->|Брокер не работает| K2[Резервный<br/>Брокер]
 
 style CP fill:#e3f2fd
 style K fill:#e3f2fd
