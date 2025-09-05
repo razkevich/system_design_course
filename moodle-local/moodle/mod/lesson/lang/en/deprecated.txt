@@ -1,4 +1,0 @@
-completiontimespent,mod_lesson
-grade,mod_lesson
-useroverridesdeleted,mod_lesson
-groupoverridesdeleted,mod_lesson

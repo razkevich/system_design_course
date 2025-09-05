@@ -1,1 +1,0 @@
-a:5:{s:21:"deleteunusablefactors";s:31:"Delete unusable Nosetup factors";s:4:"info";s:59:"This factor passes if the user has no other factors set up.";s:10:"pluginname";s:16:"No other factors";s:16:"privacy:metadata";s:60:"The No other factors plugin does not store any personal data";s:16:"summarycondition";s:27:"has no other factors set up";}
