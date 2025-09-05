@@ -13,13 +13,14 @@ Consider an e-commerce system divided by technical layers:
 
 ``` mermaid
 graph TD
-    A[Web API<br>Gateway] --> B[Business Logic<br>Service]
-    B --> C[Data Access<br>Service]  
-    C --> D[Database<br>Layer]
-    B --> E[Authentication<br>Service]
-    B --> G[Integration<br>Service]
-    G --> H[External<br>APIs]
+    A[Web API<br/>Gateway] --> B[Business Logic<br/>Service]
+    B --> C[Data Access<br/>Service]  
+    C --> D[Database<br/>Layer]
+    B --> E[Authentication<br/>Service]
+    B --> G[Integration<br/>Service]
+    G --> H[External<br/>APIs]
 ```
+
 
 While this separation looks clean, it creates problems:
 - Business operations span multiple services
@@ -97,6 +98,7 @@ graph TB
     class SUP1,SUP2,SUP3 supportStyle
     class GEN1,GEN2,GEN3 genericStyle
 ```
+
 
 **Why This Classification Matters:**
 

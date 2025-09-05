@@ -2,10 +2,13 @@
 
 Проблема двойной записи возникает, когда системы должны атомарно обновлять базу данных и публиковать событие в брокер сообщения. Шаблон «Outbox» решает эту проблему, храня события в той же базе данных, что и бизнес-данные, в рамках одной транзакции, обеспечивая согласованность без необходимости распределенных транзакций.
 
-```mermaid
+<!-- TODO: diagram image missing for this Mermaid block -->
+<!--
+Original Mermaid code:
+``` mermaid
 sequenceDiagram
     participant App as Приложение
-    participant DB as База данных<br/>(Заказы + Таблицы Outbox)
+    participant DB as База данных&lt;br/>(Заказы + Таблицы Outbox)
     participant OP as Процессор Outbox
     participant MB as Брокер сообщений
     participant Cons as Нижестоящие сервисы
@@ -28,6 +31,7 @@ sequenceDiagram
     Note over MB,Cons: 3. Доставка событий
     MB->>Cons: Доставить события подписчикам
 ```
+-->
 
 ## Как это работает
 

@@ -28,7 +28,7 @@ Metrics value derives from simplicity and aggregability. Single numbers can indi
 
 ### Golden Signals by Service Scale
 
-```mermaid
+``` mermaid
 graph LR
     A[<b>Small</b><br/>1-10 RPS<br/>P95 < 500ms<br/>0.5-1% errors<br/>Alert at 70%] 
     
@@ -36,7 +36,7 @@ graph LR
     
     C[<b>Large</b><br/>1K-100K RPS<br/>P95 < 100ms<br/>0.01-0.1% errors<br/>Alert at 50%]
     
-    D[<b>Global</b><br/>100K+ RPS<br/>P95 < 50ms<br/>&lt;0.01% errors<br/>Alert at 40%]
+    D[<b>Global</b><br/>100K+ RPS<br/>P95 < 50ms<br/><0.01% errors<br/>Alert at 40%]
     
     A --> B --> C --> D
     
@@ -45,6 +45,7 @@ graph LR
     style C fill:#fff3e0
     style D fill:#f1f8e9
 ```
+
 
 **Use Case Examples:**
 

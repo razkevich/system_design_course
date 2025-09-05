@@ -96,7 +96,7 @@ The process begins when a client sends a request to any node in the cluster (e.g
    - Promise to ignore proposals < N
    - The highest-numbered proposal it has previously accepted (if any), so the proposer knows what value to respect
 
-```mermaid
+``` mermaid
 sequenceDiagram
     participant P as Proposer
     participant A1 as Acceptor 1
@@ -115,6 +115,7 @@ sequenceDiagram
     Note over P: Majority responded - can proceed to Phase 2
 ```
 
+
 **Phase 2 - Accept:**
 1. If majority responds, proposer picks a value:
    - If acceptors returned previous proposals, use value from highest-numbered one
@@ -123,7 +124,7 @@ sequenceDiagram
 3. Acceptors accept if they haven't promised to ignore N
 4. Once majority accepts, value is chosen
 
-```mermaid
+``` mermaid
 sequenceDiagram
     participant P as Proposer
     participant A1 as Acceptor 1
@@ -142,6 +143,7 @@ sequenceDiagram
     
     Note over P,A3: Consensus achieved: Value "X"
 ```
+
 
 ### Paxos in Practice: Multi-Paxos
 
@@ -186,7 +188,7 @@ The key insight is having a strong leader who coordinates all changes, eliminati
 
 When a leader fails or becomes unreachable, or when the system is starting up, Raft ensures the cluster can quickly elect a new leader. Upon startup, or when followers detect leader failure through missing heartbeats, nodes can become candidates, and request votes from other nodes. The first candidate to receive a majority of votes becomes the new leader for the next term.
 
-```mermaid
+``` mermaid
 sequenceDiagram
     participant A as Node A (Leader)
     participant B as Node B (Follower) 
@@ -216,11 +218,12 @@ sequenceDiagram
     Note over B,C: New leader elected for Term 4
 ```
 
+
 ### Log Replication
 
 The leader receives client requests (any node can receive requests, but followers redirect them to the leader), appends them to its local log, then replicates entries to follower logs. Only after a majority of nodes have stored the entry does the leader commit it and notify followers. This ensures strong consistency across all nodes.
 
-```mermaid
+``` mermaid
 sequenceDiagram
     participant Client as Client
     participant Leader as Leader (B)
@@ -252,11 +255,12 @@ sequenceDiagram
     Note over Client,F2: All nodes have consistent committed state
 ```
 
+
 ### Safety and Recovery
 
 Raft's safety mechanisms prevent data corruption when nodes rejoin after partitions. Each term has at most one leader, and nodes with outdated information are brought up to date through log consistency checks. Higher terms always override lower terms, ensuring the cluster converges to a single consistent state.
 
-```mermaid
+``` mermaid
 sequenceDiagram
     participant A as Node A
     participant B as Node B (New Leader)
@@ -290,6 +294,7 @@ sequenceDiagram
     
     Note over A,C: All nodes synchronized in term 4
 ```
+
 
 ### Safety Properties
 

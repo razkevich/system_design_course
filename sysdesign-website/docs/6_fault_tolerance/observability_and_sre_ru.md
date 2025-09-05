@@ -28,15 +28,18 @@ Observability состоит из четырех основных инструм
 
 ### Золотые сигналы по масштабу сервиса
 
-```mermaid
+<!-- TODO: diagram image missing for this Mermaid block -->
+<!--
+Original Mermaid code:
+``` mermaid
 graph LR
-    A["<b>Малый</b><br/>1-10 RPS<br/>P95 < 500ms<br/>0.5-1% ошибки<br/>Оповещение при 70%"] 
+    A["&lt;b>Малый&lt;/b>&lt;br/>1-10 RPS&lt;br/>P95 &lt; 500ms&lt;br/>0.5-1% ошибки&lt;br/>Оповещение при 70%"] 
     
-    B["<b>Средний</b><br/>10-1K RPS<br/>P95 < 200ms<br/>0.1-0.5% ошибки<br/>Оповещение при 60%"]
+    B["&lt;b>Средний&lt;/b>&lt;br/>10-1K RPS&lt;br/>P95 &lt; 200ms&lt;br/>0.1-0.5% ошибки&lt;br/>Оповещение при 60%"]
     
-    C["<b>Крупный</b><br/>1K-100K RPS<br/>P95 < 100ms<br/>0.01-0.1% ошибки<br/>Оповещение при 50%"]
+    C["&lt;b>Крупный&lt;/b>&lt;br/>1K-100K RPS&lt;br/>P95 &lt; 100ms&lt;br/>0.01-0.1% ошибки&lt;br/>Оповещение при 50%"]
     
-    D["<b>Глобальный</b><br/>100K+ RPS<br/>P95 < 50ms<br/>&lt;0.01% ошибки<br/>Оповещение при 40%"]
+    D["&lt;b>Глобальный&lt;/b>&lt;br/>100K+ RPS&lt;br/>P95 &lt; 50ms&lt;br/>&lt;0.01% ошибки&lt;br/>Оповещение при 40%"]
     
     A --> B --> C --> D
     
@@ -45,6 +48,7 @@ graph LR
     style C fill:#fff3e0
     style D fill:#f1f8e9
 ```
+-->
 
 **Примеры использования:**
 

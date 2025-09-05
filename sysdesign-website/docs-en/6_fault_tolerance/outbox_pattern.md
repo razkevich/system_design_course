@@ -2,7 +2,7 @@
 
 The dual-write problem occurs when systems must atomically update a database and publish an event to a message broker. The outbox pattern solves this challenge by storing events in the same database as business data within a single transaction, ensuring consistency without requiring distributed transactions.
 
-```mermaid
+``` mermaid
 sequenceDiagram
     participant App as Application
     participant DB as Database<br/>(Orders + Outbox Tables)
@@ -28,6 +28,7 @@ sequenceDiagram
     Note over MB,Cons: 3. Event Delivery
     MB->>Cons: Deliver events to subscribers
 ```
+
 
 ## How It Works
 
