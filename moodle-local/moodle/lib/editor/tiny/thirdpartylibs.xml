@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<libraries>
+  <library>
+    <location>js/tinymce</location>
+    <name>Tiny</name>
+    <license>MIT</license>
+    <version>7.3.0</version>
+    <repository>https://github.com/tinymce/tinymce</repository>
+  </library>
+</libraries>

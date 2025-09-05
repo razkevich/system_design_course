@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 1208 800"
+   width="1208"
+   height="800"
+   version="1.1"
+   id="svg28"
+   sodipodi:docname="internet_routing.svg"
+   inkscape:version="1.4.2 (ebf0e940, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview28"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     showguides="true"
+     inkscape:zoom="0.7975"
+     inkscape:cx="509.71787"
+     inkscape:cy="388.08777"
+     inkscape:window-width="1440"
+     inkscape:window-height="776"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg28" />
+  <defs
+     id="defs4">
+    <style
+       id="style1">
+      .title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; text-anchor: middle; fill: #2c3e50; }
+      .label { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #34495e; }
+      .small-label { font-family: Arial, sans-serif; font-size: 10px; text-anchor: middle; fill: #7f8c8d; }
+      .tiny-label { font-family: Arial, sans-serif; font-size: 9px; text-anchor: middle; fill: #7f8c8d; }
+      .vpc { fill: #aed6f1; stroke: #2980b9; stroke-width: 2; }
+      .public-subnet { fill: #a9dfbf; stroke: #27ae60; stroke-width: 2; }
+      .private-subnet { fill: #f5b7b1; stroke: #e74c3c; stroke-width: 2; }
+      .instance { fill: #f8c471; stroke: #f39c12; stroke-width: 2; }
+      .igw { fill: #bb8fce; stroke: #8e44ad; stroke-width: 3; }
+      .nat { fill: #85c1e9; stroke: #3498db; stroke-width: 2; }
+      .internet { fill: #d5f4e6; stroke: #28b463; stroke-width: 3; }
+      .flow-out { stroke: #e74c3c; stroke-width: 4; fill: none; }
+      .flow-in { stroke: #27ae60; stroke-width: 4; fill: none; }
+      .flow-nat { stroke: #f39c12; stroke-width: 4; fill: none; }
+      .flow-bidirectional { stroke: #2c3e50; stroke-width: 5; fill: none; }
+    </style>
+    <marker
+       id="arrowhead-red"
+       markerWidth="12"
+       markerHeight="8"
+       refX="10"
+       refY="4"
+       orient="auto">
+      <polygon
+         points="12,4 0,8 0,0 "
+         fill="#e74c3c"
+         id="polygon1" />
+    </marker>
+    <marker
+       id="arrowhead-green"
+       markerWidth="12"
+       markerHeight="8"
+       refX="10"
+       refY="4"
+       orient="auto">
+      <polygon
+         points="12,4 0,8 0,0 "
+         fill="#27ae60"
+         id="polygon2" />
+    </marker>
+    <marker
+       id="arrowhead-orange"
+       markerWidth="12"
+       markerHeight="8"
+       refX="10"
+       refY="4"
+       orient="auto">
+      <polygon
+         points="12,4 0,8 0,0 "
+         fill="#f39c12"
+         id="polygon3" />
+    </marker>
+    <marker
+       id="arrowhead-bidirectional"
+       markerWidth="10"
+       markerHeight="7"
+       refX="9"
+       refY="3.5"
+       orient="auto">
+      <polygon
+         points="10,3.5 0,7 0,0 "
+         fill="#2c3e50"
+         id="polygon4" />
+    </marker>
+    <marker
+       id="arrowhead-bidirectional-start"
+       markerWidth="10"
+       markerHeight="7"
+       refX="1"
+       refY="3.5"
+       orient="auto">
+      <polygon
+         points="0,3.5 10,7 10,0 "
+         fill="#2c3e50"
+         id="polygon4-start" />
+    </marker>
+  </defs>
+  <rect
+     x="15.172414"
+     y="16.3605"
+     width="1184.6395"
+     height="771.63007"
+     fill="#f8f9fa"
+     id="rect1"
+     style="stroke-width:1.25003" />
+  <!-- Background -->
+  <!-- Title -->
+  <text
+     x="616.3009"
+     y="45.062698"
+     class="title"
+     id="text4"
+     style="font-size:24px">AWS VPC Internet Connectivity</text>
+  <!-- Internet Cloud -->
+  <ellipse
+     cx="620.06268"
+     cy="102.63323"
+     rx="180"
+     ry="35"
+     class="internet"
+     id="ellipse4" />
+  <text
+     x="606.26959"
+     y="108.88715"
+     class="label"
+     id="text5">Internet</text>
+  <!-- Internet Gateway -->
+  <rect
+     x="501.25391"
+     y="266.64575"
+     width="200"
+     height="50"
+     class="igw"
+     rx="8"
+     id="rect5" />
+  <text
+     x="601.25391"
+     y="296.64575"
+     class="label"
+     id="text6">Internet Gateway</text>
+  <!-- VPC Container -->
+  <rect
+     x="100"
+     y="430.62695"
+     width="1000"
+     height="340"
+     class="vpc"
+     rx="15"
+     id="rect6" />
+  <text
+     x="600"
+     y="455.62695"
+     class="label"
+     id="text7">VPC (10.0.0.0/16)</text>
+  <!-- Public Subnet -->
+  <rect
+     x="150"
+     y="480.62695"
+     width="400"
+     height="270"
+     class="public-subnet"
+     rx="8"
+     id="rect7" />
+  <text
+     x="350"
+     y="505.62695"
+     class="label"
+     id="text8">Public Subnet</text>
+  <text
+     x="350"
+     y="520.62695"
+     class="small-label"
+     id="text9">10.0.1.0/24</text>
+  <!-- Private Subnet -->
+  <rect
+     x="650"
+     y="480.62695"
+     width="400"
+     height="270"
+     class="private-subnet"
+     rx="8"
+     id="rect9" />
+  <text
+     x="850"
+     y="505.62695"
+     class="label"
+     id="text10">Private Subnet</text>
+  <text
+     x="850"
+     y="520.62695"
+     class="small-label"
+     id="text11">10.0.2.0/24</text>
+  <!-- NAT Gateway in Public Subnet -->
+  <rect
+     x="280"
+     y="540.62695"
+     width="140"
+     height="50"
+     class="nat"
+     rx="6"
+     id="rect11" />
+  <text
+     x="350"
+     y="570.62689"
+     class="label"
+     id="text12">NAT Gateway</text>
+  <!-- Public Subnet Instances -->
+  <rect
+     x="170"
+     y="620.62689"
+     width="120"
+     height="60"
+     class="instance"
+     rx="6"
+     id="rect12" />
+  <text
+     x="230"
+     y="645.62689"
+     class="small-label"
+     id="text13">Web Server</text>
+  <text
+     x="230"
+     y="665.62689"
+     class="tiny-label"
+     id="text14">(Public IP)</text>
+  <rect
+     x="320"
+     y="620.62689"
+     width="120"
+     height="60"
+     class="instance"
+     rx="6"
+     id="rect14" />
+  <text
+     x="380"
+     y="645.62689"
+     class="small-label"
+     id="text15">Load Balancer</text>
+  <text
+     x="380"
+     y="665.62689"
+     class="tiny-label"
+     id="text16">(Elastic IP)</text>
+  <!-- Private Subnet Instances -->
+  <rect
+     x="680"
+     y="540.62695"
+     width="120"
+     height="60"
+     class="instance"
+     rx="6"
+     id="rect16" />
+  <text
+     x="740"
+     y="565.62689"
+     class="small-label"
+     id="text17">App Server</text>
+  <text
+     x="740"
+     y="585.62689"
+     class="tiny-label"
+     id="text18">(Private IP)</text>
+  <rect
+     x="880"
+     y="540.62695"
+     width="120"
+     height="60"
+     class="instance"
+     rx="6"
+     id="rect18" />
+  <text
+     x="940"
+     y="565.62689"
+     class="small-label"
+     id="text19">Database</text>
+  <text
+     x="940"
+     y="585.62689"
+     class="tiny-label"
+     id="text20">(Private IP)</text>
+  <rect
+     x="680"
+     y="660.62689"
+     width="120"
+     height="60"
+     class="instance"
+     rx="6"
+     id="rect20" />
+  <text
+     x="740"
+     y="685.62689"
+     class="small-label"
+     id="text21">Cache</text>
+  <text
+     x="740"
+     y="705.62689"
+     class="tiny-label"
+     id="text22">(Private IP)</text>
+  <rect
+     x="880"
+     y="660.62689"
+     width="120"
+     height="60"
+     class="instance"
+     rx="6"
+     id="rect22" />
+  <text
+     x="940"
+     y="685.62689"
+     class="small-label"
+     id="text23">Worker</text>
+  <text
+     x="940"
+     y="705.62689"
+     class="tiny-label"
+     id="text24">(Private IP)</text>
+  <!-- Traffic Flows - Direct Arrows -->
+  <!-- IGW <-> Internet bidirectional connection -->
+  <line
+     x1="601.38806"
+     y1="266.93204"
+     x2="604.88153"
+     y2="138.60086"
+     class="flow-bidirectional"
+     marker-end="url(#arrowhead-bidirectional)"
+     marker-start="url(#arrowhead-bidirectional-start)"
+     id="line-bidirectional" />
+  <!-- INBOUND FLOW: IGW -> Public Subnet -->
+  <line
+     x1="500.61731"
+     y1="299.28674"
+     x2="267.02686"
+     y2="477.59622"
+     class="flow-in"
+     marker-end="url(#arrowhead-green)"
+     id="line25" />
+  <text
+     x="422.72726"
+     y="396.80249"
+     class="small-label"
+     style="fill:#27ae60"
+     id="text26">Inbound Traffic</text>
+  <!-- OUTBOUND FLOW: Public Subnet -> IGW -->
+  <line
+     x1="381.07236"
+     y1="480.79404"
+     x2="566.86359"
+     y2="321.38321"
+     class="flow-out"
+     marker-end="url(#arrowhead-red)"
+     id="line26" />
+  <text
+     x="523.82446"
+     y="400.4859"
+     class="small-label"
+     style="fill:#e74c3c"
+     id="text27">Outbound Traffic</text>
+  <text
+     x="640.97467"
+     y="400.99991"
+     class="small-label"
+     style="font-size:10px;font-family:Arial, sans-serif;text-anchor:middle;fill:#e7a33c;fill-opacity:1;stroke-width:1.5;stroke-dasharray:none"
+     id="text27-5">Outbound Traffic</text>
+  <!-- NAT FLOW: Private -> NAT Gateway -->
+  <line
+     x1="677.45233"
+     y1="570.63922"
+     x2="419.97128"
+     y2="565.62494"
+     class="flow-nat"
+     marker-end="url(#arrowhead-orange)"
+     id="line27" />
+  <text
+     x="550"
+     y="585.62689"
+     class="small-label"
+     style="fill:#f39c12"
+     id="text28">NAT Gateway Flow</text>
+  <!-- NAT FLOW: NAT Gateway -> IGW -->
+  <line
+     x1="422.1123"
+     y1="537.95703"
+     x2="680.2356"
+     y2="321.75388"
+     class="flow-nat"
+     marker-end="url(#arrowhead-orange)"
+     id="line28" />
+</svg>

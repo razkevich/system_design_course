@@ -1,0 +1,1 @@
+a:1:{s:25:"mod/lti:addmanualinstance";a:1:{s:7:"message";s:221:"Manual instance configuration is deprecated. Please create a course tool (mod/lti:addcoursetool) and ensure users are able to add an instance of the course tool via the activity chooser (mod/lti:addpreconfiguredinstance).";}}

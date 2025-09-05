@@ -1,0 +1,12 @@
+
+/**
+ * JavaScript required by the question engine.
+ *
+ * @package    moodlecore
+ * @subpackage questionengine
+ * @copyright  2008 The Open University
+ * @deprecated since Moodle 4.0
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+M.core_scroll_manager=M.core_scroll_manager||{};var loadedPromise=new Promise(function(resolve){require(['core/scroll_manager'],function(ScrollManager){var transitionLayer={};var deprecatedNotice=function(functionName,newFunctionName){window.console.error("The "+functionName+" function has been deprecated. "+"Please use core/scroll_manager::"+newFunctionName+"() instead")};transitionLayer.save_scroll_pos=function(Y,element){deprecatedNotice('save_scroll_pos','saveScrollPos');ScrollManager.saveScrollPos(element)};transitionLayer.scroll_to_saved_pos=function(){deprecatedNotice('scroll_to_saved_pos','scrollToSavedPosition');ScrollManager.scrollToSavedPosition()};M.core_scroll_manager=transitionLayer;resolve(transitionLayer)})});var callPromisedFunction=function(functionName,args){loadedPromise.then(function(transitionLayer){transitionLayer[functionName].apply(null,args)})};if(!M.core_scroll_manager.save_scroll_pos){M.core_scroll_manager.save_scroll_pos=function(Y,element){callPromisedFunction(M.core_scroll_manager.save_scroll_pos,[Y,element])};M.core_scroll_manager.save_scroll_action=function(){Y.log("The scroll_to_saved_pos function has been deprecated. "+"Please use initLinksScrollPos in core/scroll_manager instead.",'moodle-core-notification','warn')}}
+M.core_question_engine=M.core_question_engine||{};M.core_question_engine.init_submit_button=function(Y,button){Y.log("The core_question_engine.init_submit_button function has been deprecated. "+"Please use initSubmitButton in core_question/question_engine instead.",'moodle-core-notification','warn');require(['core_form/submit'],function(submit){submit.init(button)});var totalQuestionsInPage=document.querySelectorAll('div.que').length;var buttonel=document.getElementById(button);var outeruniqueid=buttonel.closest('.que').id;Y.on('click',function(e){M.core_scroll_manager.save_scroll_pos(Y,button);if(totalQuestionsInPage>1){buttonel.form.action=buttonel.form.action+'#'+outeruniqueid}},buttonel)}

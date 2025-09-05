@@ -1,0 +1,12 @@
+a:15:{s:32:"action_generate_image_apiversion";s:10:"2024-06-01";s:32:"action_generate_image_deployment";s:0:"";s:31:"action_generate_text_apiversion";s:10:"2024-06-01";s:31:"action_generate_text_deployment";s:0:"";s:38:"action_generate_text_systeminstruction";s:254:"You will receive a text input from the user. Your task is to generate text based on their request. Follow these important instructions:
+    1. Return the summary in plain text only.
+    2. Do not include any markdown formatting, greetings, or platitudes.";s:32:"action_summarise_text_apiversion";s:10:"2024-06-01";s:32:"action_summarise_text_deployment";s:0:"";s:39:"action_summarise_text_systeminstruction";s:558:"You will receive a text input from the user. Your task is to summarize the provided text. Follow these guidelines:
+    1. Condense: Shorten long passages into key points.
+    2. Simplify: Make complex information easier to understand, especially for learners.
+
+Important Instructions:
+    1. Return the summary in plain text only.
+    2. Do not include any markdown formatting, greetings, or platitudes.
+    3. Focus on clarity, conciseness, and accessibility.
+
+Ensure the summary is easy to read and effectively conveys the main points of the original text.";s:6:"apikey";s:0:"";s:21:"enableglobalratelimit";s:1:"0";s:19:"enableuserratelimit";s:1:"0";s:8:"endpoint";s:0:"";s:15:"globalratelimit";s:3:"100";s:13:"userratelimit";s:2:"10";s:7:"version";s:10:"2024100700";}

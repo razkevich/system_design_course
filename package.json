@@ -1,0 +1,17 @@
+{
+  "name": "system_design_course-root",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "start": "npm --prefix sysdesign-website start",
+    "serve": "npm --prefix sysdesign-website run serve",
+    "build": "npm --prefix sysdesign-website run build",
+    "deploy": "bash scripts/deploy.sh",
+    "sync-en": "python3 scripts/sync_en_and_assets_from_root.py",
+    "fix-images": "python3 fix_image_links.py && python3 verify_and_fix_images.py",
+    "convert-mermaid": "python3 convert_mermaid_to_images_and_comment.py",
+    "sanitize-mermaid": "python3 sanitize_commented_mermaid.py",
+    "publish": "npm run build && npm run deploy"
+  }
+}
+
