@@ -100,4 +100,4 @@ Welcome to your journey through the intricate world of system design! This cours
 
 ---
 
-**Russian version:** [/docs/intro](/docs/intro)
+**Russian version:** [/ru/intro](/ru/intro)

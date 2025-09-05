@@ -47,6 +47,8 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
+          // Mount Russian docs under /ru instead of default /docs
+          routeBasePath: 'ru',
         },
         blog: false,
         theme: {
@@ -89,7 +91,7 @@ const config: Config = {
           position: 'left',
           label: 'Курс',
         },
-        { to: '/docs/intro', label: 'RU', position: 'right' },
+        { to: '/ru/intro', label: 'RU', position: 'right' },
         { to: '/en/intro', label: 'EN', position: 'right' },
         {
           href: 'https://github.com/razkevich/system_design_course',
