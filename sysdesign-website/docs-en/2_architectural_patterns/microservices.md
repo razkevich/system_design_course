@@ -157,7 +157,7 @@ Microservices became practical only when supporting technologies matured. The co
 Testing microservices presents fundamentally different challenges than testing monolithic applications. The distributed nature introduces network boundaries, service dependencies, and failure modes that don't exist in single-process applications. Understanding how to test effectively becomes critical for maintaining confidence in system reliability.
 
 ### The Test Pyramid in Practice
-![test_pyramid](/img/test_pyramid.png)
+![test_pyramid](test_pyramid.png)
 The classic test pyramid—unit tests at the base, integration tests in the middle, and end-to-end tests at the top—remains relevant but requires adaptation for microservices. **Unit tests** stay largely unchanged, testing individual functions and classes in isolation with the same fast feedback loops you'd expect.
 
 **Service tests** become more important in microservices architecture. These tests verify a single microservice's behavior by running the service in isolation with external dependencies stubbed out. They provide confidence that your service works correctly without the complexity and brittleness of testing multiple services together.

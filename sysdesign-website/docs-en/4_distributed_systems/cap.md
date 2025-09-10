@@ -16,7 +16,7 @@ The CAP theorem (also known as Brewer's theorem) states that distributed computi
 - **Availability**: Every request to the distributed system receives a response, regardless of individual node failures, though responses across nodes may not be identical.
 - **Partition tolerance**: The system continues operating correctly despite network failures that partition the system into isolated sections.
 
-![cap](/img/cap.png)
+![cap](cap.png)
 
 This fundamental limitation raises several critical questions for distributed system architects:
 
@@ -58,7 +58,7 @@ PACELC states that distributed systems face two categories of trade-offs:
 
 This trade-off emerges from replication requirements. Ensuring resilience against failures and partitions necessitates data and service replication across data centers or geographically distributed nodes, which introduces latency-consistency decisions.
 
-![cap2](/img/cap2.png)
+![cap2](cap2.png)
 
 Strong consistency requires synchronous replication protocols that guarantee all replicas contain current data before acknowledging operations.
 

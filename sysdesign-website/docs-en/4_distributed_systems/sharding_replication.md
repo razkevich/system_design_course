@@ -6,12 +6,12 @@ This analysis progresses systematically from single-instance systems through var
 
 ## Single instance system
 
-![sharding_replication_1](/img/sharding_replication_1.png)
+![sharding_replication_1](sharding_replication_1.png)
 
 This represents the simplest setup where everything happens within a single node. While it offers no horizontal scalability, it provides strong consistency guarantees and simple reasoning about the system state. Examples include single-instance PostgreSQL, Redis without clustering, or standalone application servers. The only way to handle increased load is through vertical scaling (adding more CPU, memory, or storage to the same machine), which has physical and cost limitations. Eventually, you'll hit hardware constraints that make further scaling impossible or economically unfeasible.
 ## Replication with Single Leader
 
-![sharding_replication_2](/img/sharding_replication_2.png)
+![sharding_replication_2](sharding_replication_2.png)
 
 The simplest form of introducing scaling to such system is adding more follower replicas. These replicas can be either read replicas to serve clients their read requests, or just sit there as a hot standby so that it can replace the leader (which is also called master or write replica) in case it goes offline or breaks. All replicas have access to the complete set of data (in databases, usually the data is fully replicated), so there's no need to introduce any traffic routing or sharding strategies (besides routing writes to the leader always).
 
@@ -31,7 +31,7 @@ Besides some limits to scalability that we discussed, there's actually one impor
 
 ## Replication with Multiple Leaders
 
-![sharding_replication_3](/img/sharding_replication_3.png)
+![sharding_replication_3](sharding_replication_3.png)
 
 Some situations, such as geo-distributed deployments, collaborative editing (your mobile device that can go offline for days and a server is also a distributed system!) or high availability requirements, require setting up multiple replicas, and assigning more then one of them as write replicas (i.e. leaders). So in other words, we have multiple instances that can accept writes simultaneously. 
 
@@ -56,7 +56,7 @@ Read scaling benefits from single-leader systems apply here as well, since follo
 Multi-leader replication is preferred over leaderless when you need geographic distribution (each region has its own leader), when you have natural partitioning of writes (different leaders handle different types of data), or when you want more structured conflict resolution than what leaderless systems typically provide.
 ## Leaderless replication
 
-![sharding_replication_4](/img/sharding_replication_4.png)
+![sharding_replication_4](sharding_replication_4.png)
 
 Leaderless replication is a configuration where each replica can serve serve both read and write requests, so it's actually multi leader replication taken to extreme (each replica is a leader).
 
@@ -76,7 +76,7 @@ Conflict resolution in leaderless systems uses similar approaches to multi-leade
 
 ## Sharding
 
-![sharding_replication_5](/img/sharding_replication_5.png)
+![sharding_replication_5](sharding_replication_5.png)
 
 How do we scale our system if there's too much data that doesn't fit into one machine, or there's too much throughput (requests per second) for a single instance to handle? The approach is called sharding, where we distribute the load across multiple instances where each instance handles a configured subset of requests (and/or data). 
 Sharding is orthogonal to replication - you can have sharded systems without replication (each shard is a single instance) or combine sharding with any replication strategy (each shard can be replicated using single-leader, multi-leader, or leaderless approaches).
@@ -117,7 +117,7 @@ Disproportional load occurs when certain shards receive significantly more reque
 When dealing with dysfunctional instances, the approach depends on your replication strategy. In systems with replication, other replicas can take over the failed shard's responsibilities. Without replication, the affected data becomes unavailable until the instance recovers. Preventive measures include health checks, automatic failover to replica shards, and maintaining multiple replicas per shard. Some systems implement circuit breakers to detect failing instances quickly and route traffic away from them.
 
 ## Replication meets Sharding
-![sharding_replication_6](/img/sharding_replication_6.png)
+![sharding_replication_6](sharding_replication_6.png)
 
 Replication and sharding are orthogonal concepts but they can complement each other. In this section let's discuss how to combine them to deliver best qualities from both approaches:
 • Fault tolerance from replication ensures data availability even when nodes fail

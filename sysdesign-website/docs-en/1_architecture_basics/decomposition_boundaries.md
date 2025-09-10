@@ -113,7 +113,7 @@ This means:
 
 Hexagonal Architecture supports this principle by creating clear dependency directions, with business logic at the center surrounded by adapters that handle external concerns.
 
-![hexagonal](/img/hexagonal.png)
+![hexagonal](hexagonal.png)
 
 ### Information Hiding and Interface Design
 

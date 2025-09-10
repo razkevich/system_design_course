@@ -173,7 +173,7 @@ Object-level caching stores individual data objects or records retrieved from th
 
 The caching mechanism is multi-layered. Each layer is important and protects the next one from having to process the request. Competent design of multi-layered caching is key to performance and scalability.
 
-![Caching Layers](/img/caching_layers.png)
+![Caching Layers](caching_layers.png)
 
 ## Cache Invalidation Strategies
 
@@ -622,7 +622,7 @@ The optimal strategy directly depends on the nature of the workload. In real sys
 
 Understanding which type of load dominates allows choosing a strategy that will provide optimal balance between performance, consistency, and operation cost. Next, we’ll examine how different approaches work under predominantly read or write conditions.
 
-![Caching Strategies](/img/caching_strategies.png)
+![Caching Strategies](caching_strategies.png)
 
 # Read-intensive
 

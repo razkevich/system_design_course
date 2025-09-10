@@ -1,7 +1,7 @@
 # Domain Driven Design
 
 Domain-Driven Design (DDD) provides a systematic approach to analyzing complex business problems and modeling software solutions. The methodology consists of two complementary parts: strategic design and tactical design. Strategic design focuses on understanding the business domain and defining appropriate software boundaries. Tactical design provides implementation patterns and building blocks for rich domain models within those boundaries.
-![DDD](/img/DDD.png)
+![DDD](DDD.png)
 
 **Core Principle**: Strategic DDD discovers the *boundaries* between contexts and manages the *relationships* between them, while tactical DDD defines what goes *inside* each bounded context. Strategic design determines context boundaries and integration patterns. Tactical design implements rich domain models within those boundaries.
 

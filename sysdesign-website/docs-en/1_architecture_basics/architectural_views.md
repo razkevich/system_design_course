@@ -51,17 +51,17 @@ Architecture documentation must also capture how the system behaves dynamically.
 
 **Sequence Diagrams** show interaction flows over time between system components. They capture the temporal ordering of messages, method calls, and responses, making them effective for documenting use cases, API interactions, and complex workflows. These diagrams demonstrate the flow of control and data through the system during specific scenarios.
 
-![sequence](/img/sequence.png)
+![sequence](sequence.png)
 *Figure: UML sequence diagram showing component interactions over time*
 
 **Activity Diagrams** illustrate business processes and workflows, showing the flow of activities, decision points, parallel processing, and synchronization. They're particularly useful for documenting complex business logic, user journeys, and system processes that involve multiple actors and conditional flows.
-![activity](/img/activity.png)
+![activity](activity.png)
 
 ### Comprehensive Documentation
 
 **State Machine Diagrams** model element behavior and state transitions, showing how system components change state in response to events. They document reactive systems, user interface behavior, protocol implementations, and components with complex lifecycle management. These diagrams clarify valid state transitions and prevent invalid system states.
 
-![state_machine](/img/state_machine.png)
+![state_machine](state_machine.png)
 
 ## Combining Views
 
@@ -73,7 +73,7 @@ When views are closely related, **combined views** can effectively show these as
 
 While the C4 model is not precisely about architectural 'views' in the traditional sense, it's a complementary documentation method that's highly relevant because it provides a standardized, hierarchical approach to visualizing software architecture at different levels of abstraction. It bridges the gap between high-level system context and detailed implementation, offering a practical framework that can be used alongside or integrated with the 4+1 architectural views.
 
-![c4](/img/c4.png)
+![c4](c4.png)
 
 The C4 model consists of four levels of abstraction:
 
