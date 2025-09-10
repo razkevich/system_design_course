@@ -28,9 +28,6 @@ Observability состоит из четырех основных инструм
 
 ### Золотые сигналы по масштабу сервиса
 
-<!-- TODO: diagram image missing for this Mermaid block -->
-<!--
-Original Mermaid code:
 ``` mermaid
 graph LR
     A["&lt;b>Малый&lt;/b>&lt;br/>1-10 RPS&lt;br/>P95 &lt; 500ms&lt;br/>0.5-1% ошибки&lt;br/>Оповещение при 70%"] 
@@ -48,7 +45,6 @@ graph LR
     style C fill:#fff3e0
     style D fill:#f1f8e9
 ```
--->
 
 **Примеры использования:**
 

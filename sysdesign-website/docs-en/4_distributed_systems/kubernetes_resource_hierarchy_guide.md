@@ -397,7 +397,6 @@ Namespaces create virtual clusters within the physical cluster, providing scope 
 
 The scheduling hierarchy determines where Pods run. PriorityClasses enable workload prioritization during resource contention, ensuring critical applications get scheduled first. RuntimeClasses specify which container runtime to use, enabling scenarios where different workloads require different runtime environments (like gVisor for enhanced isolation or GPU-enabled runtimes for machine learning workloads).
 
-<!-- TODO: diagram image missing for this Mermaid block -->
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
@@ -456,7 +455,6 @@ The extension stack represents Kubernetes' most powerful operational capability:
 
 ### Monitoring Stack
 
-<!-- TODO: diagram image missing for this Mermaid block -->
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
@@ -491,7 +489,6 @@ flowchart TD
 
 ### Logging Stack
 
-<!-- TODO: diagram image missing for this Mermaid block -->
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
@@ -523,7 +520,6 @@ flowchart TD
 
 ### Custom Resources & Operators
 
-<!-- TODO: diagram image missing for this Mermaid block -->
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': { 'primaryTextColor': '#000', 'fontSize': '11px'}}}%%
 flowchart TD
