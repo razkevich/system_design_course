@@ -206,36 +206,6 @@ Boundaries must evolve over time as understanding deepens and requirements chang
 - **Branch by abstraction**: Hide boundary changes behind stable interfaces
 
 **Tools for Evolution**: Modern tools like Spring Modulith enable creating modular monoliths with clear internal boundaries that can later be extracted as separate deployable units when the benefits justify the complexity.
-
-## Practical Guidelines
-
-**A systematic approach to boundary design:**
-
-1. **Start with business boundaries** using domain-driven design
-   - Conduct domain modeling sessions with business experts
-   - Identify bounded contexts and their relationships
-   - Map business capabilities to potential component boundaries
-
-2. **Prioritize independent deployability** as a key design constraint
-   - Each component should be deployable without coordinating with others
-   - Minimize shared databases and synchronous dependencies
-   - Design for graceful degradation when dependencies fail
-
-3. **Design for change** by separating stable policies from volatile implementations
-   - Keep business rules stable and infrastructure details flexible
-   - Use dependency inversion to protect core logic from external changes
-   - Version interfaces explicitly and design for backward compatibility
-
-4. **Measure and monitor coupling** to understand actual vs. intended boundaries
-   - Track cross-boundary communication patterns
-   - Monitor deployment coordination requirements
-   - Measure team productivity and development velocity
-
-5. **Make trade-offs explicit** through Architecture Decision Records
-   - Document why boundaries were drawn where they are
-   - Record the alternatives considered and trade-offs made
-   - Plan for revisiting decisions as context changes
-
 ## Conclusion
 
 Drawing boundaries in software architecture requires both analytical and creative skills. The most successful architects understand that perfect boundaries do not exist—only boundaries appropriate for the current context, constraints, and goals.
