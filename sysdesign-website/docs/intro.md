@@ -38,7 +38,6 @@
   
 ## 3 Сети и коммуникации
   
-- [Шаблоны архитектуры API](3_network_and_communication/api_architecture_ru.md)
 - [Протоколы и модель OSI](3_network_and_communication/protocols_osi_model_ru.md)
 - [Ключевые компоненты сети](3_network_and_communication/network_components_ru.md)
 - [Service Meshes](3_network_and_communication/service_meshes_ru.md)
