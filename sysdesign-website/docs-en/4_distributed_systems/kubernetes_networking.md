@@ -1,6 +1,6 @@
 # Kubernetes Networking: Distributed System Architecture
 
-![kubernetes_front_image](kubernetes_front_image.png)
+![kubernetes_front_image](sysdesign-website/build/img/kubernetes_front_image.png)
 
 ## Introduction
 
@@ -58,7 +58,7 @@ Popular CNI plugins include Flannel (simplicity-focused), Calico (network policy
 
 This design cleanly separates network concerns: existing infrastructure manages node-to-node communication while Kubernetes handles Pod-to-Pod networking layers.
 
-![Kubernetes Pod Communication](pod_communication.svg)
+![Kubernetes Pod Communication](sysdesign-website/build/img/pod_communication.svg)
 
 ## Core Networking Concepts
 

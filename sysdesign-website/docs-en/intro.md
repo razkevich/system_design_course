@@ -36,15 +36,13 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Serverless](2_architectural_patterns/serverless.md)
 - [Multi-tenancy](2_architectural_patterns/multitenancy.md)
 
-## 3 Networking & Communication
+## 3 Distributed Systems Essentials
 
-- [API Architecture Patterns](3_network_and_communication/api_architecture.md)
-- [Protocols and OSI Model](3_network_and_communication/protocols_osi_model.md)
-- [Key Network Components](3_network_and_communication/network_components.md)
-- [Service Meshes](3_network_and_communication/service_meshes.md)
-- [Network in AWS](3_network_and_communication/network_aws.md)
-
-## 4 Distributed Systems Essentials
+**Networking & Communication**
+- [Protocols and OSI Model](protocols_osi_model.md)
+- [Key Network Components](network_components.md)
+- [Service Meshes](service_meshes.md)
+- [Network in AWS](network_aws.md)
 
 **Core Concepts**
 - [Distributed Systems Overview](4_distributed_systems/overview.md)
@@ -63,7 +61,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Kubernetes Resource Hierarchy](4_distributed_systems/kubernetes_resource_hierarchy_guide.md)
 - [Kubernetes Networking](4_distributed_systems/kubernetes_networking.md)
 
-## 5 Data Storage & Processing
+## 4 Data Storage & Processing
 
 **Database Design**
 - [Scalability and Data Modelling in Databases](5_data_storage/scalability_db.md)
@@ -77,7 +75,7 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Big Data Processing](5_data_storage/big_data.md)
 - [Kafka Deep Dive](5_data_storage/kafka_deep_dive.md)
 
-## 6 Fault Tolerance, Scalability & Observability
+## 5 Fault Tolerance, Scalability & Observability
 
 **Resilience Patterns**
 - [Redundancy](6_fault_tolerance/redundancy.md)
@@ -91,7 +89,7 @@ Welcome to your journey through the intricate world of system design! This cours
 **Monitoring & Operations**
 - [Observability and SRE](6_fault_tolerance/observability_and_sre.md)
 
-## 7 Security & Data Protection
+## 6 Security & Data Protection
 
 - [Authentication and Authorization](7_security_and_data_protection/auth.md)
 - [Securing cloud-native applications](7_security_and_data_protection/securing.md)

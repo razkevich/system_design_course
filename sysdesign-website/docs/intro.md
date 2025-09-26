@@ -36,14 +36,12 @@
 - [Serverless](2_architectural_patterns/serverless_ru.md)
 - [Multi-tenancy](2_architectural_patterns/multitenancy_ru.md)
   
-## 3 Сети и коммуникации
-  
-- [Протоколы и модель OSI](3_network_and_communication/protocols_osi_model_ru.md)
-- [Ключевые компоненты сети](3_network_and_communication/network_components_ru.md)
-- [Service Meshes](3_network_and_communication/service_meshes_ru.md)
-- [Сеть в AWS](3_network_and_communication/network_aws_ru.md)
-  
-## 4 Основы распределенных систем
+## 3 Основы распределенных систем
+
+**Сети и коммуникации**
+- [Протоколы и модель OSI](protocols_osi_model_ru.md)
+- [Ключевые компоненты сети](network_components_ru.md)
+- [Service Meshes](service_meshes_ru.md)
   
 **Основные концепции**
 - [Обзор распределенных систем](4_distributed_systems/overview_ru.md)
@@ -54,6 +52,7 @@
 **Координация и инфраструктура**
 - [Распределенный консенсус](4_distributed_systems/consensus_ru.md)
 - [Иерархия ресурсов AWS](4_distributed_systems/aws_resource_hierarchy_guide_ru.md)
+- [Сеть в AWS](4_network_and_communication/network_aws_ru.md)
 - [Архитектура данных, конвейеры и ETL](5_data_storage/data_architecture_ru.md)
   
 **Kubernetes и оркестрация контейнеров**
@@ -61,7 +60,7 @@
 - [Иерархия ресурсов Kubernetes](4_distributed_systems/kubernetes_resource_hierarchy_guide_ru.md)
 - [Сети Kubernetes](4_distributed_systems/kubernetes_networking_ru.md)
   
-## 5 Хранение и обработка данных
+## 4 Хранение и обработка данных
   
 **Проектирование баз данных**
 - [Масштабируемость и моделирование данных в базах данных](5_data_storage/scalability_db_ru.md)
@@ -75,7 +74,7 @@
 - [Обработка больших данных](5_data_storage/big_data_ru.md)
 - [Подробное описание Kafka](5_data_storage/kafka_deep_dive_ru.md)
   
-## 6 Отказоустойчивость, масштабируемость и observability
+## 5 Отказоустойчивость, масштабируемость и observability
   
 **Шаблоны отказоустойчивости**
 - [Избыточность](6_fault_tolerance/redundancy_ru.md)
@@ -88,7 +87,7 @@
 **Мониторинг и эксплуатация**
 - [Observability и SRE](6_fault_tolerance/observability_and_sre_ru.md)
   
-## 7 Безопасность и защита данных
+## 6 Безопасность и защита данных
   
 - [Аутентификация и авторизация](7_security_and_data_protection/auth_ru.md)
 - [Защита облачных приложений](7_security_and_data_protection/securing_ru.md)

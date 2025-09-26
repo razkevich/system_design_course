@@ -54,7 +54,7 @@ By default, each VPC contains one subnet per Availability Zone in the region.
 
 ### Route Tables, Security Groups, and NACLs
 
-![AWS Networking Hierarchy](aws_networking_hierarchy.svg)
+![AWS Networking Hierarchy](sysdesign-website/docs-en/4_distributed_systems/aws_networking_hierarchy.svg)
 
 Route tables are assigned to subnets and define routing rules that determine where network traffic is directed. Each route table contains a set of rules (routes) that specify the destination network and the target (gateway, network interface, or connection) to reach that destination. Route tables control traffic flow but do not filter or block traffic - they simply direct it to the appropriate destination. Every subnet must be associated with exactly one route table, though multiple subnets can share the same route table.
 
@@ -113,7 +113,7 @@ Key characteristics:
 * **Elastic IP required** - Must be associated with an Elastic IP address for internet connectivity
 * **Private subnet routing** - Route tables in private subnets point to NAT Gateway for internet-bound traffic (0.0.0.0/0 → NAT Gateway)
 
-![Internet Routing](internet_routing.svg)
+![Internet Routing](sysdesign-website/docs-en/4_distributed_systems/internet_routing.svg)
 
 *This diagram illustrates how Internet Gateway enables bidirectional communication for public subnets, while NAT Gateway provides secure outbound-only internet access for private subnets.*
 
@@ -133,7 +133,7 @@ PrivateLink enables private connectivity between VPCs and AWS services or third-
 #### VPC Lattice
 VPC Lattice is a newer service that provides application-layer networking, allowing secure communication between services across VPCs and accounts. It operates at the application level rather than the network level, offering features like service discovery, load balancing, and access controls. Lattice simplifies service-to-service communication in microservices architectures spanning multiple VPCs.
 
-![VPC Connectivity Methods](vpc_connectivity.svg)
+![VPC Connectivity Methods](sysdesign-website/docs-en/4_distributed_systems/vpc_connectivity.svg)
 ### VPN Connectivity
 
 AWS provides VPN solutions to securely connect external networks and devices to your VPC over the internet. These encrypted connections extend your private network infrastructure into the cloud.
@@ -146,7 +146,7 @@ Client VPN allows individual devices to connect securely to VPC resources. Remot
 
 Both VPN types use IPsec encryption to ensure data security during transmission and integrate with AWS routing and security controls, maintaining the same level of security as internal VPC traffic.
 
-![VPN Connectivity](vpn_connectivity.svg)
+![VPN Connectivity](sysdesign-website/docs-en/4_distributed_systems/vpn_connectivity.svg)
 
 ## Global Services: Route 53 and CloudFront
 
