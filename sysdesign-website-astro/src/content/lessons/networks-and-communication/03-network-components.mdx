@@ -1,0 +1,191 @@
+---
+title: Key Network Components
+slug: network-components
+order: 3
+section: networks-and-communication
+summary: Load balancers, API gateways, proxies, CDNs — the building blocks that turn a single application into a distributed, resilient platform.
+readingMinutes: 10
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Modern web applications depend on a small set of critical networking components that provide scalability, fault tolerance, and global performance. This lesson covers the foundational pieces of distributed-systems networking: load balancers, API gateways, proxies, and CDNs.
+
+## Load Balancers
+
+Load balancers distribute incoming traffic across multiple backend servers, providing horizontal scalability, fault tolerance, and reduced response times. They give clients a single entry point and automatically reroute traffic away from unhealthy servers.
+
+### Types by layer
+
+<IconGrid cols={2} items={[
+  { icon: '🌐', title: 'DNS load balancing', body: 'Returns different IPs to different users (Route 53). Great for geographic distribution and simple failover. DNS caching can delay updates during outages.' },
+  { icon: '⚡', title: 'Layer 4 (NLB)', body: 'IP + port only. Ultra-low latency, millions of requests per second. AWS NLB. Best when you don\'t need content-aware routing.' },
+  { icon: '🧠', title: 'Layer 7 (ALB)', body: 'Inspects HTTP content for routing decisions. Path-based routing, host-based routing, sticky sessions via cookies. AWS ALB, NGINX, HAProxy. Standard choice for HTTP traffic.' },
+  { icon: '🔀', title: 'ECMP', body: 'Network-layer load balancing across equal-cost paths. Used inside data centers when you need to spread traffic across multiple network links.' },
+]} />
+
+### Algorithms
+
+<Compare2
+  left={{
+    label: 'Static',
+    title: 'Predefined rules',
+    body: 'Round-robin, weighted round-robin, hash-based. Simple, predictable. Don\'t adapt to actual server state.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Dynamic',
+    title: 'Adapt to current load',
+    body: 'Least connections, least response time, least loaded. Better outcomes, slightly more overhead. The right default for variable workloads.',
+    accent: 'emerald',
+  }}
+/>
+
+### Sticky sessions
+
+Some apps need a user to stay on the same backend (because session state lives there). Two approaches:
+
+- **Cookie-based affinity** — Layer 7 only. LB inserts a cookie on first request; routes by cookie thereafter.
+- **Source IP affinity** — Layer 4 or 7. Routes based on client IP. Breaks behind NATs and corporate proxies.
+
+The better long-term answer is to externalize session state (Redis, JWT) so any backend can serve any request.
+
+### Production essentials
+
+<IconGrid cols={2} items={[
+  { icon: '❤️‍🩹', title: 'Health checks', body: 'Continuous HTTP/TCP probes detect unhealthy servers within seconds; traffic gets rerouted automatically.' },
+  { icon: '🔐', title: 'TLS termination', body: 'Decrypt at the LB; pass plain HTTP to backends inside the trusted network. Centralizes cert management.' },
+  { icon: '🛡️', title: 'DDoS protection + rate limiting', body: 'Filter at the edge before traffic reaches your services. Most cloud LBs integrate with WAFs.' },
+  { icon: '💾', title: 'Caching', body: 'Modern LBs can cache frequently requested responses, reducing backend load.' },
+]} />
+
+## API Gateways
+
+While load balancers distribute requests across identical servers, **API gateways** manage API complexity in distributed architectures. They make intelligent routing decisions based on request characteristics — `/users/profile` to user services, `/orders/history` to order services — and handle cross-cutting concerns.
+
+<Compare2
+  left={{
+    label: 'Load balancer',
+    title: 'Distribute among identical instances',
+    body: 'Knows nothing about what services exist. Just spreads load. Layer 4 or 7. Pure traffic distribution.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'API gateway',
+    title: 'Route by request semantics',
+    body: 'Routes based on URL paths, headers, or content. Centralizes auth, rate limiting, transformation, observability. Knows your service topology.',
+    accent: 'emerald',
+  }}
+/>
+
+### What gateways add
+
+<IconGrid cols={2} items={[
+  { icon: '🔐', title: 'Centralized security', body: 'OAuth flows, JWT validation, API keys, RBAC — all at the gateway, not duplicated per service.' },
+  { icon: '⏱️', title: 'Rate limiting', body: 'Per-tenant, per-endpoint, per-tier quotas. Free tier 300 req / 15 min; enterprise unlimited. Configured once.' },
+  { icon: '🔄', title: 'Transformation', body: 'Protocol translation (REST↔GraphQL), data format conversion, API versioning shims. Backward compatibility without backend changes.' },
+  { icon: '📊', title: 'Monitoring', body: 'Usage patterns, popular endpoints, error rates, latency bottlenecks — visible at one place before they affect users.' },
+]} />
+
+### Choosing one
+
+- **Hybrid (Kong, Ambassador, Istio Gateway)** — combine API management with high-performance load balancing. Self-hosted; flexible; more operational complexity.
+- **Pure managed gateway (AWS API Gateway, GCP Endpoints, Azure API Management)** — fully managed, integrate well with their cloud, throughput limits in extreme scenarios.
+- **Pure load balancers (NLB, HAProxy, F5)** — best raw performance; require additional tooling for API management.
+
+For most multi-tenant SaaS platforms, a managed cloud gateway in front of an internal service mesh is the pragmatic combination.
+
+## Proxies
+
+A **proxy** is any service that sits between clients and servers and forwards requests. Two main flavors:
+
+<Compare2
+  left={{
+    label: 'Forward proxy',
+    title: 'Sits in front of clients',
+    body: 'Clients send requests through it. Used for outbound filtering (corporate firewalls), caching (Squid), anonymization (Tor), regional access.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Reverse proxy',
+    title: 'Sits in front of servers',
+    body: 'Clients hit the proxy thinking it\'s the server. NGINX, Apache, Cloudflare. Used for SSL termination, caching, load balancing, header manipulation.',
+    accent: 'emerald',
+  }}
+/>
+
+The line between reverse proxy and load balancer is blurry — most reverse proxies (NGINX, HAProxy) can do load balancing, and most load balancers proxy. The distinction is mostly historical.
+
+## CDN (Content Delivery Networks)
+
+A CDN is a globally distributed network of servers that cache content close to users. Foundational for any application with a global user base.
+
+<IconGrid cols={2} items={[
+  { icon: '📍', title: 'Edge presence', body: '100s of points of presence (PoPs) worldwide. Users hit the closest one. Static content arrives in milliseconds, not seconds.' },
+  { icon: '💾', title: 'Cache hierarchy', body: 'Edge → regional → origin. Repeated requests served from cache; only cache misses hit your backend.' },
+  { icon: '🛡️', title: 'DDoS absorption', body: 'CDN PoPs absorb traffic spikes that would overwhelm your origin. Attack traffic dies at the edge.' },
+  { icon: '⚡', title: 'TLS / HTTP/3 termination', body: 'CDN handles TLS handshake at the edge — clients see the lower latency, your origin sees fewer connections.' },
+  { icon: '🔁', title: 'Origin shield', body: 'Optional layer between edge and origin to coalesce origin requests. Especially useful for popular content.' },
+  { icon: '🎯', title: 'Edge compute', body: 'Run code at the edge (Cloudflare Workers, AWS Lambda@Edge). Personalization, A/B tests, auth checks without going to origin.' },
+]} />
+
+### Caching strategies
+
+- **Cache-Control headers** drive everything. `max-age`, `s-maxage`, `stale-while-revalidate`, `stale-if-error`.
+- **Cache keys** — be explicit. Include relevant headers (Accept, Accept-Language, Authorization). Don't include irrelevant ones (User-Agent unless you really need to vary by it).
+- **Purge / invalidation** — push-based or TTL-based. Most production systems combine both: short TTL as a safety net, explicit purge on writes.
+
+For SaaS apps, the practical answer is: serve all static assets through a CDN, cache aggressively, and use short cache lifetimes (or signed URLs) for tenant-specific assets.
+
+## Auxiliary Infrastructure
+
+A few other components that round out the networking story:
+
+<IconGrid cols={2} items={[
+  { icon: '🌍', title: 'DNS', body: 'Domain → IP resolution. Modern DNS providers (Route 53, Cloudflare, NS1) offer health checks, geographic routing, weighted records.' },
+  { icon: '🔐', title: 'WAF', body: 'Web Application Firewall. Filters common attacks (OWASP Top 10) at the edge. Cloudflare WAF, AWS WAF, F5 ASM.' },
+  { icon: '🌉', title: 'VPN / Direct Connect', body: 'Private connectivity between on-prem and cloud. AWS Direct Connect, Azure ExpressRoute. Used for hybrid setups and compliance.' },
+  { icon: '🕵️', title: 'Service mesh', body: 'Istio, Linkerd, Consul Connect. Network-level concerns (mTLS, retries, circuit breakers, observability) for service-to-service traffic. Next lesson goes deep on this.' },
+]} />
+
+## Putting It Together
+
+A typical SaaS request flow:
+
+```
+[ User ]
+    │
+    │ DNS lookup (Route 53)
+    ▼
+[ CDN edge (Cloudflare) ]
+    │ TLS termination, edge cache, WAF
+    ▼
+[ Cloud Load Balancer (ALB) ]
+    │ Layer 7 routing, health checks
+    ▼
+[ API Gateway (Kong) ]
+    │ Auth, rate limiting, request transformation
+    ▼
+[ Service Mesh (Istio) ]
+    │ mTLS, retries, circuit breaker
+    ▼
+[ Microservice ]
+```
+
+Each component has a job. Each job exists because moving it to the next-most-natural location either costs more or gives less control.
+
+<KeyIdea>
+Think of the network stack as a series of filters, each handling a specific concern. CDN caches what it can. WAF blocks what it should. Load balancer spreads what gets through. Gateway authenticates and routes. Mesh secures and observes.
+</KeyIdea>
+
+## Recap
+
+- Load balancers spread traffic across identical backends. Pick Layer 4 for raw performance, Layer 7 for content-aware routing.
+- API gateways add the layer above: routing by service, auth, rate limiting, transformation.
+- CDNs serve content from the edge — fundamental for global apps; doubles as DDoS absorption.
+- WAFs, DNS providers, and service meshes round out the picture.
+- The whole stack is a series of filters, each at the level where it's cheapest and most precise.

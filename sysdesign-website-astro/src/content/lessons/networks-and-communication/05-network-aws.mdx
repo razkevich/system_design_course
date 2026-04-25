@@ -1,0 +1,237 @@
+---
+title: Network in AWS
+slug: network-aws
+order: 5
+section: networks-and-communication
+summary: How AWS networking actually works — accounts, regions, AZs, VPCs, subnets, security groups, and the connectivity options for hybrid and multi-account setups.
+readingMinutes: 11
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Cloud networks form the backbone of distributed systems infrastructure. AWS is the canonical reference: understanding its networking model gives you the vocabulary and mental model for every other cloud provider — they're broadly similar with different names.
+
+This lesson is a tour of the AWS networking primitives, from the top-level account hierarchy down to security groups and route tables.
+
+## The Hierarchy
+
+<IconGrid cols={2} items={[
+  { icon: '🏢', title: 'AWS Account', body: 'Top-level container. Single billing entity, IAM domain, security boundary. Many orgs run multi-account setups for isolation, environment separation, and compliance.' },
+  { icon: '🌍', title: 'Region', body: 'Physical location (e.g., us-east-1 = N. Virginia). Most resources are regional. Choice affects latency, compliance, cost, service availability.' },
+  { icon: '🏭', title: 'Availability Zone', body: 'Isolated data center within a region (typically 2-6 per region). Connected by high-speed, low-latency networking. Span AZs for HA.' },
+  { icon: '📍', title: 'Local Zone', body: 'AWS infrastructure closer to end users in metro areas. Sub-millisecond latency for gaming, AR/VR, real-time apps.' },
+  { icon: '🌐', title: 'Edge locations', body: 'Hundreds of CDN PoPs globally for CloudFront, Route 53. Cache content close to users.' },
+]} />
+
+### Why multi-account?
+
+<Compare2
+  left={{
+    label: 'Single account',
+    title: 'Simplest, but risky at scale',
+    body: 'One IAM domain, one billing root. Easy to set up. Hard to enforce strong isolation. Risk of cross-environment blast radius.',
+    accent: 'amber',
+  }}
+  right={{
+    label: 'Multi-account (AWS Organizations)',
+    title: 'Standard for production',
+    body: 'Separate accounts for dev/staging/prod, per business unit, per major workload. Strong isolation, granular cost attribution, compliance-friendly. AWS Control Tower or Organizations manages it.',
+    accent: 'emerald',
+  }}
+/>
+
+Common reasons organizations split into multiple accounts:
+
+- **Separation of applications** — different security needs, regulatory requirements, or operational teams.
+- **Tenant separation** — strict isolation between customers in multi-tenant systems (large enterprise tenants often get their own AWS account).
+- **Environment isolation** — dev/staging/prod can't accidentally touch each other.
+- **Cost allocation** — clean per-business-unit billing.
+- **Compliance** — regulations sometimes require strict isolation.
+
+## VPC: Virtual Private Cloud
+
+A VPC is your isolated network environment within AWS — virtually equivalent to a private data center. Resources inside communicate via private IPs, logically separated from other AWS customers.
+
+<KeyIdea>
+The VPC is where almost all your AWS networking decisions live. CIDR ranges, subnets, route tables, security groups, NACLs — they all hang off the VPC.
+</KeyIdea>
+
+### CIDR blocks
+
+When you create a VPC, you pick a **CIDR block** that defines the available IP range — e.g., `10.0.0.0/16` gives you 65,536 addresses (10.0.0.0 to 10.0.255.255). All subnets inside the VPC use slices of this space.
+
+<Callout type="warning" title="Plan CIDR ranges carefully">
+Avoid conflicts with other networks you may need to connect to later. Once your VPC is in production with thousands of resources, the CIDR is hard to change. Reserve enough address space for growth — don't pick `/24`.
+</Callout>
+
+### Properties
+
+<IconGrid cols={2} items={[
+  { icon: '🔒', title: 'Isolated by default', body: 'Complete logical separation from other AWS customers and other VPCs in your account.' },
+  { icon: '🔢', title: 'Private IPs (RFC 1918)', body: '10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 — pick what fits.' },
+  { icon: '🗺️', title: 'Customizable topology', body: 'Full control over subnets, route tables, gateways, security groups.' },
+  { icon: '🌍', title: 'Spans AZs', body: 'Subnets can be placed across multiple availability zones for HA.' },
+]} />
+
+## Subnets
+
+Subnets are subdivisions of a VPC. Each subnet:
+
+- Lives in **exactly one AZ**.
+- Uses a **subset** of the VPC's CIDR block.
+- Can be **public** (internet-accessible) or **private** (internal-only).
+
+### Why multiple subnets
+
+- **High availability** — spread resources across subnets in different AZs.
+- **Security segmentation** — public web servers vs. private databases.
+- **Access control** — public subnets connect to the internet; private subnets stay isolated.
+- **Compliance** — different tiers may need different security controls.
+
+A typical 3-tier deployment uses six subnets — public + private in three AZs:
+
+```
+VPC: 10.0.0.0/16
+
+  AZ us-east-1a:                AZ us-east-1b:                AZ us-east-1c:
+   ├── public-1a (10.0.1.0/24)   ├── public-1b (10.0.2.0/24)   ├── public-1c (10.0.3.0/24)
+   └── private-1a (10.0.11.0/24) └── private-1b (10.0.12.0/24) └── private-1c (10.0.13.0/24)
+```
+
+## Internet Connectivity
+
+### Internet Gateway (IGW)
+
+Provides bidirectional internet connectivity for public subnets. One per VPC. Resources in public subnets with public IPs (or Elastic IPs) are reachable from the internet.
+
+### NAT Gateway / NAT Instance
+
+Lets resources in **private** subnets access the internet (for software updates, calling external APIs) without being reachable from outside.
+
+<Compare2
+  left={{
+    label: 'NAT Gateway',
+    title: 'Managed, scales automatically',
+    body: 'AWS-managed, scales to 100 Gbps. One per AZ for HA. Charged per GB processed plus hourly. The default choice.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'NAT Instance',
+    title: 'EC2 you operate',
+    body: 'Cheaper for low-volume use cases. You manage uptime, scaling, OS. Mostly legacy now.',
+    accent: 'amber',
+  }}
+/>
+
+### Route Tables
+
+A route table specifies where traffic from a subnet goes. Each subnet associates with exactly one route table. Common entries:
+
+| Destination | Target | Meaning |
+| --- | --- | --- |
+| VPC CIDR (e.g., 10.0.0.0/16) | local | Within-VPC traffic stays internal |
+| 0.0.0.0/0 | igw-xxx | Send everything else to internet (public subnet) |
+| 0.0.0.0/0 | nat-xxx | Send everything else to NAT (private subnet) |
+| 192.168.0.0/16 | pcx-xxx | Send to peered VPC |
+
+## Security: Two Layers
+
+AWS gives you two complementary mechanisms for traffic control.
+
+<Compare2
+  left={{
+    label: 'Security Groups',
+    title: 'Stateful, instance-level',
+    body: 'Attached to ENIs (EC2, RDS, etc.). Stateful — return traffic auto-allowed. Allow rules only (default deny). The everyday tool.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Network ACLs',
+    title: 'Stateless, subnet-level',
+    body: 'Attached to subnets. Stateless — return traffic needs explicit rules. Allow + deny rules. Used for defense-in-depth.',
+    accent: 'amber',
+  }}
+/>
+
+### Security group example
+
+Allow SSH from one IP, HTTP/HTTPS from anywhere:
+
+| Type | Protocol | Port range | Source | Description |
+| --- | --- | --- | --- | --- |
+| SSH | TCP | 22 | 117.212.92.68/32 | Office IP |
+| HTTP | TCP | 80 | 0.0.0.0/0 | Public web |
+| HTTPS | TCP | 443 | 0.0.0.0/0 | Public web |
+
+Most production setups use security groups heavily and NACLs sparingly (default-allow NACLs as a safety net rather than primary control).
+
+## Connecting VPCs and Networks
+
+<IconGrid cols={2} items={[
+  { icon: '🤝', title: 'VPC Peering', body: 'Direct connection between two VPCs (same or different account, same or different region). Non-transitive — A-B and B-C doesn\'t make A-C work. Limited at scale.' },
+  { icon: '🔀', title: 'Transit Gateway', body: 'Hub-and-spoke connectivity. Connect many VPCs and on-prem networks through one router. Scales to thousands of attachments. The right choice for multi-VPC environments.' },
+  { icon: '🌐', title: 'Direct Connect', body: 'Dedicated private network connection from your data center to AWS. 1-100 Gbps. Used for hybrid clouds and compliance scenarios needing predictable latency.' },
+  { icon: '🔐', title: 'Site-to-Site VPN', body: 'IPsec tunnel from your data center to AWS. Cheaper than Direct Connect, runs over public internet. Used for occasional or backup connectivity.' },
+  { icon: '🔌', title: 'VPC Endpoints', body: 'Private connectivity to AWS services without going through the internet. Two flavors: Gateway endpoints (S3, DynamoDB), Interface endpoints (most other services).' },
+  { icon: '☁️', title: 'PrivateLink', body: 'Expose a service in your VPC to other VPCs (yours or your customers\') without VPC peering or internet exposure.' },
+]} />
+
+## A Realistic Topology
+
+A typical multi-tier production VPC for a SaaS platform:
+
+```
+                                     Internet
+                                         │
+                                    [Internet GW]
+                                         │
+          ┌──────────────────────────────────────────────────────────┐
+          │  VPC: 10.0.0.0/16                                        │
+          │                                                          │
+          │  ┌─Public Subnets────────────────────────────────┐       │
+          │  │  ALB / NAT GW (one per AZ)                    │       │
+          │  └─┬───────────────┬───────────────┬─────────────┘       │
+          │    │               │               │                     │
+          │  ┌─▼────────────┐ ┌▼────────────┐ ┌▼────────────┐        │
+          │  │ App Subnet   │ │ App Subnet  │ │ App Subnet  │        │
+          │  │ (private)    │ │ (private)   │ │ (private)   │        │
+          │  │ ECS / EKS    │ │ ECS / EKS   │ │ ECS / EKS   │        │
+          │  └─┬────────────┘ └┬────────────┘ └┬────────────┘        │
+          │    │               │               │                     │
+          │  ┌─▼────────────┐ ┌▼────────────┐ ┌▼────────────┐        │
+          │  │ DB Subnet    │ │ DB Subnet   │ │ DB Subnet   │        │
+          │  │ (isolated)   │ │ (isolated)  │ │ (isolated)  │        │
+          │  │ RDS Multi-AZ │ │             │ │             │        │
+          │  └──────────────┘ └─────────────┘ └─────────────┘        │
+          │     AZ 1a            AZ 1b            AZ 1c              │
+          └──────────────────────────────────────────────────────────┘
+```
+
+This shape — public subnets for load balancers and NAT, private subnets for app, isolated subnets for data — is the AWS reference architecture. Other clouds use the same shape with different names.
+
+## Multi-region for SaaS
+
+Multi-region deployments serve three needs in SaaS:
+
+1. **Latency** — users get a region close to them.
+2. **Compliance** — EU customers' data stays in EU regions; US in US.
+3. **Disaster recovery** — region-level failures don't take everyone down.
+
+Standard patterns:
+
+- **Active-passive** — primary region serves all traffic; secondary stays warm and takes over on failure.
+- **Active-active** — both regions serve traffic; clients route to closest. Higher cost; harder consistency story.
+- **Region-per-tenant** — each tenant deployed to one region based on their compliance/latency needs. Common in B2B SaaS.
+
+## Recap
+
+- Account → Region → AZ → VPC → Subnet is the core hierarchy.
+- VPCs give you isolated networks; subnets give you AZ placement and segmentation.
+- Internet Gateway + Route Tables for public connectivity; NAT Gateway for outbound from private subnets.
+- Security Groups (stateful, instance) + NACLs (stateless, subnet) layer defense.
+- Multi-VPC connectivity: peering for simple cases, Transit Gateway for scale, Direct Connect / VPN for hybrid.
+- Multi-region patterns serve latency, compliance, and DR — common in SaaS at scale.

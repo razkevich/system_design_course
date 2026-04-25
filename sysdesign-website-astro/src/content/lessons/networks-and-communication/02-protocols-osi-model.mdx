@@ -1,0 +1,140 @@
+---
+title: Protocols and the OSI Model
+slug: protocols-osi-model
+order: 2
+section: networks-and-communication
+summary: The OSI model, the practical TCP/IP model, the TCP vs UDP trade-off, and the HTTP versions you'll encounter in production.
+readingMinutes: 8
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Understanding network communication is foundational to building distributed systems. You don't need to memorize every protocol — but you do need a working mental model of the layers and what protocols live at each one. That mental model is what lets you debug strange production problems and make informed architectural calls.
+
+## The OSI Model
+
+The OSI (Open Systems Interconnection) model is the canonical way to teach networking. Seven layers, each with specific responsibilities, communicating only with adjacent layers.
+
+<IconGrid cols={2} items={[
+  { icon: '7️⃣', title: 'Application', body: 'Application protocols: HTTP, SMTP, FTP, DNS. The interface between user-facing apps and the network.' },
+  { icon: '6️⃣', title: 'Presentation', body: 'Translation, encryption, compression, format conversion. Ensures compatibility across different systems.' },
+  { icon: '5️⃣', title: 'Session', body: 'Manages communication sessions between applications.' },
+  { icon: '4️⃣', title: 'Transport', body: 'TCP, UDP. End-to-end delivery, error detection, flow control.' },
+  { icon: '3️⃣', title: 'Network', body: 'Routing and logical addressing. IP, ICMP, routing protocols.' },
+  { icon: '2️⃣', title: 'Data Link', body: 'Frame-level communication within one network segment. Ethernet, WiFi at this layer.' },
+  { icon: '1️⃣', title: 'Physical', body: 'Cables, wireless signals, hardware specs. The actual wire.' },
+]} />
+
+## The Real Model — TCP/IP
+
+In practice, the **TCP/IP model** is what you'll actually encounter. It collapses some OSI layers and matches modern Internet reality:
+
+| OSI layer | TCP/IP layer | What you'll actually see |
+| --- | --- | --- |
+| Application, Presentation, Session | **Application** | HTTP, HTTPS, SMTP, FTP, DNS, gRPC |
+| Transport | **Transport** | TCP, UDP, QUIC |
+| Network | **Network** | IP, ICMP, routing |
+| Data Link, Physical | **Network Access** | Ethernet, WiFi, cellular |
+
+Application development mostly happens at the **Application** and **Transport** layers. The lower layers exist; you'll touch them only when something is going badly wrong.
+
+<KeyIdea>
+You don't need to design at the OSI level. But knowing which layer something lives at — TLS at 6/7, TCP at 4, IP at 3 — is what lets you read traceroutes, interpret tcpdumps, and reason about latency.
+</KeyIdea>
+
+## TCP vs. UDP
+
+The choice of transport-layer protocol significantly affects system design and performance.
+
+<Compare2
+  left={{
+    label: 'TCP',
+    title: 'Reliable, ordered, slow-start',
+    body: 'Connection-oriented. Guarantees in-order delivery. Flow control, congestion control, retransmission. Higher latency in exchange for reliability.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'UDP',
+    title: 'Fast, unreliable, lightweight',
+    body: 'Connectionless. Best-effort delivery, no ordering, no flow control. Minimal overhead. Faster, but the application has to handle the loss/reordering problem itself.',
+    accent: 'amber',
+  }}
+/>
+
+**TCP wins for:**
+
+- Web traffic (HTTP/HTTPS).
+- File transfer (FTP, SFTP).
+- Email (SMTP, IMAP).
+- Database connections.
+- Anything where guaranteed delivery matters.
+
+**UDP wins for:**
+
+- Video streaming (some packet loss is acceptable).
+- Online gaming (latency-sensitive).
+- DNS queries (small payloads, simple retry logic).
+- Live broadcasts.
+- IoT sensor data (latest reading is what matters).
+
+## HTTP: The Application-Layer Workhorse
+
+HTTP has gone through several major revisions, each addressing specific performance and compatibility problems. Understanding the differences matters because they affect how your services behave under load.
+
+<IconGrid cols={3} items={[
+  { icon: '🐢', title: 'HTTP/1.1 (1997)', body: 'Universal support. One request per TCP connection (with keep-alive). Head-of-line blocking. Verbose plain-text headers. The compatibility floor.' },
+  { icon: '🐎', title: 'HTTP/2 (2015)', body: 'Multiplexing — many requests over one connection. Binary framing. Header compression. Server push. Much better at scale; ubiquitous now.' },
+  { icon: '🚀', title: 'HTTP/3 (2022)', body: 'Built on QUIC (over UDP). No head-of-line blocking on packet loss. Faster connection setup. Best on lossy networks (mobile, varying conditions).' },
+]} />
+
+For internal service-to-service traffic on stable networks, HTTP/2 is the modern default. For client-facing traffic over the public Internet — especially mobile — HTTP/3 has the edge.
+
+## TLS: Encryption at the Transport Boundary
+
+TLS (Transport Layer Security) encrypts data in transit. Modern TLS is TLS 1.2 or TLS 1.3 — older versions (SSL 2/3, TLS 1.0/1.1) are deprecated and insecure.
+
+<IconGrid cols={2} items={[
+  { icon: '🔐', title: 'TLS handshake', body: 'Establishes encrypted channel. TLS 1.3 reduced this from 2 round-trips to 1, with 0-RTT for resumption.' },
+  { icon: '📜', title: 'Certificates', body: 'Server presents a cert chain signed by a trusted CA. Let\'s Encrypt makes free certs trivial; ACME automates renewal.' },
+  { icon: '🔄', title: 'mTLS', body: 'Mutual TLS — both client and server present certs. Strong identity for service-to-service inside a mesh.' },
+  { icon: '🔑', title: 'Cipher suites', body: 'The algorithm bundle for the connection. TLS 1.3 simplified the choices significantly. Use modern cipher suites (AES-GCM, ChaCha20-Poly1305).' },
+]} />
+
+## DNS: The Hidden Performance Layer
+
+DNS resolves domain names to IPs. Often invisible — until it's slow, broken, or being abused. Things to know:
+
+- **TTLs** — DNS records are cached. Long TTLs mean clients use stale records longer; short TTLs mean more queries. Production load balancing often relies on TTL behavior.
+- **DNS-over-HTTPS / DNS-over-TLS** — encrypted DNS resolution. Increasingly default on browsers and OSes.
+- **Anycast** — same IP advertised from multiple locations; clients reach the closest one. How most large-scale CDNs and DNS providers work.
+
+For SaaS apps, your platform's choice of DNS provider (Route 53, Cloudflare, NS1) materially affects latency and reliability.
+
+## A Practical Mental Model
+
+When you see a request flow like this:
+
+```
+Browser ──[TLS 1.3]──► CDN ──[HTTP/2]──► API Gateway ──[gRPC over HTTP/2]──► Service
+```
+
+The layers in play:
+
+- **Layer 7 (App):** TLS, HTTP/2, gRPC.
+- **Layer 4 (Transport):** TCP at every hop.
+- **Layer 3 (Network):** IP routing across the public Internet, then within VPC.
+- **Layer 2/1:** Whatever the wires and wireless are doing — usually invisible.
+
+Knowing which layer is responsible for which property (encryption, ordering, routing) is what makes diagnosing weird latency or connectivity issues tractable.
+
+## Recap
+
+- OSI is the textbook model. TCP/IP is what you actually use; collapses OSI's top three into "Application."
+- TCP gives you reliability and ordering at the cost of latency. UDP gives you speed at the cost of guarantees.
+- HTTP versions matter — HTTP/2 is the default for service-to-service, HTTP/3 wins on lossy networks.
+- TLS 1.3 (with ACME / Let's Encrypt) makes secure transport trivial. mTLS is how internal services authenticate each other.
+- DNS is invisible until it isn't. TTLs and anycast are the levers worth understanding.

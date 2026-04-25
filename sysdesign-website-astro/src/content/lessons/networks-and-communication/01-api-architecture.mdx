@@ -1,0 +1,190 @@
+---
+title: API Architecture Patterns
+slug: api-architecture
+order: 1
+section: networks-and-communication
+summary: REST, RPC, GraphQL — when to use each. Versioning, authentication, gateway patterns, and the cross-cutting concerns of designing APIs for SaaS at scale.
+readingMinutes: 9
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+API architecture is the foundation of modern distributed systems. In cloud SaaS applications, the API design decisions you make shape scalability, maintainability, and integration capability — for years.
+
+This lesson is the working vocabulary: the major API styles, when each fits, and the cross-cutting concerns (versioning, auth, gateways) you'll think about regardless of which style you pick.
+
+## The Three Major API Styles
+
+<Compare2
+  left={{
+    label: 'REST',
+    title: 'Resource-oriented',
+    body: 'HTTP verbs operate on URL-identified resources. Stateless, cacheable, widely understood. Best for public APIs and CRUD-heavy systems.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'gRPC / RPC',
+    title: 'Function-oriented',
+    body: 'Calls remote procedures as if they were local. Strongly typed, binary serialization, code-generated clients. Best for internal microservices and high-performance scenarios.',
+    accent: 'amber',
+  }}
+/>
+
+<Compare2
+  left={{
+    label: 'GraphQL',
+    title: 'Query-oriented',
+    body: 'Client specifies exactly what data it needs in a single request. Solves over-fetching and under-fetching. Best for varied client needs (web, mobile) or complex relationship traversal.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Pick by use case',
+    title: 'Most platforms mix all three',
+    body: 'REST for public APIs, gRPC for internal microservices, GraphQL for client-facing endpoints with diverse data needs. The right answer is rarely "all REST" or "all GraphQL."',
+    accent: 'indigo',
+  }}
+/>
+
+### REST
+
+The most widely accepted style.
+
+- **Strengths.** HTTP-native, simple, every tool supports it, easy to debug.
+- **Where it shines.** Public APIs, CRUD-heavy systems, third-party integration surfaces.
+- **Costs.** Verbose payloads, multiple round-trips for related data, less type safety.
+
+### gRPC
+
+Modern RPC, built on HTTP/2, strongly typed via Protocol Buffers.
+
+- **Strengths.** Efficient binary serialization, code-generated clients in many languages, bidirectional streaming, strong contracts.
+- **Where it shines.** Internal microservice communication where you control both ends.
+- **Costs.** Browser support is awkward (gRPC-Web exists but adds complexity), opaque to humans, requires schema management.
+
+### GraphQL
+
+A query language for APIs.
+
+- **Strengths.** Clients fetch exactly what they need. Single endpoint, strong type system, real-time via subscriptions.
+- **Where it shines.** Frontend with diverse data needs, mobile apps that minimize bandwidth, complex data relationships.
+- **Costs.** N+1 query problems if resolvers aren't careful, harder to cache than REST, schema design takes effort.
+
+## API Versioning
+
+Versioning keeps your API evolvable without breaking consumers.
+
+<IconGrid cols={2} items={[
+  { icon: '🔢', title: 'URL versioning', body: '/v1/users, /v2/users. Most common. Easy to grok; clear separation.' },
+  { icon: '📋', title: 'Header versioning', body: 'Accept: application/vnd.api+json;version=2. Cleaner URLs but harder to test in browser.' },
+  { icon: '🤝', title: 'Content negotiation', body: 'Version selected via Accept headers. Same URL, different responses based on what the client asks for.' },
+  { icon: '📊', title: 'Semantic versioning', body: 'major.minor.patch. Breaking changes bump major; additive changes bump minor; bug fixes bump patch.' },
+]} />
+
+<Callout type="tip" title="Pick a versioning strategy on day one">
+The worst time to introduce versioning is after you have customers depending on the unversioned API. The second-worst time is later. Pick a strategy and apply it consistently from the first endpoint.
+</Callout>
+
+## Authentication and Authorization
+
+Modern API auth is layered:
+
+<IconGrid cols={2} items={[
+  { icon: '🔑', title: 'API keys', body: 'Simple. Use for server-to-server, machine-to-machine. Rotate them. Don\'t put them in URLs.' },
+  { icon: '🎫', title: 'OAuth 2.0 / OIDC', body: 'Industry standard for delegated access. JWT bearer tokens; scopes for granular permissions. The right choice for user-facing APIs.' },
+  { icon: '🛡️', title: 'mTLS', body: 'Mutual TLS — both client and server present certificates. Strong identity for service-to-service communication.' },
+  { icon: '👥', title: 'RBAC / ABAC', body: 'Role-based or attribute-based access control on top of authentication. Each endpoint enforces what the authenticated principal can do.' },
+]} />
+
+We dive deeper into auth in Section 7.
+
+## Cross-Cutting Concerns
+
+These apply across all API styles:
+
+### Rate limiting
+
+Protect the platform from abuse and noisy neighbors. Multi-dimensional limits work better than blanket per-tenant caps:
+
+- Per-tenant: 1,000 requests/minute total.
+- Per-endpoint: 100/minute on expensive endpoints, 1,000/minute on cheap ones.
+- Per-user-within-tenant: prevents one user inside a tenant from monopolizing.
+
+### Pagination
+
+Don't return unbounded lists. Three common shapes:
+
+- **Offset pagination.** `?page=3&size=50`. Simple, but performance degrades on large offsets.
+- **Cursor pagination.** Server returns an opaque cursor; client sends it back. Stable across mutations and fast at any depth.
+- **Keyset pagination.** Use the last seen primary key as the cursor. Specifically efficient.
+
+For SaaS APIs, cursor-based pagination is usually the right default.
+
+### Idempotency
+
+Network requests can be duplicated. POST and PUT operations should accept an idempotency key — clients send the same key on retry; the server returns the same result without re-executing the operation.
+
+```
+POST /payments
+Idempotency-Key: a8f4b2e1-...
+{"amount": 100, "currency": "USD"}
+```
+
+Stripe-style idempotency is now a SaaS-API standard for any state-changing endpoint.
+
+### Error handling
+
+Consistent error format across the entire API:
+
+```json
+{
+  "error": {
+    "code": "INVALID_PAYMENT_METHOD",
+    "message": "The provided payment method has expired.",
+    "field": "payment_method.expiry",
+    "request_id": "req_a8f4b2e1"
+  }
+}
+```
+
+Use HTTP status codes correctly: 400 for client errors, 401 for missing auth, 403 for forbidden, 404 for not found, 429 for rate-limited, 500 for server errors. The `request_id` makes debugging dramatically easier.
+
+## API Gateways
+
+For multi-service systems, an API gateway sits in front of all services and handles cross-cutting concerns:
+
+<IconGrid cols={2} items={[
+  { icon: '🎯', title: 'Routing', body: 'Map URL paths to backend services. Hide service topology from clients.' },
+  { icon: '🔒', title: 'Authentication', body: 'Validate JWTs / API keys at the gateway; pass authenticated identity downstream.' },
+  { icon: '⏱️', title: 'Rate limiting', body: 'Enforce per-tenant, per-endpoint quotas without each service implementing them.' },
+  { icon: '🔄', title: 'Request transformation', body: 'Versioning shims, header injection, response shaping for backward compatibility.' },
+  { icon: '👁️', title: 'Observability', body: 'Single point for request logging, tracing, metrics — without instrumenting every service.' },
+  { icon: '🛡️', title: 'WAF integration', body: 'Bot protection, DDoS mitigation, request validation at the edge.' },
+]} />
+
+Common gateways: **Kong**, **Ambassador / Emissary**, **AWS API Gateway**, **Azure API Management**, **Apigee**, **Tyk**.
+
+## Designing for Multi-Tenant SaaS
+
+A few API patterns specifically for multi-tenant platforms:
+
+<KeyIdea>
+Make the tenant context explicit at the API layer. Don't infer it from the authenticated user — inject it into every request and validate it on every operation.
+</KeyIdea>
+
+- **Tenant in the URL** (`/v1/tenants/{tenantId}/users`) makes the boundary explicit and prevents accidental cross-tenant access in code.
+- **Tenant in subdomain** (`acme.api.platform.com`) for white-label use cases or for tenant-specific routing.
+- **JWT claims** carry the tenant ID, so even if URL is missed, the gateway can reject mismatches.
+- **Per-tenant rate limiting** at the gateway, with different tiers for different plans.
+
+## Recap
+
+- Three major API styles: REST (resource-oriented, public), gRPC (function-oriented, internal), GraphQL (query-oriented, client-flexible). Most platforms mix.
+- Pick a versioning strategy on day one and apply it consistently.
+- Auth is layered: API keys, OAuth/OIDC, mTLS, RBAC.
+- Cross-cutting concerns — rate limiting, pagination, idempotency, error handling — apply regardless of API style.
+- API gateways centralize routing, auth, rate limiting, and observability for multi-service systems.
+- For multi-tenant SaaS, make tenant context explicit and enforce it at the gateway.
