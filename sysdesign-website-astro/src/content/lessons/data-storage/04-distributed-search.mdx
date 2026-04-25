@@ -1,0 +1,183 @@
+---
+title: Distributed Search
+slug: distributed-search
+order: 4
+section: data-storage
+group: Messaging & Processing
+summary: How distributed search engines work — inverted indexes, sharding, scoring, and the trade-offs of Elasticsearch, OpenSearch, and the modern alternatives.
+readingMinutes: 8
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Search is one of the most-touched features in any SaaS product. As the dataset grows, "just SQL `LIKE`" doesn't cut it. Distributed search engines like Elasticsearch and OpenSearch power the search bars, log analysis, and analytics in much of the modern web.
+
+## The Problem That Search Solves
+
+Relational databases excel at structured queries: "find all users where region = 'EU'." They struggle at:
+
+<IconGrid cols={2} items={[
+  { icon: '📝', title: 'Full-text search', body: 'Match relevance against natural language. "Find docs about distributed transactions" — DB knows nothing about "about" or relevance scoring.' },
+  { icon: '🔤', title: 'Fuzzy matching', body: 'Typos, synonyms, plurals, stemming. "Find Stripe" should also match "stripes" and "Stripe.com."' },
+  { icon: '📊', title: 'Faceted search', body: 'Aggregate filter counts. "127 results in Engineering, 89 in Sales, 23 in Support."' },
+  { icon: '🌍', title: 'Multi-language', body: 'Stop words, tokenization, stemming work differently per language. DBs don\'t.' },
+]} />
+
+## The Inverted Index
+
+The data structure that powers search.
+
+```
+Document 1: "the quick brown fox"
+Document 2: "the lazy brown dog"
+Document 3: "quick foxes are clever"
+
+Inverted index:
+  brown → [1, 2]
+  clever → [3]
+  dog → [2]
+  fox → [1]
+  foxes → [3]
+  lazy → [2]
+  quick → [1, 3]
+  ...
+```
+
+Search for "quick brown" → look up "quick" → [1, 3], "brown" → [1, 2]. Intersection: [1]. Document 1 matches.
+
+This data structure makes "find documents containing word X" a constant-time operation, regardless of total document count.
+
+<KeyIdea>
+The inverted index is one of computer science's most impactful data structures. Every search engine you've ever used — Google, Elasticsearch, internal CRM search, IDE code search — uses some variant.
+</KeyIdea>
+
+## Distributed Search Architecture
+
+For datasets too big for one machine, search engines shard the index across nodes.
+
+```
+   [ Search request ]
+          │
+          ▼
+   [ Coordinator node ]
+          │
+          │ scatter to all shards
+   ┌──────┼──────┬───────┐
+   ▼      ▼      ▼       ▼
+ Shard1 Shard2 Shard3 Shard4
+   │      │      │       │
+   │      │      │       │ (each searches its slice
+   │      │      │       │  and returns top-K)
+   └──────┴──┬───┴───────┘
+              │
+              ▼ gather + re-rank
+       [ Final top-K to client ]
+```
+
+This **scatter-gather** pattern means every query touches every shard. Latency = slowest shard. Throughput = limited by per-shard capacity.
+
+## Major Search Engines
+
+<Compare2
+  left={{
+    label: 'Elasticsearch / OpenSearch',
+    title: 'The dominant choice',
+    body: 'Distributed search built on Apache Lucene. Scales horizontally, rich query DSL, aggregations, geo-search. The default for log analysis (ELK stack) and search-as-a-feature.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Algolia / Meilisearch',
+    title: 'Search-as-a-service',
+    body: 'Hosted, opinionated, fast defaults. Less flexible than ES but dramatically simpler operations. Good fit for product search.',
+    accent: 'emerald',
+  }}
+/>
+
+<Compare2
+  left={{
+    label: 'Solr',
+    title: 'The other Lucene-based option',
+    body: 'More mature than ES in some areas (legal, library, government use). Less popular for new projects but well-supported.',
+    accent: 'amber',
+  }}
+  right={{
+    label: 'Postgres + pg_trgm + tsvector',
+    title: 'Built-in search for modest needs',
+    body: 'Full-text search inside Postgres. Saves running a separate system. Good enough for simple use cases under ~1M docs.',
+    accent: 'rose',
+  }}
+/>
+
+## Scoring and Relevance
+
+Elasticsearch's default scoring uses **BM25** (an evolution of TF-IDF):
+
+- **Term frequency** — how often the search term appears in the doc.
+- **Inverse document frequency** — rare terms count more than common ones.
+- **Field length normalization** — short matches in a field count more than long ones.
+
+For most uses, BM25 defaults are good. For more sophisticated needs:
+
+<IconGrid cols={2} items={[
+  { icon: '⚙️', title: 'Custom field boosts', body: 'Title matches count more than body matches: title^3, body^1.' },
+  { icon: '📊', title: 'Function scoring', body: 'Combine BM25 with custom signals — recency, popularity, user-specific scores.' },
+  { icon: '🤖', title: 'Learning to rank', body: 'ML models that re-rank top-K results based on click logs and user signals.' },
+  { icon: '🧬', title: 'Vector / semantic search', body: 'Use embeddings (from LLMs or specialized models) to find semantically similar content. Combined with BM25 for hybrid search.' },
+]} />
+
+## The Modern Vector Search Wave
+
+LLMs and embedding models have created a new search paradigm: **semantic search** based on vector similarity rather than keyword overlap.
+
+<IconGrid cols={2} items={[
+  { icon: '🧬', title: 'Vector databases', body: 'Pinecone, Weaviate, Qdrant, Milvus. Store and search high-dimensional vectors. Approximate nearest neighbor (ANN) algorithms.' },
+  { icon: '🐘', title: 'Postgres pgvector', body: 'Extension that adds vector type and ANN indexes. Lets your existing Postgres handle embeddings.' },
+  { icon: '🔍', title: 'Elasticsearch dense vectors', body: 'ES added vector search support. Hybrid (BM25 + vector) is the modern best-of-both pattern.' },
+  { icon: '🤝', title: 'RAG (Retrieval-Augmented Generation)', body: 'Search the vector index for relevant chunks, feed them to an LLM as context. The new SaaS-AI standard pattern.' },
+]} />
+
+## Operational Considerations
+
+Running a search engine well is its own discipline.
+
+<IconGrid cols={2} items={[
+  { icon: '📊', title: 'Sharding strategy', body: 'Number of shards per index, replicas per shard. Affects throughput, latency, recovery time. Hard to change post-creation.' },
+  { icon: '🔄', title: 'Reindexing', body: 'Schema changes often require full reindex. Plan for it — design index aliases for cutover.' },
+  { icon: '💾', title: 'Storage tiering', body: 'Recent data on fast SSD; older data on cheaper storage. ES has hot/warm/cold tiers built in.' },
+  { icon: '🔒', title: 'Security', body: 'Multi-tenant SaaS needs per-tenant index isolation. Tenant ID in every query as a filter, or separate indexes per tenant.' },
+]} />
+
+## Indexing Patterns for SaaS
+
+Where does the data come from? Two patterns:
+
+<Compare2
+  left={{
+    label: 'Synchronous indexing',
+    title: 'Write to DB and search engine together',
+    body: 'On every DB write, also update the search index. Simple, but adds latency to writes; failure modes complicated (one succeeds, the other fails).',
+    accent: 'amber',
+  }}
+  right={{
+    label: 'Asynchronous indexing',
+    title: 'Stream changes to search engine',
+    body: 'CDC (Debezium, Postgres logical replication) or outbox pattern. DB writes commit immediately; search index updates a few seconds later. Eventually consistent but cleaner.',
+    accent: 'emerald',
+  }}
+/>
+
+For most SaaS, async indexing is the right answer. Search results that are 5 seconds stale are fine for almost every use case.
+
+## Recap
+
+- Search engines solve what RDBMS struggle with: full-text, fuzzy matching, faceting, multi-language.
+- The inverted index is the core data structure — maps terms to documents.
+- Distributed search uses scatter-gather across shards. Latency = slowest shard.
+- Elasticsearch/OpenSearch dominate. Algolia/Meilisearch for hosted simpler. Postgres FTS for modest scales.
+- Scoring: BM25 by default. Custom boosts, function scoring, LTR for sophistication. Vector search for semantic.
+- Operationally: sharding strategy, reindexing pain, storage tiers, tenant isolation.
+- For SaaS: async indexing via CDC or outbox is usually the right pattern.

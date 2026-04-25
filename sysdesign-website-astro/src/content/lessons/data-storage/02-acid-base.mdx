@@ -1,0 +1,121 @@
+---
+title: ACID vs BASE Trade-offs
+slug: acid-base
+order: 2
+section: data-storage
+group: Database Design
+summary: Two paradigms for data consistency. What ACID and BASE actually guarantee, when each applies, and how modern systems blend them.
+readingMinutes: 7
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+ACID and BASE are two paradigms describing how databases handle concurrent operations and consistency. Understanding both is essential for choosing the right database — and for designing operations within whichever database you've picked.
+
+## ACID: The Classic Guarantees
+
+ACID describes what relational databases (and now many NewSQL systems) promise for transactions.
+
+<IconGrid cols={2} items={[
+  { icon: '⚛️', title: 'Atomicity', body: 'A transaction is all-or-nothing. Either every operation in it succeeds, or none of them are applied.' },
+  { icon: '✅', title: 'Consistency', body: 'A transaction transitions the database from one valid state to another. Constraints (FKs, CHECKs) must hold before and after.' },
+  { icon: '🔒', title: 'Isolation', body: 'Concurrent transactions don\'t interfere with each other. Different isolation levels offer different guarantees (next lesson).' },
+  { icon: '💾', title: 'Durability', body: 'Once committed, the change persists — even through power loss, crashes, hardware failures.' },
+]} />
+
+<Callout type="info" title="ACID is about transactional integrity, not data correctness">
+ACID doesn't promise your code is correct. It promises that if your code starts a transaction, all the operations in it either happen together or don't happen at all. Application bugs that violate business rules are not an ACID concern.
+</Callout>
+
+### The cost of ACID
+
+Strong guarantees come at a price:
+
+- **Locking and coordination** — concurrent transactions must serialize where they conflict.
+- **Single-master writes** in many implementations — limits horizontal write scaling.
+- **Slower than asynchronous alternatives** — durability requires fsync; isolation requires locks.
+
+For some workloads, this is a fair price. For others, it's the wrong trade-off.
+
+## BASE: The Distributed-System Alternative
+
+BASE emerged as the alternative for systems that prioritize availability and scale over strict transactional integrity.
+
+<IconGrid cols={3} items={[
+  { icon: '🆗', title: 'Basically Available', body: 'The system remains available — possibly with reduced functionality — even during failures.' },
+  { icon: '🌊', title: 'Soft state', body: 'State may change over time without explicit input, due to eventual consistency mechanisms.' },
+  { icon: '⏳', title: 'Eventual consistency', body: 'Without further updates, all replicas eventually converge. No strict timing guarantee.' },
+]} />
+
+BASE accepts temporary inconsistency in exchange for availability and horizontal scalability. It's the natural model for distributed systems where strict ACID would require painful coordination.
+
+## ACID vs. BASE Side by Side
+
+<Compare2
+  left={{
+    label: 'ACID',
+    title: 'Strong consistency, harder scaling',
+    body: 'Right for: financial transactions, ledgers, inventory, anywhere correctness matters more than uptime. Postgres, MySQL, Spanner, CockroachDB.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'BASE',
+    title: 'High availability, eventual consistency',
+    body: 'Right for: social feeds, recommendations, analytics, IoT ingestion, anywhere recent staleness is fine. Cassandra, DynamoDB, MongoDB, S3.',
+    accent: 'emerald',
+  }}
+/>
+
+## When the Choice Matters
+
+The key question is **what business invariants must hold**.
+
+<IconGrid cols={2} items={[
+  { icon: '💰', title: 'Hard invariants → ACID', body: 'Account balances must never go negative. Order quantities must match inventory. Bills must equal usage. Use ACID systems with serializable transactions.' },
+  { icon: '👍', title: 'Soft invariants → BASE', body: 'Following count is approximately right. Like count is eventually right. Recommendation scores are eventually consistent. BASE systems handle this fine.' },
+]} />
+
+## Modern Systems Blend Both
+
+Real production systems don't pick one paradigm. They use ACID where it matters and BASE where it doesn't, often in the same product.
+
+<KeyIdea>
+The architectural skill is **identifying which operations need which guarantees**. Payment processing → ACID. Notification delivery → BASE. User feed → BASE with read-your-own-writes optimization. Activity log → BASE with eventual consistency.
+</KeyIdea>
+
+### Patterns for blending
+
+<IconGrid cols={2} items={[
+  { icon: '🎚️', title: 'Tunable consistency', body: 'Cassandra, DynamoDB, Mongo: per-query consistency levels. ONE for fast reads, QUORUM for stronger reads, ALL for the strongest.' },
+  { icon: '✍️', title: 'Async writes', body: 'Write to ACID DB synchronously; replicate to caches and search indexes asynchronously. Reads from caches accept eventual consistency.' },
+  { icon: '👤', title: 'Read-your-own-writes', body: 'After a write, route reads to the primary for a few seconds (cookie-driven). User sees their own changes immediately even if BASE underneath.' },
+  { icon: '🔄', title: 'CRDT for shared state', body: 'Conflict-free replicated data types for collaborative features. Math-backed convergence without coordination.' },
+]} />
+
+## Sagas: ACID-like Workflows in BASE Systems
+
+When a business operation spans multiple services (each with its own database), you can't use a single ACID transaction. The **saga pattern** chains local transactions with compensating actions.
+
+```
+1. Reserve inventory (ACID inside Inventory Service)
+2. Charge payment (ACID inside Payment Service)
+3. Schedule delivery (ACID inside Shipping Service)
+
+Failure at step 3?
+→ Compensate step 2: refund payment
+→ Compensate step 1: release inventory
+```
+
+The result: business consistency through a sequence of local ACID transactions plus compensations, instead of one impossible distributed transaction. We covered this in [EDA, CQRS & Sagas](/lesson/architectural-patterns/eda).
+
+## Recap
+
+- ACID = Atomicity, Consistency, Isolation, Durability. The classic transactional guarantees.
+- BASE = Basically Available, Soft state, Eventual consistency. The distributed-systems alternative.
+- ACID is right when correctness matters more than availability. BASE is right when availability matters more than instant consistency.
+- Modern systems blend both — ACID for hard invariants, BASE for everything else.
+- Tunable consistency, async writes, read-your-own-writes, and sagas are the practical blending patterns.

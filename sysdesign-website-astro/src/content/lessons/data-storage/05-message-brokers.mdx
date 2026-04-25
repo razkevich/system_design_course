@@ -1,0 +1,177 @@
+---
+title: Message Queue Systems
+slug: message-brokers
+order: 5
+section: data-storage
+group: Messaging & Processing
+summary: The major message broker categories and when each fits. Queues vs. streams, RabbitMQ vs. Kafka vs. SQS, and the architectural patterns they support.
+readingMinutes: 9
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Message brokers are how loosely-coupled services exchange data without holding each other's network connections. They're the substrate that makes asynchronous architectures possible — and the source of half the operational complexity in distributed systems.
+
+This lesson is the working vocabulary: queue vs. stream, push vs. pull, the major brokers, and when to use which.
+
+## Two Paradigms
+
+Most message systems fall into one of two categories:
+
+<Compare2
+  left={{
+    label: 'Queue (Job Queue)',
+    title: 'Each message goes to one consumer',
+    body: 'Producer pushes work; one of N workers picks it up and processes. Once consumed, message is gone. Used for task queues, background jobs, work distribution.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Stream (Log)',
+    title: 'Multiple consumers see all messages',
+    body: 'Producer appends to a log; many consumers each track their own position. Multiple independent reads of the same data. Used for event sourcing, analytics, fan-out.',
+    accent: 'emerald',
+  }}
+/>
+
+<KeyIdea>
+The choice between queue and stream isn't about technology — it's about whether you have one consumer or many. A queue distributes work; a stream broadcasts events.
+</KeyIdea>
+
+## The Major Brokers
+
+### RabbitMQ — The Classic Queue
+
+<IconGrid cols={2} items={[
+  { icon: '🐰', title: 'AMQP-based', body: 'Mature, feature-rich. Advanced routing (exchanges, bindings, topic routing), priorities, TTLs, dead-letter queues.' },
+  { icon: '🎯', title: 'Best fit', body: 'Job queues, work distribution, RPC patterns, complex routing logic. When the consumer count and message count are both modest.' },
+  { icon: '📈', title: 'Scale ceiling', body: 'Tens of thousands of msg/sec per node. Beyond that, things get hard.' },
+  { icon: '⚖️', title: 'Trade-off', body: 'Rich features at cost of operational complexity. Cluster failover semantics are subtle.' },
+]} />
+
+### Apache Kafka — The Streaming Standard
+
+<IconGrid cols={2} items={[
+  { icon: '🌊', title: 'Append-only log', body: 'Topic = partitioned, replicated, durable log. Consumers read at their own pace; can rewind and replay.' },
+  { icon: '⚡', title: 'High throughput', body: 'Millions of messages per second per cluster. Used by LinkedIn, Netflix, Uber, every modern SaaS.' },
+  { icon: '🎯', title: 'Best fit', body: 'Event streaming, analytics pipelines, audit logs, fan-out to many consumers, anything where you might want to replay.' },
+  { icon: '🛠️', title: 'Operational tax', body: 'Real cluster ops. Managed offerings (Confluent Cloud, AWS MSK) reduce but don\'t eliminate this.' },
+]} />
+
+We have an entire deep-dive lesson coming on Kafka.
+
+### Amazon SQS / Google Pub/Sub / Azure Service Bus
+
+<IconGrid cols={2} items={[
+  { icon: '☁️', title: 'Fully managed', body: 'No clusters to operate. Pay per request. Scale handled by the cloud provider.' },
+  { icon: '📋', title: 'SQS', body: 'AWS\'s queue service. Standard (high throughput, at-least-once) or FIFO (ordered, exactly-once). Tightly integrated with Lambda.' },
+  { icon: '📢', title: 'Pub/Sub', body: 'Google\'s pub/sub. Globally distributed. At-least-once delivery; exactly-once available with Pub/Sub Lite.' },
+  { icon: '🎯', title: 'Best fit', body: 'When you want messaging without operational overhead. Sufficient for most SaaS use cases.' },
+]} />
+
+### Apache Pulsar — The Modern Hybrid
+
+<IconGrid cols={2} items={[
+  { icon: '🔀', title: 'Both queue and stream', body: 'Different subscription types (Exclusive, Shared, Failover, Key_Shared) give you queue semantics or stream semantics on the same broker.' },
+  { icon: '🌍', title: 'Geo-replication built in', body: 'First-class multi-region. Each cluster replicates to others without external tooling.' },
+  { icon: '🏘️', title: 'Multi-tenancy', body: 'Native multi-tenant — tenant/namespace as first-class concepts. Strong fit for SaaS platforms.' },
+  { icon: '🎯', title: 'Best fit', body: 'When you want Kafka-like throughput, RabbitMQ-like flexibility, native geo and multi-tenancy. The newer alternative for greenfield deployments.' },
+]} />
+
+## Push vs. Pull
+
+How do consumers receive messages?
+
+<Compare2
+  left={{
+    label: 'Push',
+    title: 'Broker delivers to consumer',
+    body: 'RabbitMQ default, SQS\'s long polling. Broker tracks consumer state. Simple consumer code. Risk: broker overwhelms slow consumer (need flow control).',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Pull',
+    title: 'Consumer fetches from broker',
+    body: 'Kafka, Pulsar. Consumer controls pace. Easy back-pressure. Stateless broker for that consumer. Slight latency overhead from polling.',
+    accent: 'emerald',
+  }}
+/>
+
+Modern systems mostly use **pull-based** models for the back-pressure benefits.
+
+## Delivery Semantics
+
+What guarantees does the broker provide about message delivery?
+
+<IconGrid cols={3} items={[
+  { icon: '👻', title: 'At most once', body: 'Messages may be lost on failure. Simple, but rare in production.' },
+  { icon: '🔁', title: 'At least once', body: 'Default for most systems. Messages can be duplicated. Consumers must be idempotent.' },
+  { icon: '💎', title: 'Exactly once', body: 'Theoretically perfect. Hard to implement; often unnecessary. We have a whole lesson on this.' },
+]} />
+
+<Callout type="info" title="Idempotency is the practical answer">
+At-least-once + idempotent consumers ≈ exactly-once for practical purposes. Idempotency keys (Stripe-style), deduplication caches, or just "this operation is naturally idempotent" — pick whichever fits.
+</Callout>
+
+## Ordering
+
+When does message order matter?
+
+<Compare2
+  left={{
+    label: 'No ordering',
+    title: 'Maximum throughput',
+    body: 'Messages can be processed in parallel. Workers pull from a queue freely. Right when each message is independent.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Ordered by partition',
+    title: 'Practical compromise',
+    body: 'Kafka partitions: strict order within a key (e.g., user ID), parallelism across keys. The right answer for most workloads where order matters.',
+    accent: 'indigo',
+  }}
+/>
+
+**Global ordering** is expensive and usually unnecessary. Most "we need ordering" requirements are actually "we need ordering per entity" — which partition keys give you.
+
+## Common Patterns
+
+<IconGrid cols={2} items={[
+  { icon: '👷', title: 'Work queue', body: 'Many workers pull from one queue. Each message processed once. Used for background jobs, image processing, email sending.' },
+  { icon: '📢', title: 'Pub/sub fan-out', body: 'One publish, many subscribers. Each subscriber sees all messages. Used for notifications, cache invalidation, analytics.' },
+  { icon: '🔄', title: 'Request/reply', body: 'Async RPC. Producer sends a message with a reply queue; consumer responds to that queue. RabbitMQ is good for this; Kafka is awkward.' },
+  { icon: '🎯', title: 'Routing', body: 'Messages routed to different queues based on content. RabbitMQ exchange + binding rules. Useful for complex business workflows.' },
+  { icon: '🪦', title: 'Dead-letter queue', body: 'Messages that fail processing repeatedly go here. Don\'t block the main queue. Required for production-grade handling.' },
+  { icon: '🐢', title: 'Delay queues', body: 'Process this message in 5 minutes. SQS supports natively; Kafka requires patterns or extensions.' },
+]} />
+
+## Choosing for SaaS
+
+| Use case | Default choice |
+| --- | --- |
+| Background jobs / task queue | RabbitMQ or SQS |
+| Event streaming, analytics, audit log | Kafka or Pulsar |
+| Cross-region pub/sub | Google Pub/Sub or Pulsar |
+| AWS-native, simple | SQS + SNS |
+| GCP-native, simple | Pub/Sub |
+| Both queue and stream needed | Pulsar (or Kafka with workarounds) |
+| Hosted, low operational overhead | SQS / Pub/Sub / Confluent Cloud |
+
+For most SaaS, the practical answer is:
+
+- **SQS / Cloud Pub/Sub** for simple queue / pub-sub work.
+- **Kafka (managed)** when streaming is core to the architecture.
+- **Both** when you have both kinds of workloads — they coexist fine.
+
+## Recap
+
+- Two paradigms: queues distribute work; streams broadcast events.
+- Major brokers: RabbitMQ (queues, rich features), Kafka (streaming standard), SQS / Pub/Sub (managed simplicity), Pulsar (modern hybrid).
+- Push vs. pull — modern systems prefer pull for back-pressure.
+- Delivery semantics: at-most-once, at-least-once (default), exactly-once. Idempotency is the practical answer.
+- Ordering: partition-based ordering is the practical compromise. Global ordering is rarely actually needed.
+- Common patterns: work queue, pub/sub fan-out, request/reply, routing, dead-letter, delay queues.
+- Choose by use case; don't try to make one broker do everything.

@@ -1,0 +1,223 @@
+---
+title: Kafka Deep Dive
+slug: kafka-deep-dive
+order: 8
+section: data-storage
+group: Messaging & Processing
+summary: How Kafka actually works — partitions, replication, producers, consumers, transactions. The mental model for using it well in production SaaS.
+readingMinutes: 12
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Apache Kafka is the streaming standard. It powers event pipelines at LinkedIn (where it was created), Netflix, Uber, Airbnb, and basically every modern SaaS at scale. Understanding how Kafka actually works under the hood is what separates "I use Kafka" from "I run Kafka well."
+
+## The Core Abstraction: Distributed, Partitioned, Replicated Log
+
+Kafka is fundamentally a **commit log**: an ordered, immutable sequence of records. The clever part is that this log is **distributed**, **partitioned**, and **replicated** for scale and fault tolerance.
+
+<IconGrid cols={2} items={[
+  { icon: '📚', title: 'Topic', body: 'A named stream. Logs of related events. "user-events", "orders", "payments-completed".' },
+  { icon: '🔪', title: 'Partition', body: 'A topic is split into N partitions. Each partition is an ordered, append-only log file. Parallelism unit.' },
+  { icon: '🔄', title: 'Replica', body: 'Each partition has multiple copies on different brokers. One leader, others are followers.' },
+  { icon: '🏢', title: 'Broker', body: 'A Kafka server. A cluster has many brokers. Each broker hosts some partition leaders and some followers.' },
+]} />
+
+```
+Topic: "orders" (3 partitions, replication factor 3)
+
+Partition 0:  [ msg0 → msg1 → msg2 → ... ]    Leader: Broker 1   Followers: Broker 2, 3
+Partition 1:  [ msg0 → msg1 → msg2 → ... ]    Leader: Broker 2   Followers: Broker 1, 3
+Partition 2:  [ msg0 → msg1 → msg2 → ... ]    Leader: Broker 3   Followers: Broker 1, 2
+```
+
+<KeyIdea>
+The partition is the unit of parallelism. Within a partition, messages are strictly ordered. Across partitions, no ordering guarantee. This is how Kafka scales horizontally — more partitions = more parallelism.
+</KeyIdea>
+
+## Producers
+
+A producer publishes messages to topics. It chooses the partition based on:
+
+<IconGrid cols={2} items={[
+  { icon: '🎯', title: 'Key-based partitioning', body: 'Messages with the same key always go to the same partition. Default Kafka behavior. Perfect for "all events for user X are ordered."' },
+  { icon: '🎰', title: 'Round-robin', body: 'No key → distribute evenly across partitions. Maximum throughput, no per-key ordering.' },
+  { icon: '🛠️', title: 'Custom partitioner', body: 'Plug in your own logic. Multi-tenant SaaS often partitions by tenant ID for isolation.' },
+]} />
+
+### Producer acks
+
+How many replicas must acknowledge before the producer considers the write successful?
+
+<Compare2
+  left={{
+    label: 'acks=0',
+    title: 'Fire and forget',
+    body: 'No acknowledgment. Fastest. Possible message loss. Almost never used.',
+    accent: 'rose',
+  }}
+  right={{
+    label: 'acks=1',
+    title: 'Leader ack only',
+    body: 'Producer waits for leader to write. If leader crashes before replication, message lost. Default in older Kafka.',
+    accent: 'amber',
+  }}
+/>
+
+<Compare2
+  left={{
+    label: 'acks=all (or -1)',
+    title: 'Wait for in-sync replicas',
+    body: 'Producer waits for all in-sync replicas (ISR) to ack. No data loss as long as one replica survives. The right default for production.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'min.insync.replicas',
+    title: 'Minimum ISR for writes',
+    body: 'Together with acks=all, defines durability. Setting min.insync.replicas=2 with replication factor 3 means writes succeed only if at least 2 replicas are healthy.',
+    accent: 'indigo',
+  }}
+/>
+
+### Idempotent producer
+
+When enabled (`enable.idempotence=true`), the producer attaches a sequence number to each message. The broker rejects duplicates from the same producer. Combined with `acks=all`, you get **exactly-once writes within Kafka**.
+
+## Consumers
+
+A consumer reads messages from topics. The key concepts:
+
+<IconGrid cols={2} items={[
+  { icon: '👥', title: 'Consumer group', body: 'A logical group of consumers sharing the work. Each partition is assigned to exactly one consumer in the group at a time.' },
+  { icon: '📍', title: 'Offset', body: 'Consumer\'s current position in a partition. Stored in __consumer_offsets topic. Survives consumer restarts.' },
+  { icon: '⚖️', title: 'Rebalance', body: 'When consumers join or leave a group, partitions are reassigned. Pause-the-world by default; cooperative rebalancing reduces this.' },
+  { icon: '🔢', title: 'Parallelism cap', body: 'A consumer group can have at most N consumers, where N = number of partitions. More consumers than partitions = idle consumers.' },
+]} />
+
+### Consumer group example
+
+```
+Topic: "orders" (4 partitions)
+
+Consumer Group "order-processor":
+  - Consumer A → Partition 0, 1
+  - Consumer B → Partition 2, 3
+
+Consumer Group "analytics":
+  - Consumer X → Partition 0, 1, 2, 3   (one consumer reads everything)
+
+Both groups receive all messages independently.
+```
+
+This is what makes Kafka different from a queue: **multiple consumer groups read the same data independently**. Each group tracks its own position. Want to add a new pipeline tomorrow? Spin up a new consumer group; it reads from the beginning (or wherever you want).
+
+## Replication and Fault Tolerance
+
+For each partition, one broker is the **leader**; others are **followers**. All reads and writes go through the leader. Followers replicate from the leader.
+
+### In-sync replicas (ISR)
+
+A follower is "in-sync" if it has caught up with the leader within a configurable threshold. Only ISRs are eligible for leadership.
+
+<Compare2
+  left={{
+    label: 'Healthy cluster',
+    title: 'ISR includes all replicas',
+    body: 'All followers caught up. Any can become leader on failure. Maximum fault tolerance.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Degraded cluster',
+    title: 'ISR shrinks',
+    body: 'Some followers fall behind (network issues, disk slow). They drop out of ISR. Cluster keeps running but with reduced fault tolerance.',
+    accent: 'amber',
+  }}
+/>
+
+### Leader election
+
+When a leader fails, a follower from ISR is promoted. With `unclean.leader.election.enable=false` (recommended), only ISRs can be elected — preventing data loss at the cost of availability.
+
+## Storage
+
+Kafka writes data to disk. The trick: **sequential disk writes are nearly as fast as memory writes** because of OS page cache and disk read-ahead.
+
+<IconGrid cols={2} items={[
+  { icon: '💾', title: 'Log segments', body: 'Each partition is written as a sequence of segment files. New writes append to the active segment.' },
+  { icon: '🗑️', title: 'Retention', body: 'Old segments are deleted by time (default: 7 days) or size. Configurable per topic.' },
+  { icon: '🧹', title: 'Log compaction', body: 'Alternative to time-based retention. Keeps the latest message per key, deletes older ones. Used for "current state" topics.' },
+  { icon: '🚀', title: 'Zero-copy', body: 'Linux sendfile(2) lets Kafka transfer log data from disk to network without copying through user space. Massive throughput gains.' },
+]} />
+
+## Kafka Streams and KSQL
+
+Kafka isn't just a transport — it has built-in stream processing:
+
+<Compare2
+  left={{
+    label: 'Kafka Streams',
+    title: 'Java/Scala library',
+    body: 'Embedded in your app. Stateful operators (joins, aggregations, windows). State stored in local RocksDB + replicated via changelog topics.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'ksqlDB',
+    title: 'SQL-like processing',
+    body: 'Run SQL queries against Kafka topics. CREATE STREAM, CREATE TABLE, JOIN, GROUP BY. For analysts and SQL-friendly teams.',
+    accent: 'emerald',
+  }}
+/>
+
+For more sophisticated stream processing (or polyglot environments), use Flink with Kafka as input/output.
+
+## Kafka Connect
+
+Pre-built connectors for getting data in and out of Kafka:
+
+<IconGrid cols={2} items={[
+  { icon: '⬇️', title: 'Source connectors', body: 'Pull data from external systems into Kafka. Debezium for CDC from databases. JDBC, MongoDB, S3 connectors. Hundreds available.' },
+  { icon: '⬆️', title: 'Sink connectors', body: 'Push data from Kafka to external systems. Snowflake, BigQuery, Elasticsearch, S3. Most have exactly-once semantics built in.' },
+]} />
+
+Connect handles offset management, error handling, exactly-once. You write configuration; the connectors handle the rest.
+
+## Operational Realities
+
+<Callout type="warning" title="Running Kafka well is its own discipline">
+Production Kafka requires understanding ZooKeeper (or KRaft in modern versions), JVM tuning, OS tuning, disk layout, network topology, monitoring (consumer lag, ISR shrinks, log size), capacity planning, and upgrade procedures. The flat learning curve is much steeper than "just use it."
+</Callout>
+
+For most teams, **managed Kafka** is the right call:
+
+<IconGrid cols={2} items={[
+  { icon: '☁️', title: 'Confluent Cloud', body: 'The Kafka company\'s managed offering. Multi-cloud (AWS, GCP, Azure). Serverless tier available.' },
+  { icon: '🔵', title: 'AWS MSK', body: 'AWS-managed Kafka. Tighter AWS integration. Less feature-rich than Confluent.' },
+  { icon: '🌟', title: 'Aiven', body: 'Multi-cloud managed Kafka. Strong observability and integration story.' },
+  { icon: '🏠', title: 'Self-hosted', body: 'When you have specific compliance requirements or you\'re at scale where managed pricing hurts. Strimzi (K8s operator) is the modern way.' },
+]} />
+
+## Multi-Tenant SaaS Patterns with Kafka
+
+A few patterns specifically for SaaS:
+
+<IconGrid cols={2} items={[
+  { icon: '🏷️', title: 'Topic-per-tenant', body: 'Strong isolation, easy GDPR. Doesn\'t scale past hundreds of tenants — Kafka has a topic count limit.' },
+  { icon: '🔑', title: 'Tenant-key partitioning', body: 'Single topic, partition key = tenant ID. Scales to many tenants. Doesn\'t isolate at storage level.' },
+  { icon: '🎯', title: 'Tier-based topics', body: 'Free tier on shared topics; enterprise tier on dedicated topics with higher retention. Common B2B pattern.' },
+  { icon: '🌐', title: 'Multi-region replication', body: 'MirrorMaker 2 or Confluent Replicator. Cross-DC replication for DR or geo-distribution.' },
+]} />
+
+## Recap
+
+- Kafka is a distributed, partitioned, replicated commit log.
+- Topics → partitions (parallelism) → replicas (durability).
+- Producers choose partitions by key (ordered) or round-robin (max throughput). `acks=all` for durability.
+- Consumer groups distribute work; multiple groups read the same data independently.
+- ISR + min.insync.replicas + acks=all = production-grade durability.
+- Kafka Streams / ksqlDB for in-Kafka stream processing. Connect for getting data in/out.
+- Managed Kafka (Confluent, MSK, Aiven) is the right call for most teams.
+- For SaaS multi-tenancy: topic-per-tenant for isolation, key-partitioning for scale, tier-based for hybrid models.

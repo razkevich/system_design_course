@@ -1,0 +1,173 @@
+---
+title: Big Data Processing
+slug: big-data
+order: 7
+section: data-storage
+group: Messaging & Processing
+summary: Batch and streaming at scale — Spark, Flink, Beam, and the modern data stack. The architectural patterns that move TB-scale data through pipelines.
+readingMinutes: 8
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+"Big data" used to mean Hadoop clusters and bespoke MapReduce code. Today it means cloud data warehouses, managed Spark, streaming engines, and a mature ecosystem that's accessible without building a Hadoop cluster.
+
+This lesson surveys the patterns and tools for processing data at scale — TB to PB — and how they fit into modern SaaS data platforms.
+
+## The Two Modes
+
+<Compare2
+  left={{
+    label: 'Batch processing',
+    title: 'Process bounded data periodically',
+    body: 'Run analyses on yesterday\'s data overnight. ETL pipelines, ML training, compliance reports. Simple programming model, high throughput, latency in hours.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Stream processing',
+    title: 'Process unbounded data continuously',
+    body: 'Process events as they arrive. Real-time dashboards, fraud detection, personalization. Complex programming model (windowing, late events), latency in seconds-minutes.',
+    accent: 'emerald',
+  }}
+/>
+
+<KeyIdea>
+The line between batch and streaming is blurring. Modern unified frameworks (Apache Beam, Flink, Spark Structured Streaming) treat batch as a special case of streaming — same code, different runtime configuration.
+</KeyIdea>
+
+## Major Frameworks
+
+### Apache Spark — The Workhorse
+
+<IconGrid cols={2} items={[
+  { icon: '⚡', title: 'In-memory computation', body: '10-100x faster than Hadoop MapReduce. Resilient Distributed Datasets (RDDs) cache intermediate results.' },
+  { icon: '🌐', title: 'Polyglot APIs', body: 'Scala (native), Python (PySpark), R, Java, SQL. PySpark is what most people use today.' },
+  { icon: '📦', title: 'Unified APIs', body: 'Same code for batch (DataFrame), streaming (Structured Streaming), ML (MLlib), graph (GraphX), SQL.' },
+  { icon: '☁️', title: 'Managed offerings', body: 'Databricks (the company spun out of the Spark team), AWS EMR, Google Dataproc. Spark without managing your own cluster.' },
+]} />
+
+### Apache Flink — The Streaming Specialist
+
+<IconGrid cols={2} items={[
+  { icon: '🌊', title: 'Streaming-first design', body: 'Built around event time, watermarks, exactly-once semantics. Often considered the strongest streaming engine.' },
+  { icon: '🎯', title: 'Low latency', body: 'Sub-second latency at scale. Used by Netflix, Uber, Alibaba for real-time personalization and fraud detection.' },
+  { icon: '🎚️', title: 'Stateful operators', body: 'First-class state management with checkpointing. Complex stateful streaming operations work cleanly.' },
+  { icon: '🛠️', title: 'Steeper learning curve', body: 'Concepts (event time, watermarks, windows) take time. Worth it when streaming is the core workload.' },
+]} />
+
+### Apache Beam — The Portable API
+
+<IconGrid cols={2} items={[
+  { icon: '✈️', title: 'Write once, run anywhere', body: 'Beam pipelines run on Spark, Flink, Google Dataflow, AWS Kinesis Data Analytics. Avoid lock-in to a single runtime.' },
+  { icon: '🎭', title: 'Unified batch + streaming', body: 'Same model for both. The cleanest realization of "batch as streaming with bounded source."' },
+  { icon: '🎯', title: 'Best fit', body: 'Greenfield projects where future portability matters. Multi-cloud teams. Teams that want flexibility without rewriting pipelines.' },
+]} />
+
+### Cloud Data Warehouses
+
+<IconGrid cols={2} items={[
+  { icon: '❄️', title: 'Snowflake', body: 'Decoupled compute/storage. Per-query cluster sizing. Multi-cloud (AWS/Azure/GCP). Often the modern default for analytical workloads.' },
+  { icon: '🔍', title: 'BigQuery', body: 'Google Cloud\'s serverless warehouse. Pay per query. Column-oriented, massively parallel.' },
+  { icon: '🔴', title: 'Redshift', body: 'AWS warehouse. Newer generation (RA3) decouples compute/storage. Mature ecosystem; tight AWS integration.' },
+  { icon: '⚡', title: 'ClickHouse', body: 'Open-source columnar OLAP. Extremely fast for analytical queries. Self-hosted or managed (ClickHouse Cloud, Aiven).' },
+]} />
+
+For most SaaS, the analytical workload lives in a cloud DW (Snowflake/BigQuery/Redshift) rather than a Spark cluster. Spark/Flink are reserved for things the warehouse can't do efficiently.
+
+## Architectural Patterns
+
+### Lambda Architecture (Classic)
+
+```
+              ┌─→ [ Batch layer (Spark) ] ─→ [ Batch view ]
+[ Source ] ──┤                                      ↘
+              └─→ [ Speed layer (streaming) ] → [ Speed view ]
+                                                      ↓
+                                              [ Serving layer ]
+```
+
+Two parallel pipelines: batch for accuracy and reprocessing, speed for low latency. Outputs merged at query time. Two codebases, double maintenance.
+
+### Kappa Architecture (Modern)
+
+```
+[ Source ] → [ Stream processing (Flink) ] → [ State / View ]
+```
+
+Single streaming pipeline. Treats batch as a bounded stream. Reprocessing means replaying the stream from the beginning. Simpler operationally; requires processing engine that can handle replay.
+
+### Modern Data Stack (Pragmatic)
+
+```
+[ Sources ]
+    │
+    ▼ (Fivetran, Airbyte, custom CDC)
+[ Cloud Warehouse: Snowflake/BigQuery/Redshift ]
+    │
+    ├─► [ Transformation: dbt (SQL) ]
+    │
+    ├─► [ Reverse ETL (Hightouch, Census) ] → [ Operational systems ]
+    │
+    ├─► [ BI (Looker, Mode, Tableau) ]
+    │
+    └─► [ ML platforms (Snowpark, BigQuery ML, SageMaker) ]
+```
+
+The pattern most modern SaaS uses. The warehouse is the central hub; tools around it handle ingestion, transformation, activation, BI, ML. Less ops than Spark/Flink for analytical use cases.
+
+## ETL vs. ELT
+
+<Compare2
+  left={{
+    label: 'ETL (classic)',
+    title: 'Extract → Transform → Load',
+    body: 'Transform data before loading into the warehouse. Fits when storage was expensive and compute cheap (the historical default).',
+    accent: 'amber',
+  }}
+  right={{
+    label: 'ELT (modern)',
+    title: 'Extract → Load → Transform',
+    body: 'Load raw data first, transform in-warehouse with SQL. Cloud warehouses make this cheap. dbt is the canonical tool. Easier to iterate, better lineage.',
+    accent: 'emerald',
+  }}
+/>
+
+For most modern SaaS data stacks, ELT with dbt is the right answer. Raw data in the warehouse is reusable; SQL-defined transformations are version-controlled and testable.
+
+## Streaming Concepts You'll Need
+
+<IconGrid cols={2} items={[
+  { icon: '⏱️', title: 'Event time vs. processing time', body: 'Event time = when the event actually happened. Processing time = when the system processes it. Almost always you want event time.' },
+  { icon: '🪟', title: 'Windows', body: 'Group events into bounded sets — tumbling (fixed), sliding (overlapping), session (gap-based). The fundamental aggregation primitive in streaming.' },
+  { icon: '🌊', title: 'Watermarks', body: 'Heuristic to determine "we\'ve probably seen all events up to time T." Trade-off: late events vs. result latency.' },
+  { icon: '💾', title: 'State', body: 'Aggregations require state. Stream processors must checkpoint state for failure recovery and exactly-once semantics.' },
+  { icon: '🚀', title: 'Backfilling', body: 'Reprocess historical data through a streaming pipeline. Requires storage that lets you rewind (Kafka, S3 with time-partitioning).' },
+  { icon: '🔄', title: 'Compacted topics', body: 'Kafka feature that keeps the latest value per key. Useful for current-state caches built from streams.' },
+]} />
+
+## Choosing for SaaS
+
+| Use case | Default choice |
+| --- | --- |
+| Analytical queries on TB data | Cloud warehouse (Snowflake/BigQuery/Redshift) |
+| Heavy ETL transforms | dbt or Spark on managed (Databricks/EMR) |
+| Real-time analytics, fraud detection | Flink (managed via Confluent or Ververica) |
+| Stream processing in AWS | Kinesis Data Analytics or Flink on EKS |
+| Stream processing in GCP | Dataflow (Beam) |
+| Greenfield data platform | Modern data stack (warehouse + dbt + Fivetran) |
+
+For most SaaS, the analytical workload should live in a cloud warehouse. Reach for streaming engines (Flink, Spark Streaming) when you have genuine real-time requirements.
+
+## Recap
+
+- Two modes: batch (bounded data, periodic) vs. streaming (unbounded, continuous). Modern frameworks unify both.
+- Major frameworks: Spark (workhorse), Flink (streaming specialist), Beam (portable API).
+- Cloud warehouses (Snowflake, BigQuery, Redshift) handle most analytical workloads.
+- Architectural patterns: Lambda (two pipelines), Kappa (one streaming pipeline), Modern Data Stack (warehouse-centric).
+- ELT > ETL in modern stacks. dbt is the SQL transformation standard.
+- Streaming concepts: event time, windows, watermarks, state, backfilling.
+- For SaaS: cloud warehouse first. Streaming engines for real-time needs.

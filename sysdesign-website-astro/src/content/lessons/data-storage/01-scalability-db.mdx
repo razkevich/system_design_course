@@ -1,0 +1,181 @@
+---
+title: Scalability and Data Modeling in Databases
+slug: scalability-db
+order: 1
+section: data-storage
+group: Database Design
+summary: How to think about database scalability — workload patterns, data models, and the trade-offs between relational, document, wide-column, and NoSQL choices.
+readingMinutes: 10
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Database scalability isn't just about handling more data — it's about maintaining performance, reliability, and reasonable cost as the system grows. Real database choices involve fundamental trade-offs between consistency, performance, and complexity.
+
+This lesson is the framework for evaluating database choices: workload patterns first, then data model, then scaling approach.
+
+## The Forces in Tension
+
+<IconGrid cols={2} items={[
+  { icon: '📖', title: 'Read vs. write patterns', body: 'Read-heavy (content, dashboards) vs. write-heavy (IoT, logs, events). Each has different scaling strategies.' },
+  { icon: '⬆️↔️', title: 'Vertical vs. horizontal', body: 'Bigger boxes (simpler, hard limits) vs. more boxes (harder, scales further).' },
+  { icon: '🔁🔪', title: 'Replication vs. sharding', body: 'Replication scales reads. Sharding scales writes. Production typically combines both.' },
+  { icon: '🤝⚡', title: 'Consistency vs. performance', body: 'Strong consistency = synchronization overhead. Eventual consistency = faster, but stale views.' },
+]} />
+
+## Relational Databases — Still the Default
+
+Predictability is the strength. The schema is upfront and explicit. SQL is one of the most powerful query languages ever designed.
+
+Modern Postgres and MySQL have evolved past the "NoSQL killers" — they support JSON documents, full-text search, geospatial, time-series. For most SaaS apps, **start with Postgres**.
+
+### Scaling reads
+
+Postgres is single-master for writes; reads scale via streaming replication. Multiple read replicas at 10-50ms latency, thousands of QPS each.
+
+<IconGrid cols={2} items={[
+  { icon: '🌟', title: 'AWS Aurora', body: 'Postgres/MySQL with separated compute/storage. Up to 15 read replicas, 3-5x throughput of vanilla Postgres. Aurora Serverless v2 for variable load.' },
+  { icon: '🏘️', title: 'Citus / Vitess', body: 'Distribute tables across nodes. Citus for Postgres, Vitess for MySQL. Tens of thousands of writes/sec while keeping SQL.' },
+  { icon: '🐘', title: 'Native partitioning', body: 'Postgres / MySQL native partitioning. Single DB, multiple physical tables. Cheap; well-supported.' },
+]} />
+
+### Scaling writes
+
+Single-master is the constraint. Options:
+
+- **Vertical scaling** — bigger box. Postgres can handle huge workloads on serious hardware. Don't underestimate this.
+- **Read offload** — move heavy reads off the primary. Replicas, materialized views, OLAP DBs.
+- **Sharding** — Citus, Vitess, or app-level. Significantly more complex; reach for it when you've genuinely outgrown a single Postgres.
+- **NewSQL** — CockroachDB, Spanner, YugabyteDB. SQL with horizontal write scale, at operational cost.
+
+## Document Databases (MongoDB)
+
+Designed for horizontal scaling from day one. Sharded clusters distribute writes across multiple primaries.
+
+<Compare2
+  left={{
+    label: 'Strengths',
+    title: 'Where MongoDB shines',
+    body: 'Flexible schemas, high write throughput, well-defined sharding keys (user ID, tenant ID, time-based). Social platforms, IoT ingestion, multi-tenant SaaS.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Costs',
+    title: 'Where it bites',
+    body: 'Shard key choice is critical — bad keys create hot spots. No joins; data shape decisions ripple through the codebase. Transaction support exists but more limited than RDBMS.',
+    accent: 'amber',
+  }}
+/>
+
+## Wide-Column Stores (Cassandra, ScyllaDB)
+
+Peer-to-peer architecture, no master. Optimized for **massive write throughput** and multi-DC.
+
+<IconGrid cols={2} items={[
+  { icon: '✍️', title: 'Append-optimized', body: 'Commit log + memtable + SSTable. Tens of thousands of writes per second per node. Predictable write latency.' },
+  { icon: '🌍', title: 'Multi-DC native', body: 'Tunable replication strategies across data centers. Each region a "rack" or "DC."' },
+  { icon: '🎚️', title: 'Tunable consistency', body: 'Per-query consistency: ANY, ONE, QUORUM, ALL. Trade latency for stronger guarantees per operation.' },
+  { icon: '🚀', title: 'Linear scalability', body: 'Add nodes, capacity grows linearly. Used by Netflix, Apple, Discord at massive scale.' },
+]} />
+
+The cost: limited query flexibility (must design table layout per query pattern), no joins, eventual consistency by default.
+
+## Key-Value Stores
+
+<Compare2
+  left={{
+    label: 'Redis',
+    title: 'In-memory, multi-purpose',
+    body: 'Sub-ms latency. Strings, hashes, lists, sets, streams, pub/sub. Used as cache, session store, rate limiter, leaderboards. Up to ~100k+ ops/sec on single node.',
+    accent: 'rose',
+  }}
+  right={{
+    label: 'DynamoDB',
+    title: 'Managed, infinite scale',
+    body: 'AWS-managed key-value with optional document features. Single-digit ms latency at any scale. Pay-per-request or provisioned. Global tables for multi-region.',
+    accent: 'emerald',
+  }}
+/>
+
+## Time-Series Databases
+
+Specialized for high-volume time-stamped data — IoT sensors, monitoring metrics, financial ticks.
+
+<IconGrid cols={2} items={[
+  { icon: '⏱️', title: 'InfluxDB', body: 'Purpose-built for time-series. Built-in retention policies, downsampling, time-windowed queries.' },
+  { icon: '🐘', title: 'TimescaleDB', body: 'Postgres extension. Time-series performance + full SQL. Good for teams wanting Postgres ergonomics.' },
+  { icon: '⏰', title: 'Amazon Timestream', body: 'AWS-managed time-series. Tiered storage (hot in memory, cold in S3-like).' },
+]} />
+
+## Search Databases
+
+For full-text search, complex filtering, log analysis.
+
+<IconGrid cols={2} items={[
+  { icon: '🔍', title: 'Elasticsearch / OpenSearch', body: 'Inverted indexes for fast full-text search. Aggregations for analytics. The default for log analysis (ELK stack).' },
+  { icon: '⚡', title: 'Algolia / Meilisearch', body: 'Hosted search-as-a-service. Tuned defaults; less flexibility than Elasticsearch but dramatically simpler operations.' },
+  { icon: '🌟', title: 'Postgres + pg_trgm / Trigram', body: 'For modest search needs, Postgres can do full-text search well. Saves running a separate system.' },
+]} />
+
+## Analytics / OLAP
+
+OLTP databases optimize for many small transactions. **OLAP** databases optimize for few large analytical queries scanning massive amounts of data.
+
+<IconGrid cols={2} items={[
+  { icon: '🧊', title: 'Columnar storage', body: 'Snowflake, BigQuery, Redshift. Data stored column-by-column for compression and analytical query performance.' },
+  { icon: '🏠', title: 'Lakehouse', body: 'Delta Lake, Iceberg, Hudi. Data lake (S3) + transactional metadata layer. Time travel, schema evolution.' },
+  { icon: '⚡', title: 'ClickHouse', body: 'Open-source columnar DB. Extremely fast for analytical queries on huge datasets.' },
+  { icon: '🐦', title: 'DuckDB', body: 'Embedded analytical DB (think SQLite for OLAP). Great for in-process analytics.' },
+]} />
+
+## Graph Databases
+
+For relationship-heavy data: knowledge graphs, fraud detection, recommendation engines.
+
+- **Neo4j** — the dominant property-graph DB. Cypher query language.
+- **Amazon Neptune** — managed graph DB on AWS. Property graph (Gremlin) and RDF (SPARQL).
+- **JanusGraph** — distributed graph DB on top of Cassandra/HBase.
+
+## NewSQL: SQL Without the Single-Master Limit
+
+A category that emerged to combine SQL with horizontal scale.
+
+<IconGrid cols={2} items={[
+  { icon: '🌐', title: 'Spanner', body: 'Google\'s globally distributed SQL. TrueTime API for tight clock sync. Strongly consistent across regions.' },
+  { icon: '🪳', title: 'CockroachDB', body: 'Open-source globally distributed SQL. Postgres-compatible API. HLC for time. Used by SaaS at scale.' },
+  { icon: '🐮', title: 'YugabyteDB', body: 'Postgres-compatible distributed SQL. Multi-region active-active.' },
+  { icon: '🐯', title: 'TiDB', body: 'MySQL-compatible distributed SQL. Strong fit for MySQL migrations.' },
+]} />
+
+## Choosing for Your Workload
+
+A pragmatic decision tree for SaaS apps:
+
+<KeyIdea>
+**Default to Postgres.** Move off only when you have specific, measurable reasons. "Postgres can't handle this" is rare; "this would be easier in X" is more common — and worth weighing against the operational cost of running multiple databases.
+</KeyIdea>
+
+| Use case | Default choice |
+| --- | --- |
+| Tenant-scoped transactional data | Postgres (Aurora at scale) |
+| User sessions, caching, rate limits | Redis |
+| Search, full-text, log analysis | Elasticsearch / OpenSearch |
+| Time-series metrics | Timescale or InfluxDB |
+| Analytics warehouse | Snowflake / BigQuery / Redshift |
+| Object storage | S3 |
+| High-throughput append-only | Kafka + DynamoDB / Cassandra |
+| Distributed multi-region OLTP | CockroachDB / Spanner |
+
+Most production SaaS platforms run **multiple databases**, each tuned for what it's best at. The "one database to rule them all" pattern doesn't survive scale.
+
+## Recap
+
+- Database scalability is about workload patterns first, data model second, scaling approach third.
+- Relational (Postgres, MySQL) is the right default for most SaaS — modern features cover most NoSQL use cases.
+- Document, wide-column, key-value, time-series, search, analytics, graph — each shines in specific use cases.
+- NewSQL (Spanner, CockroachDB) gives you SQL with horizontal write scale, at operational cost.
+- Real systems use multiple databases. The skill is matching access patterns to database strengths, not picking one for everything.

@@ -1,0 +1,203 @@
+---
+title: Exactly-Once Semantics
+slug: exactly-once
+order: 6
+section: data-storage
+group: Messaging & Processing
+summary: The myth, the reality, and the patterns that approximate "exactly-once" in production. Idempotency, deduplication, and the practical tools.
+readingMinutes: 8
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Exactly-once semantics is one of the most misunderstood concepts in distributed systems. Strictly speaking, in an asynchronous network with possible failures, "exactly-once delivery" is impossible. In practice, **exactly-once processing** is achievable — but only with deliberate design.
+
+This lesson separates the impossible from the practical and walks through the patterns that actually work.
+
+<KeyIdea>
+The trick: combine **at-least-once delivery** with **idempotent processing**. The result behaves like exactly-once for any observable purpose.
+</KeyIdea>
+
+## Why Exactly-Once Delivery Is Impossible
+
+Consider a producer sending a message:
+
+1. Producer sends.
+2. Broker receives (?).
+3. Broker acknowledges (?).
+4. Network drops the ack.
+5. Producer doesn't know if the message arrived.
+
+If the producer **doesn't retry**: possible message loss → at-most-once.
+If the producer **does retry**: possible duplicate → at-least-once.
+
+There's no third option. The Two Generals Problem proves you can't have certainty about the other side's state in an asynchronous network.
+
+The same problem appears between broker and consumer. So end-to-end, you can have "deliver at most once" or "deliver at least once" — not both at once at the protocol level.
+
+## What "Exactly-Once" Actually Means in Practice
+
+Modern systems claiming exactly-once are usually doing one of:
+
+<IconGrid cols={2} items={[
+  { icon: '🎯', title: 'Idempotent processing', body: 'At-least-once delivery + consumer that handles duplicates safely. The most common practical answer.' },
+  { icon: '💎', title: 'Transactional brokers', body: 'Kafka transactions, AWS SQS FIFO. Producer-broker-consumer all coordinate via a transaction. Exactly-once between specific systems, with caveats.' },
+  { icon: '🪪', title: 'Deduplication keys', body: 'Producer attaches a unique ID; broker or consumer dedups within a window. Stripe-style idempotency keys are the canonical example.' },
+]} />
+
+## Pattern 1: Idempotent Consumers
+
+The most pragmatic answer: design every consumer to safely handle duplicates.
+
+<Compare2
+  left={{
+    label: 'Naturally idempotent',
+    title: 'Same operation = same result',
+    body: 'SET operations, upserts, "mark as read" flags. Reprocessing the same message produces the same end state. The cleanest case.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Made idempotent',
+    title: 'Wrap with deduplication',
+    body: 'Operations like "increment counter" or "send email" aren\'t naturally idempotent. Wrap with a dedup mechanism — track processed message IDs.',
+    accent: 'indigo',
+  }}
+/>
+
+### Implementation: deduplication store
+
+```python
+def handle_message(msg):
+    if has_processed(msg.id):
+        return  # already processed, skip
+
+    process(msg)
+    mark_processed(msg.id)
+```
+
+The dedup store needs:
+
+- **Atomic check-and-set** (DB transaction, Redis SETNX).
+- **TTL** matching the broker's retry window (typically 1-7 days).
+- **Same write transaction** as the side effects, when possible.
+
+## Pattern 2: Idempotency Keys at the API Layer
+
+Stripe popularized the pattern: every state-changing API request can carry an `Idempotency-Key`. The server stores `(key → response)` and returns the saved response on retry.
+
+```
+POST /payments
+Idempotency-Key: client-uuid-12345
+{"amount": 100, "currency": "USD"}
+```
+
+Server logic:
+
+```python
+def create_payment(request, idempotency_key):
+    if existing := get_response(idempotency_key):
+        return existing  # client retried; return stored response
+
+    response = actually_create_payment(request)
+    save_response(idempotency_key, response)
+    return response
+```
+
+This pattern is now the standard for any state-changing SaaS API endpoint. Add it everywhere POST or PUT could trigger duplicate operations.
+
+## Pattern 3: Transactional Outbox
+
+The classic problem: write to DB **and** publish a message — but how do you make those two operations atomic?
+
+<Compare2
+  left={{
+    label: 'Naive: dual-write',
+    title: 'DB write + broker publish, separately',
+    body: 'Two operations. Either can fail. Failure between them = inconsistency. DB written, message not sent. Or message sent, DB rolled back.',
+    accent: 'rose',
+  }}
+  right={{
+    label: 'Transactional outbox',
+    title: 'Single DB transaction',
+    body: 'Write the state change AND insert a row into an "outbox" table — in one DB transaction. A separate process (relay) reads the outbox and publishes.',
+    accent: 'emerald',
+  }}
+/>
+
+```sql
+BEGIN;
+  UPDATE orders SET status = 'paid' WHERE id = 42;
+  INSERT INTO outbox (event_type, payload) VALUES ('OrderPaid', '{...}');
+COMMIT;
+
+-- Relay process: read unsent outbox rows, publish to broker, mark sent.
+```
+
+The relay process can be a polling worker, a CDC stream (Debezium), or Kafka Connect. Publishing happens at-least-once (broker may receive a message twice if relay restarts mid-publish), but consumer-side idempotency catches duplicates.
+
+## Pattern 4: Kafka Transactions
+
+Kafka has built-in transactional support for atomic write-to-multiple-topics:
+
+```
+producer.beginTransaction()
+producer.send(topicA, msg1)
+producer.send(topicB, msg2)
+producer.send("__consumer_offsets", offsetCommit)  // commit consumer position
+producer.commitTransaction()
+```
+
+The producer either commits all messages atomically or none. Combined with `isolation.level=read_committed` on consumers, you get exactly-once **within Kafka**.
+
+<Callout type="warning" title="Kafka exactly-once is end-to-end-ish, not magic">
+Kafka transactions give exactly-once for "consume from Kafka, process, produce to Kafka" pipelines. They don't give exactly-once if you also write to a database during processing — that requires application-level patterns (outbox, idempotency).
+</Callout>
+
+## Pattern 5: AWS SQS FIFO + Exactly-Once
+
+AWS SQS FIFO queues offer exactly-once delivery — but with constraints:
+
+- **Throughput limit** (300 messages/sec per queue, higher with batching).
+- **Per-message-group ordering**, not global ordering.
+- **5-minute deduplication window** by default.
+
+For workloads that fit, it's a clean solution: cloud-native, no operational overhead, exactly-once guaranteed.
+
+## Pattern 6: CDC + Exactly-Once Sinks
+
+For streaming pipelines:
+
+```
+[ Postgres ] → [ Debezium / CDC ] → [ Kafka ] → [ Sink Connector ] → [ Snowflake / S3 / etc. ]
+```
+
+Modern sink connectors implement exactly-once by:
+
+1. Tracking processed Kafka offsets transactionally with the destination.
+2. Using natural keys / deduplication on the destination.
+3. Atomic writes (S3 versioning, transactional INSERT).
+
+## What to Use When
+
+<IconGrid cols={2} items={[
+  { icon: '🎯', title: 'API endpoints', body: 'Stripe-style Idempotency-Key. Mandatory for any non-idempotent state-changing endpoint.' },
+  { icon: '✉️', title: 'Cross-service async messaging', body: 'Outbox pattern. The standard pattern for "write to DB and publish event."' },
+  { icon: '🌊', title: 'Streaming pipelines (Kafka)', body: 'Kafka transactions for in-Kafka work. Connector-level exactly-once for sinks.' },
+  { icon: '⚙️', title: 'Background jobs', body: 'Idempotent consumers + deduplication store. Track processed job IDs, skip duplicates.' },
+  { icon: '☁️', title: 'AWS SaaS', body: 'SQS FIFO when throughput fits. Otherwise SQS Standard + idempotent consumers.' },
+  { icon: '🪪', title: 'Webhook delivery', body: 'Sender retries on non-2xx. Receiver dedups on a (sender, event_id) tuple.' },
+]} />
+
+## Recap
+
+- **Exactly-once delivery** is impossible in asynchronous networks. **Exactly-once processing** is achievable through deliberate design.
+- The practical answer: at-least-once delivery + idempotent processing.
+- Idempotency keys at API layer (Stripe-style) for any non-idempotent state-changing endpoint.
+- Transactional outbox for "write to DB and publish event" atomicity.
+- Kafka transactions for in-Kafka exactly-once. SQS FIFO for limited-throughput AWS workloads.
+- Deduplication stores for general idempotent consumers.
+- Pick the pattern that fits the layer — no single technique solves all cases.

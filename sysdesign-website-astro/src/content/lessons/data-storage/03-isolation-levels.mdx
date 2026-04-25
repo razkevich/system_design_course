@@ -1,0 +1,171 @@
+---
+title: Transaction Isolation Levels
+slug: isolation-levels
+order: 3
+section: data-storage
+group: Database Design
+summary: The four standard isolation levels, the anomalies each one allows, and how to pick the right level for each operation.
+readingMinutes: 8
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Transaction isolation is the **I** in ACID. It defines what one transaction can see of another transaction's in-progress work. The choice of isolation level is one of the most consequential decisions in transactional system design — and one of the most under-discussed.
+
+This lesson covers the four standard SQL isolation levels, the anomalies each allows, and practical guidance for choosing.
+
+## The Anomalies
+
+Transaction isolation is defined by which **anomalies** can occur. Here are the classic ones, in order of severity:
+
+<IconGrid cols={2} items={[
+  { icon: '👻', title: 'Dirty Read', body: 'Transaction A reads data that B has modified but not yet committed. If B rolls back, A saw a value that never existed.' },
+  { icon: '🔁', title: 'Non-Repeatable Read', body: 'Transaction A reads a row, then reads it again later. The value has changed because B committed in between.' },
+  { icon: '👤', title: 'Phantom Read', body: 'Transaction A queries a range of rows. B inserts a new row in that range and commits. A\'s second query returns more rows.' },
+  { icon: '💸', title: 'Lost Update', body: 'A and B both read the same row, both compute updates, both write back. One update is lost.' },
+  { icon: '🪞', title: 'Read Skew', body: 'A reads X = 100, then reads Y = 200. Between those reads, B updated X and Y atomically. A sees inconsistent state.' },
+  { icon: '✏️', title: 'Write Skew', body: 'A and B read overlapping data, both check an invariant, both write. Each individually OK, but together they violate the invariant.' },
+]} />
+
+## The Four Standard Isolation Levels
+
+Defined by SQL standard, but with implementation-specific quirks.
+
+<Compare2
+  left={{
+    label: 'Read Uncommitted',
+    title: 'No isolation',
+    body: 'A transaction can see B\'s uncommitted changes. Dirty reads possible. Almost no one uses this in production. Postgres treats it as Read Committed.',
+    accent: 'rose',
+  }}
+  right={{
+    label: 'Read Committed',
+    title: 'Default in many DBs',
+    body: 'Each query sees only committed data. No dirty reads. Non-repeatable reads still possible — re-reading the same row in the same transaction can yield different values.',
+    accent: 'amber',
+  }}
+/>
+
+<Compare2
+  left={{
+    label: 'Repeatable Read',
+    title: 'Snapshot semantics',
+    body: 'Within one transaction, every read sees the same snapshot — taken at the start of the transaction. Non-repeatable reads prevented. Phantoms prevented in Postgres (uses MVCC); allowed in MySQL InnoDB.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Serializable',
+    title: 'Strongest',
+    body: 'Transactions execute as if they were serial — one after another. All anomalies prevented. Most expensive. May abort transactions due to conflict; application must retry.',
+    accent: 'emerald',
+  }}
+/>
+
+### What each level prevents
+
+| Level | Dirty read | Non-repeatable | Phantom | Lost update | Write skew |
+| --- | :---: | :---: | :---: | :---: | :---: |
+| Read Uncommitted | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Read Committed | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Repeatable Read | ✅ | ✅ | partial* | ✅ | ❌ |
+| Serializable | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+*Postgres prevents phantoms at Repeatable Read via MVCC; MySQL InnoDB allows them.
+
+## Implementation Differences
+
+The SQL standard gives names; databases implement them differently.
+
+<IconGrid cols={2} items={[
+  { icon: '🐘', title: 'Postgres', body: 'Read Committed (default), Repeatable Read = "snapshot isolation" (prevents phantoms), Serializable = SSI (Serializable Snapshot Isolation, may abort).' },
+  { icon: '🐬', title: 'MySQL InnoDB', body: 'Repeatable Read is the default (unusual). Uses gap locks to prevent phantoms within RR. Serializable converts SELECT to SELECT FOR SHARE.' },
+  { icon: '🪨', title: 'Oracle', body: 'Read Committed (default), Serializable. No Repeatable Read level — Serializable uses snapshot isolation (technically not strict serializability).' },
+  { icon: '☁️', title: 'SQL Server', body: 'Read Committed (default, can use snapshot variant), Repeatable Read, Serializable, Snapshot.' },
+]} />
+
+<Callout type="warning" title="Same name, different behavior">
+"Repeatable Read" doesn't behave the same in Postgres and MySQL. Always read your specific database's isolation documentation. The SQL standard provides a name; the DB provides the semantics.
+</Callout>
+
+## The Snapshot Isolation Trap
+
+Most databases' "Repeatable Read" or "Snapshot Isolation" is actually weaker than true serializable. The classic example is **write skew**:
+
+```
+Constraint: "At least one doctor must be on call."
+
+T1 reads: Alice on call, Bob on call. (count = 2)
+T1 thinks: "OK, I can take Alice off — Bob will still be on call."
+T1 writes: Alice off.
+
+T2 reads: Alice on call, Bob on call. (count = 2)  -- snapshot from before T1 commit
+T2 thinks: "OK, I can take Bob off — Alice will still be on call."
+T2 writes: Bob off.
+
+Result: nobody on call. Constraint violated.
+```
+
+Both transactions read a consistent snapshot. Both wrote based on that snapshot. Neither saw the other. Snapshot isolation can't catch this — only true serializable can.
+
+## Practical Guidance
+
+<IconGrid cols={2} items={[
+  { icon: '👤', title: 'Read Committed for most reads', body: 'Default in most databases. Right for the vast majority of read-only operations. Avoid the long held locks of stricter levels.' },
+  { icon: '📊', title: 'Repeatable Read for reports', body: 'When you need a consistent view across multiple queries (e.g., end-of-day reports). All queries see the same snapshot.' },
+  { icon: '💎', title: 'Serializable for invariants', body: 'When the operation must hold a business invariant that two concurrent transactions could violate (write skew scenarios). Be ready to retry on serialization failure.' },
+  { icon: '🔒', title: 'SELECT FOR UPDATE for hot rows', body: 'Pessimistic row locking. Forces transactions to serialize on a specific row. Right for "decrement inventory" style operations.' },
+]} />
+
+## Optimistic vs. Pessimistic Concurrency
+
+Beyond isolation levels, you have two strategies for handling conflict:
+
+<Compare2
+  left={{
+    label: 'Pessimistic',
+    title: 'Lock first, then work',
+    body: 'SELECT FOR UPDATE / SELECT FOR SHARE. Block other transactions from touching this row until you commit. Good when conflicts are common.',
+    accent: 'amber',
+  }}
+  right={{
+    label: 'Optimistic',
+    title: 'Work first, check for conflicts',
+    body: 'Read with version number / timestamp. On commit, check if version still matches. If not, retry. Good when conflicts are rare.',
+    accent: 'emerald',
+  }}
+/>
+
+A typical optimistic update:
+
+```sql
+SELECT id, value, version FROM accounts WHERE id = 42;
+-- compute new_value based on value
+UPDATE accounts SET value = new_value, version = version + 1
+WHERE id = 42 AND version = old_version;
+-- if 0 rows updated, someone else modified it; retry
+```
+
+## Multi-Statement Transactions in Distributed Systems
+
+For systems spanning multiple databases or services, full ACID transactions aren't viable. Patterns:
+
+<IconGrid cols={2} items={[
+  { icon: '📦', title: 'Outbox pattern', body: 'Write the message to an outbox table inside the same DB transaction as the state change. A separate process reads the outbox and publishes events. Atomicity preserved.' },
+  { icon: '🔄', title: 'Sagas', body: 'Sequence of local transactions with compensating actions on failure. Achieves business consistency without distributed transactions.' },
+  { icon: '🎫', title: 'Idempotency keys', body: 'Same operation can be safely retried. Stripe-style — client sends a unique key; server returns the same result on retry.' },
+  { icon: '🔢', title: 'Optimistic concurrency at the API', body: 'ETags / version numbers in API responses. PUT must include If-Match: <etag>. Catches concurrent modifications.' },
+]} />
+
+## Recap
+
+- Isolation defines what one transaction sees of another's in-progress work.
+- The classic anomalies: dirty read, non-repeatable read, phantom, lost update, read skew, write skew.
+- Standard isolation levels: Read Uncommitted, Read Committed (default), Repeatable Read, Serializable.
+- Same level name behaves differently across databases — always check your DB's specific semantics.
+- Snapshot isolation isn't true serializable — write skew is the classic gotcha.
+- Pick by use case: Read Committed for most reads, Repeatable Read for reports, Serializable for invariant-critical updates, FOR UPDATE for hot rows.
+- For distributed systems: outbox, sagas, idempotency keys, ETags.
