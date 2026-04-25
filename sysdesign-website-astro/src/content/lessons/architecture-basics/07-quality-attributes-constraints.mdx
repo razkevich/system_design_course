@@ -10,255 +10,244 @@ lastUpdated: "2026-04-25"
 ---
 
 import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+import StatStrip from '../../../components/StatStrip.astro';
+import NumberCards from '../../../components/NumberCards.astro';
+import BigQuote from '../../../components/BigQuote.astro';
 
-Quality attributes are the non-functional characteristics that define how *well* a system performs its intended functions. Where functional requirements describe what the system *does*, quality attributes describe how well it does it. Combined with the constraints around the system, they shape every architectural decision worth talking about.
+<BigQuote>
+Functional requirements describe what the system does. Quality attributes describe how well it does it.
+</BigQuote>
 
-This lesson is the working vocabulary: the named quality attributes you'll see referenced everywhere else in the course, and the constraints that bound how far you can push them.
+Quality attributes are the non-functional characteristics that define how well a system performs its intended functions. Combined with the constraints around the system, they shape every architectural decision worth talking about.
+
+This lesson is the working vocabulary: the named quality attributes you'll see referenced throughout the course, and the constraints that bound how far you can push them.
 
 ## Performance
 
 **Definition.** How efficiently the system uses resources to meet timing requirements.
 
-Performance has three core dimensions:
+<IconGrid cols={3} items={[
+  { icon: '⚡', title: 'Latency', body: 'Time to process a single request.' },
+  { icon: '📊', title: 'Throughput', body: 'Requests handled per unit of time.' },
+  { icon: '⚙️', title: 'Resource utilization', body: 'CPU, memory, network, I/O efficiency.' },
+]} />
 
-- **Latency** — time to process a single request.
-- **Throughput** — requests handled per unit of time.
-- **Resource utilization** — efficiency of CPU, memory, network, and I/O.
-
-Common levers:
-
-- Caching frequently used data.
-- Asynchronous processing for long-running operations.
-- Connection pooling for databases and external services.
-- Query optimization (indexes, pagination, projection).
-- CDN for static assets and edge content.
+Common levers: caching frequently used data, async processing for long ops, connection pooling, query optimization, CDN for static assets.
 
 ## Availability
 
-**Definition.** The percentage of time the system is operational and able to serve requests.
+**Definition.** Percentage of time the system is operational and serving requests.
 
-Availability is usually expressed as a number of "nines":
+<StatStrip
+  caption="Each level dramatically more expensive than the last."
+  stats={[
+    { value: '99%',     label: 'baseline',  sub: '~3.65 days/yr down' },
+    { value: '99.9%',   label: 'standard',  sub: '~8.76 hours/yr' },
+    { value: '99.99%',  label: 'critical',  sub: '~52.6 minutes/yr' },
+    { value: '99.999%', label: 'carrier',   sub: '~5.26 minutes/yr' },
+  ]}
+/>
 
-| Level | Annual downtime | Typical fit |
-| --- | --- | --- |
-| **99%** | 3.65 days | Internal tools, non-critical systems |
-| **99.9%** | 8.76 hours | Standard for most business applications |
-| **99.99%** | 52.6 minutes | E-commerce, financial services |
-| **99.999%** | 5.26 minutes | Carrier-grade telecom, payments |
-
-High availability requires redundancy, fault detection, graceful degradation, and reliable monitoring. Each additional "nine" is dramatically more expensive than the last.
+High availability requires redundancy, fault detection, graceful degradation, reliable monitoring.
 
 ## Scalability
 
-**Definition.** The ability to handle increased load — more users, more data, more requests — without architectural surgery.
+**Definition.** Ability to handle increased load without architectural surgery.
 
-Two complementary approaches:
-
-- **Horizontal scaling.** Add more machines. Best fit for stateless services. Distributes load, improves fault tolerance, gives you elastic capacity.
-- **Vertical scaling.** Make existing machines bigger. Best fit for stateful services with moderate growth. Simpler to implement, doesn't break existing architecture, but eventually hits hard limits.
+<Compare2
+  left={{
+    label: 'Horizontal scaling',
+    title: 'More machines',
+    body: 'Best fit for stateless services. Distributes load, improves fault tolerance, gives elastic capacity.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Vertical scaling',
+    title: 'Bigger machines',
+    body: 'Best fit for stateful services with moderate growth. Simpler to implement, eventually hits hard limits.',
+    accent: 'amber',
+  }}
+/>
 
 Scaling problems to plan for:
 
-- **Data consistency** — keeping information correct across multiple nodes during concurrent reads and writes.
-- **Session management** — preserving user experience in stateless architectures behind load balancers.
-- **Coordination complexity** — synchronizing multiple components and services to behave coherently.
-
-Strategies that come up repeatedly:
-
-- Database sharding.
-- Microservices architectures.
-- Event-driven architecture.
-- Careful state management — externalize where you can.
+<IconGrid cols={3} items={[
+  { icon: '🤝', title: 'Data consistency', body: 'Keeping information correct across nodes during concurrent reads/writes.' },
+  { icon: '👤', title: 'Session management', body: 'Preserving UX in stateless architectures behind load balancers.' },
+  { icon: '🎭', title: 'Coordination complexity', body: 'Making multiple components and services behave coherently.' },
+]} />
 
 ## Security
 
-Five principles cover most of the security thinking you'll do at the architecture level:
+Five principles cover most architecture-level security thinking:
 
-- **Least privilege.** Grant the minimum permissions necessary to perform the task.
-- **Security by design.** Build security in from the start, not bolted on later.
-- **Defense in depth.** Multiple independent layers of protection.
-- **Fail secure.** When something goes wrong, default to the safe state.
-- **Zero trust.** Verify everything, trust nothing — even inside your own network.
+<NumberCards cols={3} items={[
+  { title: 'Least privilege', body: 'Grant the minimum permissions necessary.' },
+  { title: 'Security by design', body: 'Build it in from the start, not bolted on later.' },
+  { title: 'Defense in depth', body: 'Multiple independent layers of protection.' },
+  { title: 'Fail secure', body: 'When something goes wrong, default to safe.' },
+  { title: 'Zero trust', body: 'Verify everything — even inside your own network.' },
+]} />
 
-The architectural toolkit you'll reach for:
+The architectural toolkit:
 
-1. **Authentication and authorization.** Identity verification (OAuth/OIDC, JWT, mTLS), role-based or attribute-based access control.
-2. **Input validation.** Validate and sanitize all incoming data — defense against injection and a long tail of related attacks.
-3. **Encryption.** Protect sensitive data at rest and in transit using current algorithms (AES-GCM for symmetric, TLS 1.3 for transport, properly rotated keys).
-4. **Secure protocols.** No unauthenticated channels between trusted services.
-5. **Audit logging.** Comprehensive logging of user actions and system events for monitoring and incident response.
+<IconGrid cols={2} items={[
+  { icon: '🆔', title: 'Authentication & Authorization', body: 'OAuth/OIDC, JWT, mTLS. RBAC or ABAC.' },
+  { icon: '🛡️', title: 'Input validation', body: 'Validate and sanitize all incoming data.' },
+  { icon: '🔐', title: 'Encryption', body: 'AES-GCM at rest, TLS 1.3 in transit, properly rotated keys.' },
+  { icon: '🔍', title: 'Audit logging', body: 'Comprehensive logs for monitoring and incident response.' },
+]} />
 
 ## Reliability
 
-**Definition.** The probability that the system will operate correctly over a specified time period.
+**Definition.** Probability the system operates correctly over a specified time period.
 
-Key indicators:
+<IconGrid cols={3} items={[
+  { icon: '⏱️', title: 'MTBF', body: 'Mean Time Between Failures.' },
+  { icon: '🚑', title: 'MTTR', body: 'Mean Time To Repair (or Recover).' },
+  { icon: '📈', title: 'Availability', body: 'Percentage of time operational.' },
+]} />
 
-- **MTBF** — Mean Time Between Failures.
-- **MTTR** — Mean Time To Repair (or Recover).
-- **Availability** — percentage of time operational (related, but not identical).
-
-Characteristics of reliable systems:
-
-- Graceful error handling.
-- Automatic failure recovery.
-- Data integrity preservation.
-- Comprehensive testing.
-
-Practical patterns:
-
-- **Redundancy** — duplicate critical components.
-- **Checkpoints** — preserve state for recovery.
-- **Error detection** — monitoring and early problem identification.
-- **Comprehensive testing** — across normal and failure paths.
+Practical patterns: redundancy, checkpoints, error detection, comprehensive testing.
 
 ## Modifiability
 
 **Definition.** How easily and safely the system can be changed.
 
-Modifiability is the architectural side of "can we still ship?". Three things matter:
+<IconGrid cols={3} items={[
+  { icon: '🚪', title: 'Clear interfaces', body: 'Well-defined contracts between components.' },
+  { icon: '🪢', title: 'Loose coupling', body: 'Minimal interdependencies between components.' },
+  { icon: '🎯', title: 'Separation of concerns', body: 'Each component has one clear responsibility.' },
+]} />
 
-1. **Clear interfaces.** Well-defined contracts between components.
-2. **Loose coupling.** Minimal interdependencies between components.
-3. **Separation of concerns.** Each component has one clear responsibility.
-
-Techniques:
-
-- Information hiding — encapsulate internal implementation behind stable interfaces.
-- Stable interfaces — keep contracts steady even as internals change.
-- Limit communication paths — minimize direct dependencies between modules.
-- Use intermediaries — patterns like facade, gateway, mediator.
-
-Modifiability is what determines whether the system is *evolvable* (last lesson) or stuck. The lessons reinforce each other.
+Modifiability is what determines whether the system is **evolvable** (last lesson) or stuck. The lessons reinforce each other.
 
 ## Testability
 
 **Definition.** How easily the software can demonstrate its faults through testing.
 
-Characteristics of testable systems:
-
-- Good observability of internal state.
-- Controllable inputs and outputs.
-- Minimal complex interdependencies.
-
-The patterns that pay off:
-
-- **Dependency injection** — swap real components for mocks during testing.
-- **Separation of concerns** — clean responsibility boundaries make individual components easy to test.
-- **No global state** — predictable behaviour without hidden dependencies.
-- **Clear interfaces** — well-defined contracts make scenarios easy to write.
+<IconGrid cols={2} items={[
+  { icon: '💉', title: 'Dependency injection', body: 'Swap real components for mocks during testing.' },
+  { icon: '🎯', title: 'Separation of concerns', body: 'Clean responsibility boundaries make individual components easy to test.' },
+  { icon: '🧊', title: 'No global state', body: 'Predictable behaviour without hidden dependencies.' },
+  { icon: '📐', title: 'Clear interfaces', body: 'Well-defined contracts make scenarios easy to write.' },
+]} />
 
 ## Usability
 
 Usability has architectural implications even though it's often considered "just UI."
 
-- **Interface design.** Intuitive controls, logical navigation, visual hierarchy.
-- **System responsiveness.** Quick response times, smooth transitions, immediate feedback.
-- **Error handling.** Clear error messages, suggestions for resolution, graceful degradation.
-
-Architecturally, usability shapes decisions about responsiveness budgets, error handling strategies, data presentation formats, and integration with external systems.
+<IconGrid cols={3} items={[
+  { icon: '🎨', title: 'Interface design', body: 'Intuitive controls, logical navigation, visual hierarchy.' },
+  { icon: '⚡', title: 'Responsiveness', body: 'Quick response times, smooth transitions, immediate feedback.' },
+  { icon: '🛟', title: 'Error handling', body: 'Clear messages, suggestions for resolution, graceful degradation.' },
+]} />
 
 ## Interoperability
 
-The ability of systems to work together — exchanging data and functionality across platforms, technologies, and organizational boundaries.
+The ability of systems to work together across platforms, technologies, and organizational boundaries.
 
-Building blocks:
-
-- **API integration** with standardized formats and protocols.
-- **Data exchange** across different storage formats and schemas.
-- **Platform compatibility** across diverse technology stacks.
-- **Version management** for backward compatibility and graceful interface evolution.
-
-In a multi-tenant SaaS context, interoperability is also about *integrations* — webhooks out, third-party APIs in, marketplace ecosystems. Treat integration surfaces as a first-class architectural concern, not as an afterthought.
+<IconGrid cols={2} items={[
+  { icon: '🔌', title: 'API integration', body: 'Standardized formats and protocols.' },
+  { icon: '📦', title: 'Data exchange', body: 'Across different storage formats and schemas.' },
+  { icon: '🌐', title: 'Platform compatibility', body: 'Across diverse technology stacks.' },
+  { icon: '📚', title: 'Version management', body: 'Backward compatibility and graceful interface evolution.' },
+]} />
 
 ## Portability
 
-**Definition.** How easily the system can be moved from one environment to another.
+**Definition.** How easily the system can be moved between environments.
 
-Common scenarios:
-
-- Different hardware platforms.
-- Different operating systems.
-- Alternative databases.
-- Cloud-to-cloud or hybrid migrations.
-
-Approaches that improve portability:
-
-- **Standard APIs** instead of proprietary lock-in.
-- **Containerization** for consistent deployment.
-- **Abstraction layers** that isolate platform-specific code.
-- **Multi-cloud capability** when business needs justify it.
+<IconGrid cols={2} items={[
+  { icon: '🌐', title: 'Standard APIs', body: 'Generally accepted interfaces, not proprietary lock-in.' },
+  { icon: '📦', title: 'Containerization', body: 'Consistent deployment across environments.' },
+  { icon: '🏛️', title: 'Abstraction layers', body: 'Isolate platform-specific code.' },
+  { icon: '☁️', title: 'Multi-cloud capability', body: 'When business needs justify it.' },
+]} />
 
 ## Quality Attributes Pull Against Each Other
 
-Quality attributes rarely align. Common tensions:
+Common tensions:
 
 | If you push... | You usually pay in... |
 | --- | --- |
 | Security | Performance (encryption, validation overhead) |
-| Availability | Complexity (redundancy, failover machinery) |
+| Availability | Complexity (redundancy, failover) |
 | Scalability | Strict consistency (distributed systems trade it away) |
 | Performance | Maintainability (specialized optimizations) |
 
-The job isn't to maximize all of them. It's to find the right balance for *this* system, *this* business, *these* users. That requires explicit conversations about acceptable trade-offs, quantified success criteria, and regular reassessment as requirements change.
+<KeyIdea>
+The job isn't to maximize all attributes. It's to find the right balance for *this* system, *this* business, *these* users. Explicit conversations about acceptable trade-offs, quantified success criteria, regular reassessment.
+</KeyIdea>
 
 ## Constraints
 
-Constraints are the limits inside which architecture has to operate. They're not obstacles — they're the context that makes a particular design *correct* for *this* system.
+Constraints are the limits inside which architecture has to operate. Not obstacles — context that makes a particular design *correct* for *this* system.
 
 ### Infrastructure constraints
 
-- **Hardware constraints.** CPU power, memory, storage performance directly affect your performance optimization approach. Aggressive caching, resource-efficient algorithms, careful data layout.
-- **Network constraints.** Limited bandwidth has deep architectural consequences — payload optimization, compression, batching, edge caching.
-- **Platform constraints.** Whatever the chosen stack rules out (e.g., language ecosystems, cloud-provider-specific services).
+<IconGrid cols={3} items={[
+  { icon: '💻', title: 'Hardware constraints', body: 'CPU, memory, storage. Drives caching, efficient algorithms, careful data layout.' },
+  { icon: '🌐', title: 'Network constraints', body: 'Bandwidth limits drive payload optimization, compression, batching, edge caching.' },
+  { icon: '⚙️', title: 'Platform constraints', body: 'Whatever the chosen stack rules out (language ecosystems, cloud-specific services).' },
+]} />
 
 ### Regulatory constraints
 
 These often dictate hard architectural decisions:
 
-- **GDPR** — data deletion capabilities throughout the system. Not just marking records as deleted — actually purging personal data from backups, logs, and derived datasets.
-- **HIPAA** — specific authentication and access-control requirements for health data. Architectural foundations affecting access patterns and audit logging.
-- **SOX** — financial regulations require change control and segregation of duties, affecting deployment processes and system boundaries.
-- **PCI DSS** — credit card data requires specific isolation, encryption, and monitoring patterns.
-- **SOC 2** — controls around security, availability, processing integrity, confidentiality, and privacy.
+<IconGrid cols={2} items={[
+  { icon: '🇪🇺', title: 'GDPR', body: 'Actually purge personal data from backups, logs, derived datasets — not just mark deleted.' },
+  { icon: '🏥', title: 'HIPAA', body: 'Healthcare-specific authentication and access-control requirements. Affects access patterns and audit logging.' },
+  { icon: '💼', title: 'SOX', body: 'Financial change control and segregation of duties. Affects deployment processes and system boundaries.' },
+  { icon: '💳', title: 'PCI DSS', body: 'Credit card data isolation, encryption, monitoring. Often pushes toward tokenization.' },
+  { icon: '📋', title: 'SOC 2', body: 'Security, availability, integrity, confidentiality, privacy controls.' },
+]} />
 
 ### Organizational constraints
 
-- **Budget** — affects infrastructure and technology choices.
-- **Time-to-market pressure** — forces conscious technical trade-offs.
-- **Team skills** — limit viable technology choices.
-- **Team structure** — defines architecture through Conway's Law.
+<IconGrid cols={2} items={[
+  { icon: '💰', title: 'Budget', body: 'Affects infrastructure and tech choices.' },
+  { icon: '⏰', title: 'Time-to-market', body: 'Forces conscious technical trade-offs.' },
+  { icon: '🎓', title: 'Team skills', body: 'Limit viable technology choices.' },
+  { icon: '👥', title: 'Team structure', body: 'Defines architecture through Conway\'s Law.' },
+]} />
 
-A practical example of Conway's Law in team structure:
+A practical example of Conway's Law:
 
-| Team type | Architecture it tends to produce |
-| --- | --- |
-| **Functional teams** (frontend, backend, DBA specialists) | Layered architectures with clear technology boundaries |
-| **Product teams** (organized by business capability, full-stack) | Service-oriented architectures with full ownership of capabilities |
-
-Functional teams tend to produce deep technical expertise; product teams tend to ship features faster but can duplicate work between teams.
-
-### Working with constraints
-
-The most successful architects work *with* constraints rather than fighting them. Constraints stimulate innovation by forcing creative solutions that often turn out to be more effective than the unconstrained alternative would have been.
+<Compare2
+  left={{
+    label: 'Functional teams',
+    title: 'Frontend / backend / DBA specialists',
+    body: 'Tend to produce layered architectures with clear technology boundaries. Deep technical expertise; slower cross-functional features.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Product teams',
+    title: 'Full-stack, organized by business capability',
+    body: 'Tend to produce service-oriented architectures with full ownership. Faster feature delivery; can duplicate work between teams.',
+    accent: 'emerald',
+  }}
+/>
 
 <Callout type="tip" title="Constraints as context, not obstacles">
-Constraints aren't obstacles to good architecture — they're the context in which great architecture is created. The best solutions are often born exactly from the necessity of working within strict limits.
+The most successful architects work *with* constraints rather than fighting them. Constraints stimulate innovation by forcing creative solutions that often turn out to be more effective than the unconstrained alternative.
 </Callout>
 
 ## A Systems View
 
 Quality attributes and constraints together form the foundation of all architectural decisions. The skill is understanding that they work *as a system* — push one and others move.
 
-Instead of looking for ideal solutions, effective architects focus on making clear, conscious decisions that align with business priorities while creating the conditions for future evolution.
-
-Both quality attributes and constraints change over time. The most successful architects anticipate these changes and design systems that can adapt their priorities and creatively work within shifting limits as the business evolves.
+Both qualities and constraints change over time. Anticipate the changes. Design systems that can adapt their priorities and creatively work within shifting limits.
 
 ## Recap
 
 - Quality attributes describe how well the system works: performance, availability, scalability, security, reliability, modifiability, testability, usability, interoperability, portability.
-- Each one has named techniques and common levers. Knowing the vocabulary helps you have precise conversations.
-- Quality attributes pull against each other. Optimize for the right ones for *this* system, not all of them.
+- Each has named techniques and common levers. Knowing the vocabulary helps you have precise conversations.
+- Quality attributes pull against each other. Optimize for the right ones for *this* system.
 - Constraints — infrastructure, regulatory, organizational — are the context inside which architecture has to live.
-- Constraints aren't obstacles; they're inputs to good design. Great architecture often comes from working within hard limits.
+- Constraints aren't obstacles; they're inputs to good design.
 - Both qualities and constraints change over time. Build systems that can re-prioritize as the business evolves.
