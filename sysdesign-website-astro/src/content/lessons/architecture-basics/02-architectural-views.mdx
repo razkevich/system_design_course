@@ -10,22 +10,36 @@ lastUpdated: "2026-04-25"
 ---
 
 import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+import BigQuote from '../../../components/BigQuote.astro';
+import NumberCards from '../../../components/NumberCards.astro';
+
+<BigQuote>
+You can't show everything on one diagram. So pick the lens that answers this stakeholder's question.
+</BigQuote>
 
 Software architecture is a multi-dimensional thing. A single diagram can't capture every aspect — it ends up cluttered, contradictory, or both. **Architectural views** are different perspectives onto the same system, each tuned to a specific stakeholder concern.
 
-This lesson is a tour of the views that actually pay off in practice: Philippe Kruchten's **4+1 model**, **quality views** that overlay structural concerns, Simon Brown's **C4 model**, and a quick look at where enterprise frameworks fit in.
+This lesson is a tour of the views that pay off in practice: Philippe Kruchten's **4+1 model**, **quality views** that overlay structural concerns, Simon Brown's **C4 model**, and where enterprise frameworks fit in.
 
 ## The 4+1 View Model
 
-Kruchten's 4+1 model is the classic answer to "how do I document this without my diagram becoming a spaghetti plate?" Four structural views, plus a unifying *Scenarios* view that ties them together.
+Kruchten's 4+1 model is the classic answer to "how do I document this without my diagram becoming a spaghetti plate?" Four structural views, plus a unifying **Scenarios** view that ties them together.
 
 ![4+1 architectural views](/images/section-1/c4.png)
 
+<IconGrid cols={2} items={[
+  { icon: '🧩', title: 'Logical view', body: 'What the system does. Functional decomposition, domain objects, key abstractions. Drawn with class diagrams, state machines.' },
+  { icon: '⚙️', title: 'Process view', body: 'The system at runtime. Processes, threads, queues, communication patterns. Concurrency, distribution, performance.' },
+  { icon: '📦', title: 'Development view', body: 'How the code is organized. Modules, packages, build artifacts, team ownership boundaries.' },
+  { icon: '🏢', title: 'Physical view', body: 'How software maps to hardware. Deployment topology, networking, capacity. The view DR planning lives in.' },
+]} />
+
 ### Logical view — what the system does
 
-The logical view describes the system's functional requirements and the services it provides to end users. It focuses on **what** the system does and how the functional pieces relate. Domain objects, key behavioural patterns, the abstractions the rest of the team will reference in standups.
-
-In practice you draw it with class diagrams, object diagrams, and state machines. We'll dig into this much more deeply when we get to Domain-Driven Design.
+Functional requirements and the services delivered to end users. Domain objects, key behavioural patterns, the abstractions the rest of the team will reference in standups. We'll dig much deeper when we get to Domain-Driven Design.
 
 <Callout type="tip" title="Interview-style example">
 Designing an e-commerce platform, you might propose splitting along logical boundaries: an `OrderService`, a `PaymentService`, and a `CatalogService`, each responsible for its own slice of behaviour.
@@ -33,31 +47,15 @@ Designing an e-commerce platform, you might propose splitting along logical boun
 
 ### Process view — the system in motion
 
-The process view shows the **runtime** architecture: processes, threads, services, queues, and the way they talk to each other. Where the logical view is a static picture of *what* the system is, the process view shows *what's happening at runtime*: concurrency, distribution, performance characteristics.
-
-Common patterns in this view:
-
-- Client-server interactions
-- Pub/sub messaging
-- Pipelined processing
-- Distributed work across nodes
+The runtime architecture: processes, threads, services, queues, and how they talk. Where the logical view is a static picture of *what* the system is, the process view shows *what's happening at runtime*.
 
 <Callout type="tip" title="Interview-style example">
-"An API Gateway routes requests to ten replicas of `OrderService`, which calls `InventoryService` synchronously over REST, then publishes an `OrderCreated` event to Kafka for asynchronous processing by `PaymentService` and `NotificationService`." That's a process view spoken out loud.
+"An API Gateway routes requests to ten replicas of `OrderService`, which calls `InventoryService` synchronously over REST, then publishes an `OrderCreated` event to Kafka for async processing by `PaymentService` and `NotificationService`." That's a process view spoken out loud.
 </Callout>
 
 ### Development view — the codebase
 
-The development view describes the **static** organization of the code: modules, libraries, packages, build artifacts, ownership boundaries between teams. It addresses the concerns of the people writing the code, not the people running it.
-
-It covers four things:
-
-1. **Code structure** — how packages, modules, and libraries are organized.
-2. **Build dependencies** — which components depend on which, and how the build is wired.
-3. **Team ownership** — which team is responsible for what.
-4. **Architectural constraints** — which boundaries the build system enforces (e.g., this module cannot import from that one).
-
-This is more concrete than abstract module diagrams. It shows the *actual* code organisation, not an idealised functional decomposition.
+The static organization of the code. Modules, libraries, packages, build artifacts, ownership boundaries between teams.
 
 <Callout type="tip" title="Interview-style example">
 A monorepo with `/services/order`, `/services/payment`, a shared `@company/auth-lib`, organized into `domain` / `application` / `infrastructure` layers. Team Checkout owns the order and payment modules.
@@ -65,27 +63,36 @@ A monorepo with `/services/order`, `/services/payment`, a shared `@company/auth-
 
 ### Physical view — software meets hardware
 
-The physical view maps software components onto infrastructure: where things actually run, how they're networked, and how resources are allocated.
-
-It covers deployment topology, network connectivity, and capacity planning. It's the view that supports DR planning, performance tuning, and infrastructure budgeting.
+How software maps onto infrastructure: where things actually run, how they're networked, how resources are allocated.
 
 <Callout type="tip" title="Interview-style example">
-"Kubernetes on AWS EKS with autoscaling pods (3–20), Postgres on RDS Multi-AZ with read replicas, Redis ElastiCache, CloudFront CDN for the frontend, all spread across three availability zones behind an Application Load Balancer." That's the physical view of a multi-tenant SaaS stack.
+"Kubernetes on AWS EKS with autoscaling pods (3–20), Postgres on RDS Multi-AZ with read replicas, Redis ElastiCache, CloudFront CDN, all spread across three availability zones behind an Application Load Balancer." That's the physical view of a multi-tenant SaaS stack.
 </Callout>
 
 ### Scenarios — the +1
 
-The +1 isn't a view in the same sense; it's a set of representative use-case walkthroughs that exercise all four structural views together. It's where you check that your views are actually consistent — that the logical, process, development, and physical pieces describe the same system, not four different ones.
+Use-case walkthroughs that exercise all four structural views together. The consistency check — that logical, process, development, and physical describe the same system, not four different ones.
 
 ## Quality Views
 
-The four structural views describe the *what* and the *where*. **Quality views** describe the *how well* — how the system performs against specific non-functional requirements. They cut across the structural views.
+The four structural views describe the *what* and the *where*. **Quality views** describe the *how well* — non-functional behavior cutting across structural views.
 
-Two of them you'll touch nearly every system design conversation:
+<Compare2
+  left={{
+    label: 'Security view',
+    title: 'Defenses + attack surface',
+    body: 'Trust boundaries, authn/authz flows, encryption points, access control. What a security team or auditor wants on the wall during an assessment.',
+    accent: 'rose',
+  }}
+  right={{
+    label: 'Performance view',
+    title: 'Latency + throughput + scalability',
+    body: 'CDNs, cache tiers, autoscaling tiers, read replicas, indexes. Paired with metrics — response time, throughput, bottleneck identification.',
+    accent: 'emerald',
+  }}
+/>
 
-### Security view
-
-Focuses on protection mechanisms and the attack surface. Shows trust boundaries, authentication and authorization flows, encryption points, and access control.
+### Security view in detail
 
 | Concern | What you draw |
 | --- | --- |
@@ -95,80 +102,56 @@ Focuses on protection mechanisms and the attack surface. Shows trust boundaries,
 | Secrets | Vault, KMS, key rotation paths |
 | Data at rest | Encrypted storage, per-tenant key isolation |
 
-This view is what a security team or auditor wants on the wall when assessing the system.
-
-### Performance view
-
-Highlights latency, throughput, and scalability characteristics — the components and patterns that determine whether the system holds up at peak load.
-
-Typical elements:
-
-- CDN for global static delivery
-- Cache tiers (e.g., Redis clusters)
-- Auto-scaling application tiers
-- Database read replicas and tuned indexes
-
-Paired with metrics — response time, throughput, resource utilization, bottleneck identification — the performance view is what an SRE or performance engineer reaches for when planning capacity.
-
 ## Combining Views
 
-The opening claim of this lesson — "you can't show everything on one diagram" — is correct. But that doesn't mean views must always stay separate. **Combined views** are useful when two views have strong, frequently-cited associations and you want to highlight them together.
-
-The simplest form is an **overlay**: combine information from two views while preserving the original element types. Show the process view, then overlay the security boundaries from the security view on top of it. The result is more revealing than either view shown alone.
+Views can overlay productively. **Combined views** highlight strong, frequently-cited associations between two views — show the process view, then overlay security boundaries from the security view.
 
 <Callout type="warning" title="Don't over-stack">
-Combined views work best when the relationship between views is genuinely tight. Stack too many overlays and you end up with the spaghetti diagram you were trying to avoid in the first place. Two perspectives is usually the limit.
+Combined views work best when the relationship is genuinely tight. Stack too many overlays and you end up with the spaghetti diagram you were trying to avoid. Two perspectives is usually the limit.
 </Callout>
 
 ## The C4 Model
 
-The C4 model, by Simon Brown, isn't an "architectural view" in the 4+1 sense — it's a *visualization* method. But it's the most common way modern teams document architecture, so it earns a section.
+Simon Brown's C4 isn't an "architectural view" in the 4+1 sense — it's a **visualization** method. But it's how modern teams typically document architecture, so it earns a section.
 
-C4 gives you four levels of zoom — Context, Containers, Components, Code — that get progressively more detailed.
+C4 gives you four levels of zoom — progressively more detailed.
 
-### Level 1 — System Context
+<NumberCards items={[
+  { title: 'System Context', body: 'What is this system, and how does it fit into the world? One box, the people who use it, the systems it talks to. No tech details. Aimed at non-technical stakeholders.' },
+  { title: 'Containers', body: 'Zoom in. A "container" = a deployable unit (web app, API service, DB, message broker). Shows the architecture shape and technology choices.' },
+  { title: 'Components', body: 'Zoom into one container. Shows the major code building blocks behind well-defined interfaces. Should map to real groupings in the codebase.' },
+  { title: 'Code', body: 'Zoom into one component. Class diagrams, interfaces, implementation shape. Often auto-generated from IDE; decays fastest as code changes.' },
+]} />
 
-What is this system, and how does it fit into the world? Shows the system as a single box, surrounded by the people who use it and the other systems it talks to. No technology details. Aimed at non-technical stakeholders.
-
-### Level 2 — Containers
-
-Zoom into the system. A "container" here means a deployable unit — a web app, a mobile app, an API service, a database, a message broker. Shows the **shape** of the architecture and the technology choices.
-
-### Level 3 — Components
-
-Zoom into a single container. Shows the components inside — the major building blocks of the code, each behind a well-defined interface. These should map onto real groupings in the codebase, not invented ones.
-
-### Level 4 — Code
-
-Zoom into a single component. Class diagrams, interface definitions, the actual implementation shape. Often generated automatically from the IDE rather than maintained by hand — this level decays fastest as code changes.
-
-C4 + DDD pair well. Container diagrams correspond to bounded contexts as deployable units. Component diagrams reveal aggregates and domain services within a context. Event Storming, used during discovery, naturally informs the logical view by surfacing the events and aggregates the system actually cares about.
+<KeyIdea>
+C4 + DDD pair beautifully. Container diagrams = bounded contexts as deployable units. Component diagrams reveal aggregates and domain services. Event Storming during discovery feeds the logical view directly.
+</KeyIdea>
 
 ## Enterprise Architecture Frameworks
 
-For organizations that need a *catalogue* of standardized views, enterprise frameworks offer one out of the box.
+For organizations needing a catalog of standardized views:
 
-- **ArchiMate** (The Open Group) is the most thorough — a structured modeling language with three layers (Business, Application, Technology) plus cross-cutting aspects (Motivation, Strategy, Implementation), and 25+ standardized viewpoints.
-- **TOGAF ADM** offers an Architecture Development Method with standard domains: Business, Data, Application, Technology.
-- **Gartner EA** is more pragmatic and business-outcome-focused, emphasizing the link between IT and business strategy.
+<IconGrid cols={3} items={[
+  { icon: '🏛️', title: 'ArchiMate', body: 'The Open Group. Most thorough — three layers (Business/Application/Technology) + cross-cutting aspects + 25+ viewpoints.' },
+  { icon: '🗺️', title: 'TOGAF ADM', body: 'Architecture Development Method. Standard domains: Business, Data, Application, Technology.' },
+  { icon: '📊', title: 'Gartner EA', body: 'More pragmatic, business-outcome-focused. Emphasizes IT-business strategy alignment.' },
+]} />
 
-These frameworks are heavyweight. They earn their keep in regulated enterprises that need standardized vocabulary and documentation across hundreds of systems. For a single SaaS product team, 4+1 plus C4 is usually more than enough.
+These frameworks are heavyweight. They earn their keep in regulated enterprises with hundreds of systems. For a single SaaS product team, **4+1 plus C4 is usually more than enough**.
 
-## Closing the Loop
+## Three Habits That Make Views Useful
 
-Architectural views are communication tools. They exist so that the right person — engineer, auditor, SRE, executive — can look at the system and understand the part they care about, without drowning in the rest.
-
-Three habits make views actually useful:
-
-1. **Start from stakeholder needs.** Who's looking, and what decision are they making?
-2. **Pick views and notations to fit the question.** A C4 container diagram for new joiners, a sequence diagram for an outage post-mortem, a security overlay for an audit.
-3. **Keep documentation alive.** A view that lies is worse than no view. If the diagram is wrong, fix it or delete it.
+<NumberCards items={[
+  { title: 'Start from stakeholder needs', body: 'Who\'s looking, and what decision are they making? The view that doesn\'t serve a decision is documentation theater.' },
+  { title: 'Pick views and notations to fit the question', body: 'A C4 container diagram for new joiners, a sequence diagram for an outage post-mortem, a security overlay for an audit.' },
+  { title: 'Keep documentation alive', body: 'A view that lies is worse than no view. If the diagram is wrong, fix it or delete it.' },
+]} />
 
 ## Recap
 
 - One diagram can't show everything. Use multiple views, each for a specific concern.
-- The 4+1 model — Logical, Process, Development, Physical, plus Scenarios — covers the structural side.
-- Quality views (security, performance) overlay non-functional concerns across structural views.
-- The C4 model is the most common modern visualization method: zoom from Context → Containers → Components → Code.
+- 4+1 model — Logical, Process, Development, Physical, plus Scenarios — covers structural concerns.
+- Quality views (security, performance) overlay non-functional concerns.
+- C4 is the modern visualization method: Context → Containers → Components → Code.
 - Enterprise frameworks (ArchiMate, TOGAF) are heavy but useful at scale.
-- The job of every view is to help one stakeholder make one decision faster.
+- Every view should help one stakeholder make one decision faster. If it doesn't, delete it.

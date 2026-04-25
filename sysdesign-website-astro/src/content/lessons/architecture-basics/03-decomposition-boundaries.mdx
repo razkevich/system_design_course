@@ -10,8 +10,15 @@ lastUpdated: "2026-04-25"
 ---
 
 import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+import NumberCards from '../../../components/NumberCards.astro';
+import BigQuote from '../../../components/BigQuote.astro';
 
-> "Software architecture is the set of structures needed to reason about the system, comprising software elements, relations among them, and properties of both." — Len Bass, Paul Clements, Rick Kazman
+<BigQuote attribution="Len Bass, Paul Clements, Rick Kazman">
+Software architecture is the set of structures needed to reason about the system, comprising software elements, relations among them, and properties of both.
+</BigQuote>
 
 Architecture defines components and their relationships. The fundamental question — *where do the boundaries between components go?* — sits at the heart of every architectural decision.
 
@@ -21,55 +28,64 @@ Architecture defines components and their relationships. The fundamental questio
 
 When deciding how to decompose, architects weigh several forces that often pull in different directions. Good decomposition acknowledges all of them and trades off consciously.
 
+<IconGrid cols={2} items={[
+  { icon: '🏢', title: 'Domain functionality', body: 'The business itself. Bounded contexts → component boundaries. Usually the most stable lines.' },
+  { icon: '⚡', title: 'Quality attributes', body: 'Performance, security, availability, scalability — pull boundaries in different directions than domain alone would.' },
+  { icon: '🔧', title: 'Technical constraints', body: 'Existing systems, deployment platforms, technology choices. Pragmatic forces that override the theoretical clean cut.' },
+  { icon: '👥', title: 'Organizational structure', body: 'Conway\'s Law — team boundaries shape system boundaries. You can\'t cleanly fight Conway\'s Law.' },
+]} />
+
 ### Domain functionality — the business-shaped boundary
 
-The strongest single force is the business domain itself. Domain-Driven Design teaches that the **problem space** — the actual business reality you're modeling — should drive the decomposition of the **solution space**. Careful domain analysis surfaces **bounded contexts** — explicit boundaries within which a specific domain model applies — and those contexts map directly onto component boundaries. We'll go much deeper on DDD in a later section; for now, the headline is: business-shaped boundaries are usually the most stable.
+The strongest single force is the business domain itself. Domain-Driven Design teaches that the **problem space** — the actual business reality you're modeling — should drive the decomposition of the **solution space**. We'll go much deeper on DDD in a later section; for now, the headline is: **business-shaped boundaries are usually the most stable**.
 
 Take an e-commerce platform. Domain analysis surfaces these business capabilities, which suggest natural service boundaries:
 
-- **Customer management** — registration, profiles, authentication, preferences.
-- **Product catalog** — product info, categories, search, recommendations.
-- **Order processing** — cart, checkout, payments, fulfillment.
-- **Inventory management** — stock levels, reservations, supply-chain coordination.
+<IconGrid cols={2} items={[
+  { icon: '👤', title: 'Customer management', body: 'Registration, profiles, authentication, preferences.' },
+  { icon: '📦', title: 'Product catalog', body: 'Product info, categories, search, recommendations.' },
+  { icon: '🛒', title: 'Order processing', body: 'Cart, checkout, payments, fulfillment.' },
+  { icon: '📊', title: 'Inventory management', body: 'Stock levels, reservations, supply-chain coordination.' },
+]} />
 
 Each is a coherent business capability that can be owned by a team and shipped as a component or service. Aligning architectural boundaries with these natural business boundaries gives you systems that are easier for non-engineers to discuss and easier for engineering teams to evolve.
 
 ### Quality attributes — the non-functional pull
 
-Performance, security, availability, scalability, maintainability — quality attributes routinely pull boundaries in directions the domain wouldn't on its own. These conflicts are normal and often necessary.
+Performance, security, availability, scalability, maintainability — quality attributes routinely pull boundaries in directions the domain wouldn't on its own.
 
-Consider a social network where the domain model suggests separating "user profiles" from "user activity" into different bounded contexts. Performance requirements may push you the other way: co-locate them in one service so you can render the news feed without an expensive cross-service call. Or take a financial trading system — domain logic might keep "Trading" as a single context, but security requires splitting order entry, risk validation, and trade execution into separate services with hard boundaries between them.
+Consider a social network where the domain model suggests separating "user profiles" from "user activity" into different bounded contexts. Performance requirements may push you the other way: co-locate them in one service so you can render the news feed without an expensive cross-service call. Or take a financial trading system — domain logic might keep "Trading" as a single context, but security requires splitting order entry, risk validation, and trade execution into separate services with hard boundaries.
 
 <Callout type="info" title="The friction is the feature">
-Domain boundaries optimize for business clarity and team organization. Quality boundaries optimize for system behavior under load, failure, or compliance pressure. Sometimes you trade some domain purity for a critical non-functional requirement. The point is to make the trade-off consciously and document why.
+Domain boundaries optimize for business clarity and team organization. Quality boundaries optimize for system behavior under load, failure, or compliance. Sometimes you trade some domain purity for a critical non-functional requirement. The point is to make the trade-off consciously and document why.
 </Callout>
 
 A working list of how quality attributes pull boundaries:
 
 | Attribute | Definition | Pull on decomposition |
 | --- | --- | --- |
-| **Performance** | Response time, throughput, resource use | Larger components to avoid network hops; co-locate hot paths |
-| **Scalability** | Ability to handle increased load | Finer decomposition so components scale independently |
-| **Security** | Protection against threats and unauthorized access | Extra boundaries for access control; isolate sensitive data |
+| **Performance** | Response time, throughput | Larger components to avoid network hops; co-locate hot paths |
+| **Scalability** | Handle increased load | Finer decomposition for independent scaling |
+| **Security** | Protection against threats | Extra boundaries for access control; isolate sensitive data |
 | **Availability** | Uptime and fault tolerance | Isolate critical from non-critical; redundancy boundaries |
-| **Maintainability** | Ease of modification | Clear, stable interfaces; separation of concerns |
+| **Maintainability** | Ease of modification | Clear stable interfaces; separation of concerns |
 | **Deployability** | Ease of releasing changes | Independent deployable units, aligned with change cadence |
 
 ### Technical and organizational constraints
 
-Real systems also have to live with deployment environments, legacy systems, platform limits, and technology choices — pragmatic constraints that often override the theoretically clean boundary.
+Real systems have to live with deployment environments, legacy systems, platform limits, and technology choices. And then there's **Conway's Law**: *"organizations that design systems are constrained to produce designs that are copies of those organizations' communication structures."* Team structure, communication patterns, skills, and ownership shape system evolution whether you plan for it or not.
 
-And then there's Conway's Law: *"organizations that design systems are constrained to produce designs that are copies of those organizations' communication structures."* Team structure, communication patterns, skills, and ownership shape system evolution whether you plan for it or not. A team split into "frontend specialists" and "backend specialists" naturally produces an API boundary between front and back. Cross-functional teams produce feature-shaped boundaries. Neither is wrong — they're trade-offs.
+### Other factors
 
-### Other factors that pull on boundaries
+<IconGrid cols={2} items={[
+  { icon: '🔄', title: 'Change frequency', body: 'Things that change at different rates should usually be separated. UI changes faster than business logic, which changes faster than infra.' },
+  { icon: '👥', title: 'Team ownership', body: 'Every component needs a clear owner. Shared ownership = coordination tax + unclear accountability.' },
+  { icon: '📋', title: 'Regulatory boundaries', body: 'Compliance often dictates specific boundaries — finance separating trading from reporting, healthcare isolating PHI handling.' },
+  { icon: '🔧', title: 'Technology diversity', body: 'Different components benefit from different tech (Python for data, Go for real-time, React for UI).' },
+  { icon: '📍', title: 'Data locality', body: 'Operations group around the data they touch. Components with high data-access frequency belong close to the data.' },
+]} />
 
-- **Change frequency.** Things that change at different rates should usually be separated. UI changes faster than business logic, which changes faster than infrastructure.
-- **Team ownership.** Every component needs a clear owner. Shared ownership creates coordination tax and unclear accountability; clear boundaries enable team autonomy.
-- **Regulatory boundaries.** Compliance often dictates specific boundaries — finance separating trading logic from reporting, healthcare isolating PHI handling.
-- **Technology diversity.** Different components can benefit from different tech stacks (Python for data, Go for real-time, React for UI).
-- **Data locality.** Operations group around the data they touch. Components with high data-access frequency belong close to the data — and storing related data in the same database, region, or partition can be a meaningful performance and compliance lever.
-
-## Guiding Principles for Drawing Boundaries
+## Guiding Principles
 
 The forces above tell you *what* to consider. The principles below help you evaluate *whether you got it right*.
 
@@ -77,21 +93,34 @@ The forces above tell you *what* to consider. The principles below help you eval
 
 This principle, first articulated by Larry Constantine in the 1970s, is still the cornerstone of good decomposition. It applies at every level — function, class, module, service, system.
 
-**Cohesion** is how strongly the elements *inside* a component work together toward a common purpose. High cohesion makes components easier to understand, test, maintain, and reuse. Cohesion types, best to worst:
+<Compare2
+  left={{
+    label: 'Cohesion',
+    title: 'How tightly inside elements relate',
+    body: 'High cohesion = elements work together toward a common purpose. Easier to understand, test, maintain, reuse.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Coupling',
+    title: 'How tightly components depend on each other',
+    body: 'Low coupling = components operate independently with minimal knowledge of each other. Enables independent dev/test/deploy.',
+    accent: 'indigo',
+  }}
+/>
 
-- **Functional cohesion** — elements work together to perform one well-defined task. *Best — produces focused, reusable components.*
-- **Data cohesion** — elements work on the same data structures. *Good — natural grouping around data.*
-- **Change cohesion** — elements that change for the same reasons. *Good — aligns with how the business evolves.*
-- **Temporal cohesion** — elements accessed or changed at the same time. *Weak — usually a missing abstraction.*
+**Cohesion types**, best to worst:
 
-**Coupling** is the degree of interdependence between components. Low coupling means components can operate independently, with minimal knowledge of each other's internals. Coupling types, best to worst:
+- **Functional** — elements perform one well-defined task. *Best.*
+- **Data** — elements work on the same data structures. *Good.*
+- **Change** — elements that change for the same reasons. *Good.*
+- **Temporal** — elements accessed or changed at the same time. *Weak; usually a missing abstraction.*
 
-- **Data coupling** — components exchange only simple data. *Best — minimal dependency.*
-- **Contract coupling** — components exchange data structures. *Acceptable — common in well-designed APIs.*
-- **Control coupling** — one component controls another's flow. *Problematic — creates rigid dependencies.*
-- **Content coupling** — one component reaches into another's internals. *Worst — breaks encapsulation.*
+**Coupling types**, best to worst:
 
-Low coupling is what makes independent development, testing, deployment, and scaling possible. It's the principle behind microservices: each service is independently deployable and scalable, so teams work autonomously.
+- **Data** — components exchange only simple data. *Best.*
+- **Contract** — components exchange data structures. *Acceptable; common in well-designed APIs.*
+- **Control** — one component controls another's flow. *Problematic.*
+- **Content** — one component reaches into another's internals. *Worst.*
 
 <Callout type="tip" title="Not all coupling is bad">
 Coupling is fine when it serves architectural goals — between components that change together, belong to the same business capability, or require strong consistency. Coupling becomes bad when it crosses team boundaries, mismatched scaling needs, or different change cadences.
@@ -99,7 +128,7 @@ Coupling is fine when it serves architectural goals — between components that 
 
 ### The dependency rule
 
-Dependencies should obey a stability rule. Higher-level entities — core business rules and use cases that define what the system does — should not depend on lower-level details like databases, frameworks, or external APIs. This is the heart of Clean Architecture (Robert Martin): keep business logic stable while implementation details are free to evolve.
+Higher-level entities — core business rules — should not depend on lower-level details like databases, frameworks, or external APIs. Clean Architecture's load-bearing principle: **keep business logic stable while implementation details are free to evolve**.
 
 In practice:
 
@@ -111,76 +140,28 @@ Hexagonal architecture is the canonical visualization: business logic in the cen
 
 ![Hexagonal architecture](/images/section-1/hexagonal.png)
 
-### Information hiding and protocol design
+### Information hiding
 
-Well-designed boundaries expose only what consumers actually need, hiding implementation details behind stable interfaces. David Parnas formalized this principle in the 1970s and it's still load-bearing for managing complexity.
+Well-designed boundaries expose only what consumers actually need, hiding implementation details behind stable interfaces. David Parnas formalized this in the 1970s. Information hiding:
 
-Information hiding matters because it:
+<IconGrid cols={2} items={[
+  { icon: '🛡️', title: 'Localizes change', body: 'Implementation changes don\'t ripple to consumers.' },
+  { icon: '🧠', title: 'Simplifies the mental model', body: 'Consumers don\'t need to understand the internals.' },
+  { icon: '🤝', title: 'Enables parallel development', body: 'Teams work against contracts, not implementations.' },
+  { icon: '🧪', title: 'Supports testing', body: 'Stable interfaces are easy to mock.' },
+]} />
 
-- Localizes the impact of change.
-- Simplifies the consumer's mental model.
-- Enables parallel development by defining clear contracts.
-- Supports testing through stable interfaces that can be mocked.
+Good interfaces are minimal, stable, and shaped by consumer needs — not by what was convenient on the implementation side.
 
-Good interfaces are minimal, stable, and shaped by consumer needs — not by what was convenient on the implementation side. The principle applies at multiple levels:
+## Common Anti-patterns
 
-- **Code level.** Java modules (Project Jigsaw) expose specific packages, hide the rest.
-- **Service level.** Microservices expose a REST or gRPC API, hide internal data models and business logic.
-- **System level.** Public APIs hide whole-platform complexity (Stripe's payment API hides global payment processing complexity).
-- **Team level.** Clear team protocols spell out which capabilities the team provides and consumes, hiding internal team process.
-
-## Common Anti-patterns and Fixes
-
-### Distributed monolith
-
-Services split physically but not logically. Operational complexity of distributed systems, none of the benefits.
-
-**Fixes**
-
-- Focus on business boundaries, not technical ones.
-- Confirm services can be developed, tested, and deployed independently.
-- Minimize inter-service transactions and synchronous coupling.
-- Design services around business capabilities, not data.
-
-### Anemic component
-
-Components — services, modules, classes — too small to justify being separate. Mostly data shuttles, almost no logic.
-
-**Fixes**
-
-- Combine related capabilities into coherent business operations.
-- Focus on meaningful business operations rather than CRUD.
-- Apply the "could this just be a function?" test.
-
-### God component
-
-Components that try to do too much, violating single responsibility, becoming bottlenecks for multiple teams and use cases.
-
-**Fixes**
-
-- Split by business capability using DDD.
-- Extract shared concerns into specialized components.
-- Identify distinct reasons to change and separate them.
-
-### Duplicated cross-cutting concerns
-
-Logging, security, and caching reimplemented per service rather than extracted into shared infrastructure.
-
-**Fixes**
-
-- Extract infrastructure concerns into shared libraries or platform services.
-- Use middleware patterns or aspect-oriented programming.
-- Push concerns down to platform level (API gateway, service mesh).
-
-### Premature decomposition
-
-Splitting a system before you understand the domain. The result is verbose interfaces and high coordination tax.
-
-**Fixes**
-
-- Start with a modular monolith to learn the boundaries.
-- Use Strangler Fig to extract services gradually as understanding firms up.
-- Default to larger, cohesive components early; split later.
+<NumberCards items={[
+  { title: 'Distributed monolith', body: 'Services split physically but not logically. Operational complexity of distributed systems, none of the benefits. Fix: focus on business boundaries; ensure independent dev/test/deploy.' },
+  { title: 'Anemic component', body: 'Components too small to justify being separate. Mostly data shuttles. Fix: combine related capabilities; apply the "could this just be a function?" test.' },
+  { title: 'God component', body: 'Components that try to do too much. Bottlenecks for multiple teams. Fix: split by business capability; identify distinct reasons to change.' },
+  { title: 'Duplicated cross-cutting concerns', body: 'Logging, security, caching reimplemented per service. Fix: extract into shared libraries or push to platform level (gateway, mesh).' },
+  { title: 'Premature decomposition', body: 'Splitting before you understand the domain. Verbose interfaces, complex coordination. Fix: start coarse; split as boundaries become clear.' },
+]} />
 
 <Callout type="pitfall" title="The premature microservices trap">
 The most expensive boundary mistakes happen when teams split into microservices before understanding the domain. Distributed systems are dramatically harder to debug, deploy, and reason about — boundaries set too early get baked in and are painful to undo.
@@ -190,25 +171,28 @@ The most expensive boundary mistakes happen when teams split into microservices 
 
 Initial decomposition decisions are rarely perfect. Domain understanding deepens, team structure shifts, performance needs change, new technologies appear. Systems that can't evolve their boundaries calcify and eventually get rewritten.
 
-To support evolution, design for **observability** of boundaries:
+Design for **observability** of boundaries:
 
-- **Architecture tests** — automated tests that detect drift over time. Examples: dependency analysis to catch unwanted coupling, contract tests for interface stability, complexity metrics that flag emerging god components.
-- **Telemetry that respects boundaries** — request rates, error rates, and latencies measured *between* components, not just within them. Distributed tracing across boundaries. Structured logs that follow a request through.
-- **Migration patterns** — Strangler Fig (gradually replace old with new), parallel run (old and new together for verification), feature flags (control boundary changes via config), branch-by-abstraction (hide the change behind a stable interface).
-
-Modern tooling helps. Spring Modulith, for example, lets you build a modular monolith with enforced internal boundaries that you can later extract as separate services *when the benefits justify the complexity* — not before.
+<IconGrid cols={2} items={[
+  { icon: '🧪', title: 'Architecture tests', body: 'Automated tests that detect drift over time. Dependency analysis, contract tests, complexity metrics flagging god components.' },
+  { icon: '👁️', title: 'Boundary telemetry', body: 'Request rates, error rates, latencies measured between components. Distributed tracing across boundaries.' },
+  { icon: '🔄', title: 'Migration patterns', body: 'Strangler Fig (gradual replacement), parallel run (verification), feature flags (controlled cutover), branch-by-abstraction.' },
+  { icon: '🛠️', title: 'Modern tooling', body: 'Spring Modulith for modular monoliths with enforced internal boundaries — extract as services when the benefits justify the complexity.' },
+]} />
 
 ## Closing the Loop
 
 Drawing boundaries is part analysis, part craft. The most successful architects know there's no single perfect decomposition — only a decomposition that fits the current context, constraints, and goals.
 
-The aim isn't zero coupling — it's coupling that's deliberate, well-understood, and aligned with architectural goals. Good boundaries make the right things easy and the wrong things hard. They let teams work independently while the system as a whole stays coherent.
+<KeyIdea>
+The aim isn't zero coupling — it's coupling that's deliberate, well-understood, and aligned with architectural goals. Good boundaries make the right things easy and the wrong things hard.
+</KeyIdea>
 
 When you're choosing boundaries, the test is whether they make future change easier or harder. Start simple, learn from real use, and evolve boundaries as your understanding grows. The architectures that last longest are the ones that can adapt their boundaries while keeping their identity.
 
 ## Recap
 
-- Decomposition is about *where the lines go*, and every architectural decision is some version of that question.
+- Decomposition is *where the lines go*, and every architectural decision is some version of that question.
 - Domain boundaries are usually the most stable; quality, technical, and organizational forces pull them in other directions.
 - High cohesion, low coupling — Constantine's principle — is still the rubric for evaluating any boundary.
 - The dependency rule keeps business logic stable as implementation details change.
