@@ -1,0 +1,131 @@
+---
+title: Domain-Driven Design
+slug: domain-driven-design
+order: 1
+section: architectural-patterns
+group: Domain-Driven Design
+summary: The strategic + tactical framework for turning business reality into software. Bounded contexts, ubiquitous language, and the bridge between problem and solution space.
+readingMinutes: 9
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+import BigQuote from '../../../components/BigQuote.astro';
+
+<BigQuote>
+The model is the language. The language is the model.
+</BigQuote>
+
+Domain-Driven Design (DDD) is a systematic approach to analyzing complex business problems and modeling software solutions. It splits naturally into two complementary halves: **strategic design** (the big-picture boundaries) and **tactical design** (the building blocks inside each boundary).
+
+<KeyIdea>
+Strategic DDD discovers the *boundaries* between contexts and manages the *relationships* between them. Tactical DDD defines what lives *inside* each bounded context.
+</KeyIdea>
+
+## Two Spaces
+
+DDD constantly distinguishes between the **problem space** (the business reality you're modeling) and the **solution space** (the architecture that addresses it).
+
+<Compare2
+  left={{
+    label: 'Problem space',
+    title: 'What needs solving',
+    body: 'The business domain itself, independent of software. Domains, sub-domains (core / supporting / generic), and the language the business actually uses.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Solution space',
+    title: 'How we structure software',
+    body: 'Bounded contexts, context maps, integration patterns. The architectural shapes that reflect the problem space.',
+    accent: 'emerald',
+  }}
+/>
+
+### Inside the problem space
+
+<IconGrid cols={3} items={[
+  { icon: '🌍', title: 'Domain', body: 'The whole business area you operate in.' },
+  { icon: '🧩', title: 'Sub-domains', body: 'Logical divisions of the domain — by business capability.' },
+  { icon: '💎', title: 'Core domain', body: 'The differentiating capabilities unique to your business.' },
+  { icon: '🛠️', title: 'Supporting sub-domain', body: 'Necessary, but not differentiating.' },
+  { icon: '📦', title: 'Generic sub-domain', body: 'Cross-cutting concerns; not unique to your business.' },
+  { icon: '🗣️', title: 'Ubiquitous language', body: 'The shared vocabulary that bridges business and engineering.' },
+]} />
+
+### Inside the solution space
+
+- **Bounded contexts** — software boundaries within which a single domain model applies coherently.
+- **Context maps** — visual representations of how bounded contexts relate.
+- **Integration patterns** — Shared Kernel, Customer/Supplier, Anti-corruption Layer, and friends.
+
+## The Bridge: One Domain, Many Models
+
+The same business concept can carry different meanings across bounded contexts — and that's a feature, not a bug.
+
+<Callout type="info" title="Customer means different things">
+In **Sales**, "Customer" is a prospect being qualified.
+In **Billing**, "Customer" is an account with payment methods.
+In **Support**, "Customer" is a request for help.
+Each context's model is right *for that context*. Forcing one universal "Customer" model across all of them is how distributed monoliths get born.
+</Callout>
+
+The model is what spans both spaces. Multiple bounded contexts can reference the same sub-domain; one sub-domain can be touched by multiple bounded contexts. The relationships are many-to-many.
+
+## Tactical Building Blocks
+
+Inside a bounded context, tactical DDD gives you the patterns to express the model in code.
+
+<IconGrid cols={2} items={[
+  { icon: '🆔', title: 'Entities', body: 'Objects with unique identity that persist over time (Customer, Order).' },
+  { icon: '📐', title: 'Value objects', body: 'Defined by their attributes, not identity (Address, Money).' },
+  { icon: '📦', title: 'Aggregates', body: 'Clusters of entities and value objects treated as a single unit for state changes.' },
+  { icon: '🌳', title: 'Aggregate root', body: 'The single entity in an aggregate that external code can reference directly.' },
+  { icon: '⚙️', title: 'Domain services', body: 'Operations that don\'t naturally belong to a single entity or value object.' },
+  { icon: '🗃️', title: 'Repositories', body: 'Abstractions for storing and retrieving aggregates.' },
+  { icon: '🏭', title: 'Factories', body: 'Encapsulate the logic for constructing complex aggregates.' },
+  { icon: '⚡', title: 'Domain events', body: 'Significant occurrences in the domain that other parts of the system care about.' },
+]} />
+
+## A Concrete Walkthrough
+
+Imagine an e-commerce platform. Strategic analysis surfaces three sub-domains:
+
+- **Product Recommendations** — core (your differentiator).
+- **Order Processing** — supporting (essential, but not where you compete).
+- **User Authentication** — generic (essentially the same for everyone).
+
+Each maps to a bounded context. Inside the **Order Processing** context, tactical patterns shape the model:
+
+- An `Order` entity with identity and lifecycle.
+- `OrderItem` value objects defined by product and quantity.
+- An `OrderAggregate` enforcing invariants like "total = sum of line items."
+- An `OrderRepository` for persistence.
+- A `PricingService` for calculations that don't belong to a single entity.
+
+## Strategic and Tactical Are Iterative
+
+Strategic and tactical design are **not** sequential phases. You start with strategic analysis to find boundaries, but tactical implementation insights routinely feed back into strategic refinement. The boundary that looked clean on a whiteboard sometimes turns out to be wrong; the fix is to redraw the boundary, not paper over it in code.
+
+The domain model emerges from this iteration — from the dialogue between business reality and software implementation.
+
+## Why DDD Pays Off
+
+DDD does three things at once that no other approach quite does:
+
+1. **Aligns software structure with business structure.** What changes in the business changes in the same place in code.
+2. **Gives engineers a shared vocabulary with the business.** No translation layer between requirements and design.
+3. **Provides patterns for the gnarly bits** — invariants across multiple entities, integrating with legacy systems, evolving boundaries as understanding grows.
+
+In multi-tenant SaaS, where the product and the business model are tightly coupled, DDD is often the difference between a platform that scales coherently and one that becomes the kind of "big ball of mud" the previous lesson warned about.
+
+## Recap
+
+- DDD has two halves: strategic (boundaries) and tactical (building blocks).
+- Problem space describes the business; solution space describes the software.
+- Bounded contexts encapsulate one consistent domain model each.
+- The same business concept can mean different things in different contexts — and that's correct.
+- Tactical patterns (entities, value objects, aggregates, repositories) implement the model inside a bounded context.
+- Strategic and tactical work iteratively — boundaries get refined as the team learns.

@@ -10,10 +10,31 @@ lastUpdated: "2026-04-25"
 ---
 
 import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+import BigQuote from '../../../components/BigQuote.astro';
+
+<BigQuote>
+Either you choose your architecture, or it chooses you.
+</BigQuote>
 
 Software architecture defines how the pieces of an application fit together — its internal structure, the data flowing between components, and the relationships that decide whether your system can grow or whether it will calcify. **System design** zooms out further. It covers the entire technology footprint: infrastructure, data storage, service-to-service communication, deployment pipelines, and operational concerns.
 
-Think of architecture as designing the inside of a building — rooms, hallways, plumbing — and system design as planning the surrounding district: utilities, roads, zoning, and the substations that keep everything running. Architecture answers "how should this application be structured?" System design answers "how should this application fit into and interact with the broader technical landscape?"
+<Compare2
+  left={{
+    label: 'Architecture',
+    title: 'Inside the building',
+    body: 'How components interact, how data flows, how modules relate. Answers "how should this application be structured?"',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'System design',
+    title: 'The whole district',
+    body: 'Infrastructure, storage, networking, deployment, operations. Answers "how should this application fit into the broader technical ecosystem?"',
+    accent: 'emerald',
+  }}
+/>
 
 For a multi-tenant SaaS platform under load, both disciplines are unavoidable. Bad decisions in either area don't just hurt that area — they amplify each other.
 
@@ -21,18 +42,20 @@ For a multi-tenant SaaS platform under load, both disciplines are unavoidable. B
 
 Every system has both an architecture and a system design, whether you chose them on purpose or let them emerge by accident. The choice is binary: either you decide what they should be, or they decide what they will be.
 
-<Callout type="info" title="Key idea">
+<KeyIdea>
 Systems without deliberate architectural thinking aren't unstructured. They have *bad* structure — built up tactically, one urgent ticket at a time, with no one looking at the whole.
-</Callout>
+</KeyIdea>
 
 The distinction matters more as the system grows. A small SaaS app launched by two engineers can survive almost any architecture for a while. Once it has fifty paying tenants, a billing pipeline, an event firehose, three teams shipping in parallel, and a noisy-neighbor problem on your shared database, every architectural shortcut you took compounds. Symptoms show up in a predictable order:
 
-- Development velocity slows. The team spends more time working *around* the architecture than *with* it.
-- Bugs multiply. Tightly coupled components fail in non-obvious ways.
-- Deployments get scary. Releases require coordination across teams.
-- Operating costs creep up. Inefficient designs need more compute to do the same work.
-- The infrastructure becomes fragile. Outages take longer to diagnose and recover from.
-- New features take disproportionate effort to ship.
+<IconGrid cols={3} items={[
+  { icon: '🐌', title: 'Velocity drops', body: 'Team spends more time working around the architecture than with it.' },
+  { icon: '🐛', title: 'Bugs multiply', body: 'Tightly coupled components fail in non-obvious ways.' },
+  { icon: '😰', title: 'Deploys get scary', body: 'Releases need cross-team coordination and feel risky.' },
+  { icon: '💸', title: 'Costs creep up', body: 'Inefficient designs need more compute to do the same work.' },
+  { icon: '🪨', title: 'Infrastructure gets fragile', body: 'Outages take longer to diagnose and recover from.' },
+  { icon: '🐢', title: 'Features get expensive', body: 'New features take disproportionate effort to ship.' },
+]} />
 
 These aren't separate failure modes. They are the same architectural debt manifesting in different parts of the company.
 

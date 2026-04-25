@@ -1,0 +1,121 @@
+---
+title: Modern Architectural Styles Overview
+slug: modern-architectural-styles
+order: 4
+section: architectural-patterns
+group: Architectural Styles
+summary: A tour of the architectural styles in modern use — traditional and modern — and how to combine them in a multi-tenant SaaS platform.
+readingMinutes: 7
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+
+Software architecture has changed substantially in two decades. Cloud computing, distributed systems, and the demand for highly scalable applications pushed architectural styles past the classic monolith — but didn't replace traditional patterns. Modern systems mix and match.
+
+This lesson is a tour of the styles you'll encounter, what each is good for, and the technologies typically used to build them.
+
+<KeyIdea>
+Architectural styles aren't mutually exclusive. Successful systems combine them — traditional patterns for internal service structure, modern approaches for system-wide concerns like scalability and resilience.
+</KeyIdea>
+
+## Traditional Styles (Still Useful)
+
+These long-established styles remain the foundation of most software, often serving as the building blocks of modern distributed systems.
+
+<IconGrid cols={2} items={[
+  { icon: '🏛️', title: 'Layered architecture', body: 'Horizontal layers (presentation, business, data). Classic three-tier. Clean separation, simple to reason about. Used in: Spring, .NET, Django, Rails.' },
+  { icon: '🎭', title: 'MVC / MVVM', body: 'Splits app into model (data + logic), view (UI), controller (input handling). MVVM adds a binding layer. Used in: Angular, React, Vue, Spring MVC.' },
+  { icon: '🔗', title: 'Pipes and Filters', body: 'Data flows through filters connected by pipes. Each filter transforms and passes on. Great for stream processing. Used in: Unix pipelines, Kafka Streams, Apache Camel, RxJS.' },
+  { icon: '🔌', title: 'Microkernel (plugin)', body: 'Small core providing minimal features, extensions via plugins. Used in: Eclipse, IntelliJ, Jenkins, WordPress, OSGi.' },
+  { icon: '🏢', title: 'Service-Oriented Architecture (SOA)', body: 'Loosely coupled services with well-defined interfaces, often via SOAP. Predecessor to microservices. Used in: SOAP/WS-*, ESBs, IBM WebSphere.' },
+]} />
+
+## Modern Styles
+
+These approaches emerged to handle cloud-scale distributed systems.
+
+### Microservices
+
+Break the application into small independent services that communicate over the network. Each service owns its data, can be deployed independently, and is typically organized around a business capability.
+
+<Compare2
+  left={{
+    label: 'Microservices',
+    title: 'Fine-grained, decentralized',
+    body: 'Service boundaries align with bounded contexts. Lightweight protocols (REST, gRPC). Independent deployment. Polyglot tech stack.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'SOA (predecessor)',
+    title: 'Coarser-grained, centralized governance',
+    body: 'Heavy protocols (SOAP, WS-*). ESB at the center. Designed for reuse across enterprise. Higher coordination overhead.',
+    accent: 'amber',
+  }}
+/>
+
+**Technologies.** Docker, Kubernetes, service meshes (Istio, Linkerd), API gateways (Kong, Ambassador), gRPC, REST.
+
+import Compare2 from '../../../components/Compare2.astro';
+
+### Event-Driven Architecture
+
+Components communicate asynchronously through events. The publisher doesn't know who's listening; subscribers process events independently. Naturally supports reactive and real-time processing.
+
+**Technologies.** Apache Kafka, AWS EventBridge, Azure Event Grid, RabbitMQ, Apache Pulsar.
+
+### Space-Based Architecture
+
+Eliminates the central database as a bottleneck by using replicated in-memory data grids. Processing units contain both application logic and data. New units can be added or removed dynamically as load changes. Ideal for traffic patterns with extreme spikes.
+
+**Technologies.** Apache Ignite, Hazelcast, Oracle Coherence, GridGain, Redis Cluster.
+
+### Serverless
+
+Delegates infrastructure management entirely to the cloud provider. Applications are stateless, event-driven functions with automatic scaling and pay-per-execution billing.
+
+**Technologies.** AWS Lambda, Azure Functions, Google Cloud Functions, Vercel, Cloudflare Workers.
+
+### Reactive Architecture
+
+Builds systems that are responsive, resilient, elastic, and message-driven (the four properties from the Reactive Manifesto). Emphasizes asynchronous, non-blocking communication and graceful failure handling. Strong fit for high-throughput, low-latency applications.
+
+**Technologies.** Akka, Vert.x, Spring WebFlux, RxJava, Reactive Streams, Node.js, Erlang/Elixir.
+
+### Peer-to-Peer
+
+Distributes functionality among nodes that act as both clients and servers. Decentralized, no central coordination. Excellent fault tolerance and scalability.
+
+**Technologies.** Blockchain platforms, BitTorrent, DHTs, IPFS, libp2p, WebRTC.
+
+## How They Combine in Practice
+
+A modern multi-tenant SaaS rarely picks a single style. A common composition:
+
+<IconGrid cols={2} items={[
+  { icon: '🧱', title: 'Microservices for business capabilities', body: 'One service per bounded context. Independent deploys, owned by a single team.' },
+  { icon: '⚡', title: 'Event-driven for integration', body: 'Pub/sub via Kafka or similar. Services publish state changes; others subscribe.' },
+  { icon: '☁️', title: 'Serverless for spiky workloads', body: 'Image processing, scheduled jobs, webhooks. Scale to zero, pay per use.' },
+  { icon: '🏛️', title: 'Layered architecture inside each service', body: 'API → application service → domain → repository. Clean separation within the service boundary.' },
+]} />
+
+## Choosing a Style
+
+The choice depends on system requirements, team structure, operational constraints, and business goals. A few rules of thumb:
+
+- **Default to a modular monolith** for most early-stage products. Extract services as boundaries firm up.
+- **Microservices** make sense once team size, deployment cadence, and scaling requirements justify the operational tax.
+- **Event-driven** is the right pattern when you have multiple consumers of the same state changes — including the consumers you don't have yet.
+- **Serverless** is ideal for spiky, stateless workloads where the operational simplicity outweighs the cold-start trade-off.
+- **Reactive** matters when sustained high throughput on low-latency endpoints is the requirement.
+
+The lessons that follow go deep on the styles most relevant to multi-tenant SaaS: modular monoliths, microservices, event-driven, reactive, serverless, and multi-tenancy patterns specifically.
+
+## Recap
+
+- Architectural styles aren't mutually exclusive; production systems combine them.
+- Traditional styles (layered, MVC, pipes & filters, microkernel, SOA) remain the foundation.
+- Modern styles (microservices, event-driven, space-based, serverless, reactive, P2P) address cloud-scale distribution.
+- Default to simpler styles; reach for more complex ones only when their costs are justified by the requirements.

@@ -1,0 +1,233 @@
+---
+title: Strategic DDD
+slug: strategic-ddd
+order: 3
+section: architectural-patterns
+group: Domain-Driven Design
+summary: The boundaries between contexts and the patterns for integrating them. Domains, sub-domains, bounded contexts, context maps, and the seven integration patterns.
+readingMinutes: 12
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+import NumberCards from '../../../components/NumberCards.astro';
+
+Strategic DDD is the half of the methodology that decides **where the boundaries go**. Tactical DDD shapes what's inside each boundary; strategic DDD shapes the boundaries themselves and the relationships between them.
+
+<KeyIdea>
+Start with understanding your business domain. Technical decisions follow naturally from business boundaries — not the other way around.
+</KeyIdea>
+
+## Why Technical Boundaries Aren't Enough
+
+A common mistake: split a system by technical layer — API gateway, business logic service, data access service, auth service, integration service. Looks clean. Creates a distributed monolith.
+
+<Compare2
+  left={{
+    label: 'Technical-layer split',
+    title: 'Looks clean, scales poorly',
+    body: 'Business operations span multiple services. Data consistency is brittle. Domain knowledge is scattered. Every change requires cross-team coordination.',
+    accent: 'rose',
+  }}
+  right={{
+    label: 'Domain-driven split',
+    title: 'Reflects business reality',
+    body: 'A bounded context owns its slice of the business end-to-end. Teams shipping in their context don\'t need to coordinate with others for routine work.',
+    accent: 'emerald',
+  }}
+/>
+
+## Two Spaces, Again
+
+Strategic DDD operates across the **problem space** (the business reality) and the **solution space** (the software architecture). The point is to understand the problem space *before* designing the solution.
+
+### Problem space — domain and sub-domains
+
+The **domain** is the entire business area you operate in. **Sub-domains** are distinct areas of functionality within it. For e-commerce, sub-domains might include:
+
+- Customer management
+- Product catalog
+- Order processing
+- Inventory management
+- Payment processing
+- Shipping & fulfillment
+- Marketing & promotions
+
+Sub-domains aren't all equal. They classify into three buckets, and the classification drives investment decisions:
+
+<IconGrid cols={3} items={[
+  { icon: '💎', title: 'Core sub-domain', body: 'Your competitive advantage. Where senior engineers and custom architecture should go. (e.g., Netflix\'s recommendation engine.)' },
+  { icon: '⚙️', title: 'Supporting sub-domain', body: 'Business-essential, but not differentiating. Custom-built but simpler. (e.g., order processing for most e-commerce.)' },
+  { icon: '📦', title: 'Generic sub-domain', body: 'Necessary, not unique. Buy off-the-shelf. (e.g., authentication, payment processing, email delivery.)' },
+]} />
+
+### Practical heuristics for finding sub-domains
+
+- **Follow the money.** Revenue-generating activities point at core areas.
+- **Look for specialized expertise.** Areas needing domain experts are usually distinct sub-domains.
+- **Trace business processes.** End-to-end workflows reveal natural divisions.
+- **Listen to organizational language.** Different teams using different vocabulary often signal different sub-domains.
+- **Identify decision boundaries.** Where different rules and policies apply.
+
+### Discovery techniques
+
+- **Event Storming** — collaborative workshop where domain experts and engineers map all domain events on a timeline. Reveals processes, suggests bounded contexts via event clustering, surfaces concepts that traditional requirements gathering misses.
+- **Domain Storytelling** — domain experts narrate how work is done; participants visualize the stories. Identifies actors, work objects, and activities; makes implicit knowledge explicit.
+
+## Bounded Contexts: The Solution-Space Boundary
+
+A **bounded context** is the implementation boundary inside which a specific domain model applies. Inside the boundary, all terms have specific, consistent meanings. Outside it, the same words can mean entirely different things.
+
+### Sub-domain ↔ bounded context isn't always one-to-one
+
+- One sub-domain → multiple bounded contexts (when complexity demands it).
+- Multiple sub-domains → one bounded context (when they're tightly coupled).
+- Generic sub-domains often need no custom context at all — use the off-the-shelf solution.
+
+### Linguistic boundaries
+
+The most reliable signal that you've found a bounded-context boundary is **language**. When experts from different parts of the business use the same word for different things, you've probably found a boundary.
+
+<Callout type="info" title='"Customer" means different things'>
+- **Sales context** — a prospect with purchase potential. Focus: purchase history, tier status, discount eligibility.
+- **Support context** — someone needing help. Focus: contact info, ticket history, satisfaction ratings.
+- **Shipping context** — a delivery destination. Focus: addresses, delivery preferences, carrier options.
+
+Each context has its own model of "customer," optimized for that context's job. This isn't bad duplication — it's recognition that the same business concept serves different purposes.
+</Callout>
+
+## Context Maps: Documenting Relationships
+
+Once you've identified bounded contexts, you need to understand how they relate. A **context map** shows:
+
+- Which bounded contexts exist.
+- How they're connected.
+- Which integration patterns they use.
+- Who owns what in each relationship.
+
+## The Seven Integration Patterns
+
+Different relationships need different integration approaches. Strategic DDD codifies seven patterns:
+
+### 1. Partnership
+
+Two contexts developed by tightly collaborating teams. Changes are coordinated; both teams have equal influence.
+
+> **Example.** Sales context ↔ Marketing context. Joint campaigns require coordination on both sides.
+>
+> **When to use.** Contexts that must evolve together; teams that work closely.
+>
+> **Risk.** High coordination cost; both teams must move at the same pace.
+
+### 2. Customer/Supplier
+
+One context (supplier) provides services to another (customer). The supplier has more interface influence but must consider customer needs. Most common pattern in well-designed systems.
+
+> **Example.** Product Catalog (supplier) → Sales (customer). Sales depends on product data but doesn't control catalog structure.
+>
+> **When to use.** Clear dependency relationship; stable interface.
+>
+> **Risk.** Supplier changes can break customer; needs good versioning.
+
+### 3. Conformist
+
+Downstream context accepts the upstream model unchanged. Common when integrating with external systems where you have no influence.
+
+> **Example.** External payment gateway → Order processing. Must accept whatever payment payload format the gateway provides.
+>
+> **When to use.** External or legacy systems you can't change.
+>
+> **Risk.** Upstream changes force downstream changes; can pollute the domain model.
+
+### 4. Anti-Corruption Layer (ACL)
+
+Downstream context translates the upstream model into its own terms. Protects the downstream from upstream changes.
+
+> **Example.** Legacy inventory system → [translation layer] → Modern order system. The order system keeps its clean model despite the legacy system's mess.
+>
+> **When to use.** Integrating legacy or external systems with mismatched models.
+>
+> **Benefit.** Protects downstream's domain model; simplifies testing and maintenance.
+
+### 5. Shared Kernel
+
+Two contexts share a model for some concepts. Requires close coordination and shared ownership. Use sparingly, only for very stable concepts.
+
+> **Example.** Sales context ↔ Support context, sharing Customer identity.
+>
+> **When to use.** Very stable shared concepts; teams that can coordinate closely.
+>
+> **Risk.** Changes affect multiple contexts; can become a bottleneck.
+
+### 6. Open Host Service
+
+A context exposes a well-defined API for multiple downstream contexts. The upstream designs its interface to serve many clients, not optimize for one.
+
+> **Example.** User authentication service (open host) → many client contexts.
+>
+> **When to use.** One-to-many relationships; stable public APIs.
+>
+> **Benefit.** Reduces coupling; clients can evolve independently.
+
+### 7. Separate Ways
+
+Contexts are not connected and duplicate functionality rather than integrate. Sometimes the right call when integration cost exceeds duplication cost.
+
+> **Example.** Internal analytics ↔ External reporting tool, both maintaining their own customer data.
+>
+> **When to use.** Integration cost > duplication cost; very different models needed.
+>
+> **Benefit.** Complete independence; no coordination overhead.
+
+## Common Mistakes
+
+<NumberCards cols={2} items={[
+  { title: 'Distributed monolith', body: 'Services physically split but tightly coupled. Use ACLs to isolate contexts. Design for eventual consistency.' },
+  { title: 'God context', body: 'One context handles too many concerns. Look for natural seams — different sub-domains, different teams, different change rates.' },
+  { title: 'Anemic context', body: 'Just CRUD services with no business logic. Move rules into domain models. Focus on behavior, not just storage.' },
+  { title: 'Premature splitting', body: 'Too-fine-grained contexts before understanding the domain. Start coarse; split as you learn.' },
+]} />
+
+## Boundaries Evolve
+
+Bounded contexts aren't permanent. As your business grows and changes, boundaries need to evolve.
+
+<Compare2
+  left={{
+    label: 'Signs to split',
+    title: 'A context wants to break up',
+    body: 'Teams conflicting over changes. Very different concerns inside one context. Wildly different scalability or reliability needs. Domain model becoming hard to reason about.',
+    accent: 'amber',
+  }}
+  right={{
+    label: 'Signs to merge',
+    title: 'Two contexts want to come together',
+    body: 'Excessive cross-context communication for simple operations. Lots of shared data always used together. Constant coordination on changes between teams. Duplicated business logic.',
+    accent: 'emerald',
+  }}
+/>
+
+Strategies for evolving boundaries:
+
+- **Strangler Fig** — gradually replace old context boundaries with new ones.
+- **Event-driven integration** — use domain events to maintain loose coupling during transitions.
+- **Database-per-context** — make sure data ownership matches context boundaries.
+- **API versioning** — support multiple versions during context evolution.
+
+## Closing the Loop
+
+Strategic DDD isn't a one-time exercise. Your boundaries will evolve as your business grows and your understanding deepens. Start with understanding the domain, identify bounded contexts through linguistic boundaries, map the relationships, and validate against real business scenarios.
+
+The goal isn't perfect boundaries from day one. It's the *best* boundaries you can draw now, with the discipline to refine them as you learn.
+
+## Recap
+
+- Strategic DDD draws boundaries from business reality, not technical convenience.
+- Sub-domains classify into core (your differentiator), supporting (essential, custom), and generic (buy, don't build).
+- Bounded contexts are the implementation boundaries; same words can mean different things across them.
+- Context maps document relationships; the seven integration patterns give names to the shapes those relationships take.
+- Watch for distributed monolith, god context, anemic context, and premature splitting.
+- Boundaries evolve. Plan for it.

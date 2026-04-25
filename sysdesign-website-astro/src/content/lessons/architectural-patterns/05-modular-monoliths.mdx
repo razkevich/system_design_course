@@ -1,0 +1,139 @@
+---
+title: Modular Monoliths
+slug: modular-monoliths
+order: 5
+section: architectural-patterns
+group: Architectural Styles
+summary: The pragmatic middle ground — clean module boundaries inside a single deployable unit. The architecture Shopify, GitHub, and Basecamp run at scale.
+readingMinutes: 9
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+import NumberCards from '../../../components/NumberCards.astro';
+
+Modular monoliths combine the modularity and clear boundaries of microservices with the operational simplicity of a monolithic deployment. Shopify, GitHub, and Basecamp run massive systems on this pattern — getting team autonomy and clear architectural boundaries without taking on distributed-system complexity.
+
+<KeyIdea>
+The difference between a modular monolith and a traditional monolith isn't *how it's deployed* — both ship as one unit. It's the internal organization and the discipline with which boundaries are maintained.
+</KeyIdea>
+
+## What Makes a Monolith Modular
+
+In a modular monolith, **modules aren't just folders or packages — they're architectural boundaries**. Each module represents a separate business capability with its own data model, business logic, and a clear interface to the rest of the system.
+
+<Compare2
+  left={{
+    label: 'Traditional monolith',
+    title: 'Single deployable, no internal walls',
+    body: 'Shared database, shared models, code reaches across "modules" freely. Looks fine until the team grows and changes start cascading.',
+    accent: 'rose',
+  }}
+  right={{
+    label: 'Modular monolith',
+    title: 'Single deployable, hard internal walls',
+    body: 'Each module owns its data and exposes a defined interface. Cross-module communication goes through that interface — never direct DB access or internal calls.',
+    accent: 'emerald',
+  }}
+/>
+
+Modules talk through **well-defined interfaces**, not direct method calls or shared database access. When the orders module needs user info, it doesn't query the user database — it calls the user module's API. The interface might compile down to in-process method calls for performance, but the architectural boundary is explicit.
+
+## Enforcing Boundaries
+
+The hardest problem with modular monoliths is **enforcing boundaries** without the network barrier microservices give you for free. Discipline alone doesn't scale; tooling does.
+
+<IconGrid cols={3} items={[
+  { icon: '☕', title: 'Spring Modulith (Java)', body: 'Compile-time boundary verification. Modules expose explicit public APIs; cross-module access to non-public components fails at build time.' },
+  { icon: '🔷', title: 'C# / .NET', body: 'Internal access modifiers and assembly-level access control. Wolverine and MediatR add event-driven communication patterns.' },
+  { icon: '🦀', title: 'Rust', body: 'Module visibility (pub, pub(crate)) makes module boundaries first-class language constructs.' },
+  { icon: '🐍', title: 'Python', body: 'Lacks built-in enforcement. Use static analyzers like importlinter to catch violations in CI.' },
+  { icon: '🟦', title: 'TypeScript', body: 'ESLint rules + path aliasing + dependency-cruiser to detect cross-module imports that shouldn\'t exist.' },
+  { icon: '🏗️', title: 'Build tools', body: 'Bazel, Nx, Turborepo enforce module boundaries via build dependency graphs.' },
+]} />
+
+## DDD as the Foundation
+
+The most successful modular monoliths align module boundaries with DDD bounded contexts. Each module represents a bounded context — an area with its own consistent business concepts, rules, and terminology.
+
+For an e-commerce platform: customer management, order processing, inventory, payments, shipping. Each is a module with its own model of shared concepts. The customer-management module has detailed customer profiles. The shipping module has only delivery addresses and preferences.
+
+## Implementation Patterns
+
+### Hexagonal modules
+
+Each module structures itself with hexagonal architecture (ports and adapters). Core business logic at the center, surrounded by ports that define interfaces for external communication, and adapters that implement those interfaces.
+
+This pattern shines in modular monoliths because boundaries become explicit. Other modules interact only through defined ports, never with internal implementations.
+
+### Event-driven communication inside the monolith
+
+Even in a single process, modules can communicate through **events** rather than direct calls. When an order completes, the Orders module publishes an `OrderCompleted` event. Inventory, Notifications, and Analytics modules consume it independently.
+
+This produces the same loose-coupling benefits as microservices, while keeping the simplicity of in-process communication. Events can be processed synchronously for immediate consistency or asynchronously for performance.
+
+### Database patterns
+
+Managing data is one of the trickier problems with modular monoliths. Useful patterns:
+
+<NumberCards items={[
+  { title: 'Schema per module', body: 'Each module has its own database schema. Foreign keys exist only within a module. Cross-module data access goes through APIs, not direct queries.' },
+  { title: 'Views for read integration', body: 'Read-only views provide controlled cross-module data access for reporting and analytics, while writes still go through module APIs.' },
+  { title: 'Domain events for integration', body: 'Events serve as both integration points and audit trails. Modules emit state changes other modules subscribe to.' },
+]} />
+
+## Evolution: Both Directions
+
+One of the most powerful aspects of modular monoliths is **evolutionary flexibility**. They can grow from simple monoliths and, if needed, split into microservices — or consolidate back from microservices when operational complexity becomes excessive.
+
+<Compare2
+  left={{
+    label: 'Grow into',
+    title: 'From traditional monolith → modular',
+    body: 'Identify domain boundaries inside the existing codebase. Use Strangler Fig — gradually extract functionality into well-defined modules, set clear interfaces, eliminate direct dependencies.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Grow out of (or back to)',
+    title: 'Modules ↔ microservices',
+    body: 'Well-designed modules can be extracted as services when scale or team structure justifies it. Or — like Prime Video and Segment — services can be consolidated back into a modular monolith when distributed complexity outweighs benefits.',
+    accent: 'amber',
+  }}
+/>
+
+A well-designed modular monolith is an excellent **launchpad for microservices**. Teams experiment with service boundaries, refine interfaces, and build operational maturity — all while keeping deployment simple. When extraction makes sense, the architectural foundation is already there.
+
+## Why Smart Teams Choose This Pattern
+
+<IconGrid cols={2} items={[
+  { icon: '🚀', title: 'Operational simplicity', body: 'One CI/CD pipeline, one rollback procedure, one runtime to monitor. Architecture stays clean even as the deployment stays simple.' },
+  { icon: '⚡', title: 'No network tax', body: 'In-process method calls instead of HTTP/gRPC round-trips. What costs 5 ms across a network is microseconds in-process.' },
+  { icon: '💾', title: 'Transactional consistency', body: 'When a business operation spans modules, ACID semantics still work. No saga patterns, no distributed transactions.' },
+  { icon: '🧠', title: 'Lower cognitive load', body: 'Developers reason about module interfaces, not network partitions, eventual consistency, and service discovery.' },
+  { icon: '👥', title: 'Team autonomy', body: 'Clear ownership of modules. Teams ship in their module without coordinating cross-team for routine work.' },
+  { icon: '💻', title: 'Local dev that works', body: 'The whole system runs on a laptop. No mocking 30 dependencies or running half a Kubernetes cluster locally.' },
+]} />
+
+## Where They Struggle
+
+<Callout type="pitfall" title="Boundary discipline is the load-bearing assumption">
+Without network barriers, the easy shortcut is always there: query another module's database directly, call an internal method. Every shortcut compounds. Without constant vigilance and tooling, technical debt erodes the boundaries until you're back to a traditional monolith with extra steps.
+</Callout>
+
+Other limits:
+
+- **Limited team autonomy.** Teams share infrastructure choices, branching strategy, deployment cadence. Microservices teams pick their own; modular-monolith teams compromise.
+- **Scaling ceilings.** All modules share runtime, memory, deployment cycle. For truly massive systems, eventual extraction may be required.
+- **Refactoring across modules** is harder than within services. When boundaries need to move, more coordination is required than in loosely coupled microservices.
+
+## Recap
+
+- Modular monoliths combine module-level architectural discipline with single-deployment simplicity.
+- The boundary is enforced by tooling and discipline — not network barriers.
+- Each module is a bounded context with its own data, interface, and ownership.
+- Communication via well-defined APIs (or in-process events), never direct DB access.
+- Excellent middle ground for most teams; can be a long-term solution or a launchpad for microservices.
+- The biggest risk is boundary erosion — invest in tooling that enforces it.

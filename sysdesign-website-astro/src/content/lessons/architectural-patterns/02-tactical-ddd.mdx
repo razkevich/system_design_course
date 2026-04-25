@@ -1,0 +1,231 @@
+---
+title: Tactical DDD
+slug: tactical-ddd
+order: 2
+section: architectural-patterns
+group: Domain-Driven Design
+summary: The building blocks inside a bounded context — entities with behavior, value objects, aggregates, domain services. Trading anemic models for rich ones.
+readingMinutes: 10
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Tactical DDD provides the building blocks for implementing rich domain models inside bounded contexts. Where strategic DDD draws the boundaries, tactical DDD decides what lives inside them.
+
+The core move is **putting behavior next to data**. The classic enterprise pattern of "data classes + service classes" — what Eric Evans named the *anemic domain model* — gets in the way as systems grow.
+
+## Anemic vs. Rich Domain Models
+
+<Compare2
+  left={{
+    label: 'Anemic',
+    title: 'Data + setters, no behavior',
+    body: 'Java bean with getters and setters. All business logic lives in service classes that call set...() and call validate() everywhere.',
+    accent: 'rose',
+  }}
+  right={{
+    label: 'Rich',
+    title: 'Data + behavior, invariants enforced',
+    body: 'Order.confirm() instead of order.setStatus(CONFIRMED). The domain object owns its rules. Service code coordinates; entity code enforces.',
+    accent: 'emerald',
+  }}
+/>
+
+A typical anemic order:
+
+```java
+public class Order {
+    private String id;
+    private String customerId;
+    private List<OrderItem> items;
+    private OrderStatus status;
+    private BigDecimal totalAmount;
+    // getters and setters...
+}
+
+@Service
+public class OrderService {
+    public void processOrder(Order order) {
+        if (order.getStatus() != OrderStatus.PENDING)
+            throw new IllegalStateException("Only pending orders can be processed");
+        // calculate total here, set status here, invariants enforced from outside
+    }
+}
+```
+
+The same thing, made rich:
+
+```java
+public class Order {
+    private final OrderId id;
+    private final CustomerId customerId;
+    private final List<OrderItem> items;
+    private OrderStatus status;
+    private Money totalAmount;
+
+    public void addItem(Product product, int quantity) {
+        if (status != OrderStatus.PENDING)
+            throw new IllegalStateException("Cannot modify confirmed order");
+        items.add(new OrderItem(product, quantity));
+        recalculateTotal();
+    }
+
+    public void confirm() {
+        if (items.isEmpty())
+            throw new IllegalStateException("Cannot confirm empty order");
+        if (status != OrderStatus.PENDING)
+            throw new IllegalStateException("Order already processed");
+        this.status = OrderStatus.CONFIRMED;
+    }
+}
+```
+
+Business rules are now visible *in the entity*. State transitions are validated at the source. The order can't be put into an invalid state from the outside.
+
+<KeyIdea>
+Replace setters with intent-revealing methods. `order.confirm()` says what the business is doing. `order.setStatus(CONFIRMED)` only says what the database is doing.
+</KeyIdea>
+
+## Value Objects: Rich Data Types
+
+Value objects group related properties into cohesive, meaningful objects with encapsulated behavior. They replace primitive obsession (strings and numbers everywhere) with domain types.
+
+Method signatures change shape:
+
+```java
+// Primitive obsession
+calculateShipping(BigDecimal amount, String currency,
+                  String street, String city, String zip, String country)
+
+// With value objects
+calculateShipping(Money price, Address destination)
+```
+
+<IconGrid cols={3} items={[
+  { icon: '🛡️', title: 'Type safety', body: 'Pass CustomerId where OrderId is expected? Compile error, not a 3 a.m. bug.' },
+  { icon: '🪞', title: 'Self-documenting', body: 'Method signatures express intent without comments.' },
+  { icon: '✅', title: 'Validation at construction', body: 'Email("not-an-email") throws — bad data never reaches downstream.' },
+  { icon: '🧊', title: 'Immutability', body: 'New instance for changes. No accidental mutation.' },
+  { icon: '🧪', title: 'Testability', body: 'Isolated business logic, easy unit tests.' },
+  { icon: '🗣️', title: 'Domain vocabulary', body: 'Code uses business words, not platform primitives.' },
+]} />
+
+Use value objects to:
+
+- Replace primitives that represent domain concepts (email, phone, money).
+- Group fields that travel together (address components, coordinates).
+- Encapsulate domain-specific behavior (calculations, validations, formatting).
+
+## Domain Services: Logic That Doesn't Belong on an Entity
+
+Some business logic doesn't naturally sit on a single entity. **Domain services** hold the operations that span multiple entities or represent concepts that aren't a single object.
+
+```java
+@DomainService
+public class OrderPricingService {
+    private final DiscountCalculator discountCalculator;
+    private final TaxCalculator taxCalculator;
+
+    public OrderTotal calculateTotal(Order order, Customer customer) {
+        Money subtotal = order.getSubtotal();
+        Money discount = discountCalculator.calculate(order, customer);
+        Money tax      = taxCalculator.calculate(subtotal.subtract(discount), customer.getLocation());
+        return new OrderTotal(subtotal, discount, tax);
+    }
+}
+```
+
+When does logic belong on an entity vs. a domain service?
+
+<Compare2
+  left={{
+    label: 'Entity',
+    title: 'Single-entity invariants and identity',
+    body: 'Logic that protects this object\'s state and lifecycle. order.confirm(), product.discontinue(), account.deposit(amount).',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Domain service',
+    title: 'Cross-entity, cross-context, or external',
+    body: 'Multi-aggregate operations, external integrations, complex calculations spanning multiple contexts, frequently changing policies.',
+    accent: 'amber',
+  }}
+/>
+
+## Aggregates: Consistency Boundaries
+
+An aggregate is a cluster of related entities and value objects treated as a single unit for state changes. Within a bounded context, **aggregates define consistency boundaries** — everything inside an aggregate must remain consistent, and the aggregate is the only path through which external code can modify the cluster.
+
+<KeyIdea>
+External code references the aggregate root, never the internal entities directly. The root enforces all invariants, so the aggregate can never be put into an invalid state from outside.
+</KeyIdea>
+
+```java
+public class Order { // Aggregate root
+    private final OrderId id;
+    private final CustomerId customerId;
+    private final List<OrderItem> items; // internal entities
+    private OrderStatus status;
+
+    public void changeItemQuantity(ProductId productId, int newQuantity) {
+        OrderItem item = findItem(productId);
+        if (item == null)
+            throw new IllegalArgumentException("Item not found in order");
+        if (status != OrderStatus.PENDING)
+            throw new IllegalStateException("Cannot modify confirmed order");
+
+        item.changeQuantity(newQuantity);
+        recalculateTotal();
+
+        // Business rule: orders > $1,000 need approval
+        if (totalAmount.isGreaterThan(Money.of("1000")))
+            this.status = OrderStatus.PENDING_APPROVAL;
+    }
+}
+```
+
+Choosing aggregate boundaries is one of the most consequential decisions in DDD:
+
+- **Too big.** Aggregates that span many entities create concurrency bottlenecks and slow performance.
+- **Too small.** Cross-aggregate consistency requires distributed coordination.
+
+The right size is "as small as possible, while still maintaining true business invariants together."
+
+## Migrating From Anemic to Rich
+
+A practical sequence for retrofitting tactical DDD onto an existing codebase:
+
+<IconGrid cols={2} items={[
+  { icon: '🎯', title: '1. Start small', body: 'Pick a well-understood domain concept with several related service methods.' },
+  { icon: '📋', title: '2. Identify rules', body: 'Extract validation, state transitions, and calculations from service classes.' },
+  { icon: '📐', title: '3. Introduce value objects', body: 'Replace primitives with domain types where it adds clarity.' },
+  { icon: '🎭', title: '4. Encapsulate operations', body: 'Replace setters with intent-revealing methods (order.confirm() not setStatus).' },
+  { icon: '🧪', title: '5. Test the model', body: 'Rich domain logic is easier to unit-test in isolation.' },
+  { icon: '🔄', title: '6. Iterate', body: 'Don\'t try to retrofit the whole codebase. Convert as you touch each context.' },
+]} />
+
+## Common Pushback
+
+<Callout type="info" title="Misconception #1: Rich models are overkill for CRUD">
+True for genuinely simple CRUD. But applications usually evolve past simple CRUD, and rich models accommodate that evolution without rewrites. The cost of switching from anemic to rich later is much higher than starting rich.
+</Callout>
+
+<Callout type="info" title="Misconception #2: ORMs don't support rich models">
+Modern JPA/Hibernate (and similar ORMs in other ecosystems) do support rich models well. `@Access(AccessType.FIELD)` and careful constructor design make integration straightforward.
+</Callout>
+
+<Callout type="info" title="Misconception #3: Rich models eliminate services">
+Application services still coordinate workflows, manage transactions, and orchestrate use cases. Domain services still hold cross-entity logic. The change is about *where business rules live*, not eliminating services.
+</Callout>
+
+## Recap
+
+- Tactical DDD puts behavior next to data — replacing anemic models with rich ones.
+- Value objects replace primitive obsession with domain types that encapsulate validation and behavior.
+- Domain services hold logic that spans multiple entities or doesn't fit on one.
+- Aggregates define consistency boundaries; external code goes through the root.
+- Migrating from anemic to rich is incremental: start with one concept, expand outward.

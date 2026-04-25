@@ -1,0 +1,185 @@
+---
+title: Microservices
+slug: microservices
+order: 6
+section: architectural-patterns
+group: Architectural Styles
+summary: Independent services aligned to business capabilities. The benefits, the costs, the boundary problem, and what the industry has learned after a decade of doing this.
+readingMinutes: 12
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+import NumberCards from '../../../components/NumberCards.astro';
+
+Amazon Prime Video moved part of their video monitoring system **back** to a monolith in 2023 to reduce latency and operational complexity. Segment did the same with their event pipeline. Even Istio — the tool literally designed for managing microservices — consolidated several control-plane services to reduce operational burden.
+
+These weren't failures of microservices. They were signs of engineering maturity. After a decade of adoption, the industry has learned when microservices make sense and when they don't.
+
+<KeyIdea>
+The question is not "monolith vs. microservices." It's "what architecture serves this organization, at this scale, for this problem, *right now*?"
+</KeyIdea>
+
+## Anatomy of a Microservice
+
+A microservice is a small, autonomous service that does one thing well. "Small" is about scope, not lines of code. The defining characteristics:
+
+<IconGrid cols={2} items={[
+  { icon: '🎯', title: 'Business-capability aligned', body: 'Each service maps to a specific business capability or domain. Auth service handles auth. Payments service handles payments. Not "database service" or "UI service."' },
+  { icon: '🗃️', title: 'Owns its data', body: 'Each service has its own database and is the source of truth for its domain. No other service reaches into another\'s data store.' },
+  { icon: '🚀', title: 'Independent deployment', body: 'Teams deploy without coordinating with other teams. This autonomy is what unlocks fast iteration.' },
+  { icon: '🌐', title: 'Tech independence', body: 'Different services can use different languages, frameworks, databases. Recommendation service in Python; payments in Java; UI in TypeScript.' },
+]} />
+
+## The Benefits
+
+<Compare2
+  left={{
+    label: 'Promised',
+    title: 'What microservices give you',
+    body: 'Independent scaling, team autonomy, fault isolation, technology flexibility, fine-grained deployment cadence.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Cost',
+    title: 'What you take on in return',
+    body: 'Distributed systems complexity (latency, partial failure, eventual consistency), operational overhead (dozens of pipelines, observability), debugging archaeology, data consistency challenges.',
+    accent: 'rose',
+  }}
+/>
+
+**Independent scaling** lets you allocate resources where you need them — scale video processing during peak hours while keeping baseline capacity for user profiles.
+
+**Team autonomy** lets organizations move faster by reducing coordination cost and letting teams pick their own stacks and deployment cadence.
+
+**Fault isolation** means a failure in one service doesn't necessarily take down the whole system. The recommendation engine can struggle while users still browse, search, and check out.
+
+## The Real Costs
+
+The complexity is what teams routinely underestimate.
+
+<Callout type="pitfall" title="Network costs add up fast">
+What looks like a single feature — playing a video, loading a profile, processing a payment — suddenly requires coordination across multiple service calls. Each hop adds latency, and debugging failures becomes archaeology of distributed systems.
+</Callout>
+
+The common pain points:
+
+- **Operational overhead.** Instead of monitoring one app, you're monitoring 50 — each with its own logs, metrics, and pipeline.
+- **Service sprawl.** Following "do one thing well" too literally produces services so granular that simple business operations require complex coordination.
+- **Cognitive load.** Tracking dependencies, understanding data flows, coordinating deploys across a service mesh can paralyze velocity.
+- **Data consistency.** When a customer places an order, you might need to update inventory, process payment, and send notifications across multiple services — handling failures correctly is non-trivial.
+
+## Anti-patterns to Avoid
+
+<NumberCards items={[
+  { title: 'Shared database', body: 'Two services using one DB lose the independence that makes microservices valuable. Schema changes need coordination; you\'re coupled at the data layer.' },
+  { title: 'Distributed monolith', body: 'Services so tightly coupled they must deploy together. All complexity, no benefit. If changing one service requires changes in five others, this is what you have.' },
+  { title: 'Premature decomposition', body: 'Going microservices on day one usually produces wrong service boundaries. Better: start with a well-structured monolith, extract services as domain boundaries become clear.' },
+]} />
+
+## Communication: The Nervous System
+
+In a monolith, method calls are cheap and reliable. In microservices, communication becomes a primary design concern. How services talk to each other determines latency, reliability, and failure modes.
+
+<Compare2
+  left={{
+    label: 'Synchronous',
+    title: 'REST, gRPC, GraphQL',
+    body: 'Immediate feedback, simple to debug. Costs: tight coupling, latency propagation, cascading failures along call chains.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Asynchronous',
+    title: 'Events, queues, streams',
+    body: 'Services decoupled in time. Resilient to downstream failures. Costs: eventual consistency, harder debugging, operational complexity of message infrastructure.',
+    accent: 'amber',
+  }}
+/>
+
+Most production systems mix patterns. We covered communication patterns in detail in [the previous section](/lesson/architecture-basics/communication-patterns).
+
+## Boundary Problem
+
+The single most consequential decision in microservices architecture is **where to put the boundaries**. Get it right and you unlock fast independent teams. Get it wrong and you've built a distributed big ball of mud that's harder to manage than the monolith you started with.
+
+### DDD as your guide
+
+DDD's bounded contexts map naturally onto service boundaries. A bounded context is a business area where specific terms, rules, and models apply consistently — exactly the right unit of decomposition.
+
+In an e-commerce system, "Customer" means different things in different contexts:
+
+- **Sales:** purchase history, preferences, loyalty status.
+- **Support:** tickets, issue history, satisfaction ratings.
+- **Billing:** payment methods, invoices, credit limits.
+
+Each becomes its own service with its own data model.
+
+### Practical heuristics
+
+<NumberCards cols={2} items={[
+  { title: 'Start with business capabilities', body: 'Not technical components. Think "Order Management Service," not "Database Service."' },
+  { title: 'Watch data ownership', body: 'If you find yourself saying "Order service needs to read from User database," you\'ve found a boundary problem.' },
+  { title: 'Respect Conway\'s Law', body: 'Team boundaries shape service boundaries. Fighting Conway\'s Law usually fails.' },
+  { title: 'Mind transactional boundaries', body: 'Operations needing strong consistency tend to belong in the same service. If you frequently need distributed transactions, you might be slicing wrong.' },
+]} />
+
+## Migrating: The Strangler Fig
+
+Most organizations don't *start* with microservices — they evolve toward them. The Strangler Fig pattern (named for the vine that gradually overtakes its host tree) is the systematic approach:
+
+<NumberCards items={[
+  { title: 'Identify a bounded context', body: 'Pick one inside the monolith that can be cleanly extracted.' },
+  { title: 'Build the new service', body: 'Stand it up alongside the monolith. Wire it to the rest of the system.' },
+  { title: 'Route new functionality', body: 'New features go to the new service. Existing functionality stays in the monolith.' },
+  { title: 'Migrate existing functionality', body: 'Move existing capabilities from monolith to service incrementally.' },
+  { title: 'Remove the old code', body: 'When everything has migrated, delete the now-dead monolith code.' },
+  { title: 'Repeat', body: 'Pick the next bounded context and start over.' },
+]} />
+
+This reduces risk and lets you adjust as you go. Read-only services (search, recommendations) make easier first targets than transactional ones.
+
+## The Tech Stack That Made This Practical
+
+<IconGrid cols={2} items={[
+  { icon: '🐳', title: 'Containers + Kubernetes', body: 'Service discovery, load balancing, health checks, rolling deploys. Declarative state model means you describe what you want, K8s maintains it.' },
+  { icon: '🕸️', title: 'Service mesh', body: 'Istio, Linkerd, Consul Connect. Retries, circuit breaking, mTLS, observability — at infrastructure level, not in app code.' },
+  { icon: '☁️', title: 'Managed cloud services', body: 'Managed K8s, databases, message queues, serverless. Removed the operational floor that used to gate microservices adoption.' },
+  { icon: '🔧', title: 'IaC + GitOps', body: 'Terraform, ArgoCD. Consistent, reproducible deployments across environments. Manual infrastructure management doesn\'t scale.' },
+  { icon: '👁️', title: 'Distributed tracing', body: 'Jaeger, Zipkin, OpenTelemetry. The "three pillars" — metrics, logs, traces — become essential.' },
+  { icon: '🚦', title: 'Independent CI/CD', body: 'Each service builds, tests, deploys independently. Canary releases and feature flags reduce deploy risk.' },
+]} />
+
+## Testing Distributed Systems
+
+Microservices break the classic test pyramid in interesting ways.
+
+<Callout type="info" title="The pyramid still applies, but the layers shift">
+Unit tests stay roughly the same. **Service tests** (one service in isolation, dependencies stubbed) gain importance. **End-to-end tests across services** become problematic — slow, flaky, and a coordination bottleneck. The fix is **consumer-driven contracts** (Pact) — consumer teams write tests expressing their expectations of producers; tests run isolated; breaking changes surface immediately without full-system orchestration.
+</Callout>
+
+The other shift: **testing in production** stops being a slogan and becomes necessary. Synthetic monitoring, canary deploys, and feature flags let you validate behavior under real conditions. The philosophy is **optimizing MTTR over MTBF** — accept that some failures will happen and design for fast recovery.
+
+## The Pendulum Swings Back
+
+After a decade, the most thoughtful teams have moved past the binary "monolith vs. microservices" question:
+
+<IconGrid cols={2} items={[
+  { icon: '🧩', title: 'Modular monolith', body: 'Module-level discipline inside one deployable. Shopify, GitHub, Basecamp run massive systems on this. Often the right answer.' },
+  { icon: '📦', title: 'Macroservices', body: 'Bigger than microservices, smaller than monoliths. One "User Service" instead of three (auth, profiles, settings).' },
+  { icon: '⚡', title: 'Serverless / FaaS', body: 'Many of the microservices benefits — independent deploy, autoscale, pay-per-use — without the container/orchestration overhead. Great for event-driven and infrequent workloads.' },
+  { icon: '🎨', title: 'Micro-frontends', body: 'Microservices philosophy applied to UI. Module Federation, Single-SPA. Independent UI teams that match backend service ownership.' },
+]} />
+
+The best teams have stopped arguing monolith vs. microservices and build systems that mix patterns based on what each part of the product needs. Payment processing might be tightly integrated for predictable performance. Recommendations might be loosely coupled microservices for experimental flexibility. That's not a compromise — that's engineering judgment.
+
+## Recap
+
+- Microservices = small, autonomous, business-capability-aligned services with independent data ownership and deployment.
+- Real benefits at scale; real costs in complexity. Underestimating the costs is the most common mistake.
+- The boundary problem is the single most consequential decision; DDD bounded contexts are the best guide.
+- Strangler Fig is the safe migration path from monolith to services.
+- Modern tooling (K8s, service mesh, observability) made microservices practical — but didn't make them universally appropriate.
+- The mature view is **adaptive architecture**: pick the right pattern for each part of the system, not for the whole.
