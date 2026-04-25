@@ -1,0 +1,166 @@
+---
+title: Distributed Consensus
+slug: consensus
+order: 5
+section: distributed-systems
+group: Coordination & Infrastructure
+summary: How distributed systems agree without a coordinator. Paxos, Raft, ZAB, and PBFT — the algorithms that power leader election, replicated logs, and atomic broadcast.
+readingMinutes: 9
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Distributed consensus solves the fundamental problem of getting multiple computers to agree on a single value, even when some nodes can fail or become unreachable. It's one of the most foundational problems in computer science — and underlies database consistency, leader election, atomic transactions, and configuration changes in every distributed system.
+
+<KeyIdea>
+The naive approaches don't work. Waiting for *all* nodes can wait forever (failed nodes never reply). Letting one node decide is unsafe (it might be partitioned). Consensus algorithms require **majority agreement** — providing both safety (consistency) and liveness (progress).
+</KeyIdea>
+
+## What Consensus Is For
+
+Despite many concrete uses, consensus problems boil down to two patterns:
+
+<Compare2
+  left={{
+    label: 'Single-value consensus',
+    title: 'Agree on one decision',
+    body: 'Leader election, configuration changes, cluster membership. "Should D join the cluster?" "Who is the new leader?" Algorithms: Basic Paxos.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Sequence consensus',
+    title: 'Agree on an ordered log',
+    body: 'A replicated log of operations. All nodes process operations in the same order. Algorithms: Multi-Paxos, Raft, ZAB. Powers most distributed systems.',
+    accent: 'emerald',
+  }}
+/>
+
+### Concrete examples
+
+**Single-value consensus:**
+
+- Leader election: which node (A, B, C) is the leader?
+- Configuration changes: should we add node D to the cluster?
+- Cluster membership: who's currently in the cluster?
+
+**Sequence consensus (replicated log):**
+
+- Database transactions: `[INSERT Alice, UPDATE balance, DELETE record]`
+- State machine replication: `[SET x=1, SET y=2, DELETE z]`
+- Event streams: `[OrderCreated, PaymentProcessed, OrderShipped]`
+- Blockchain: blocks in the same order across all nodes
+
+## The Major Algorithms
+
+### Paxos (Lamport, 1998)
+
+The original. Famously hard to understand from the paper, easy to implement incorrectly. Two flavors:
+
+- **Basic Paxos** — one decision per run. Inefficient for sequences.
+- **Multi-Paxos** — optimized for sequences. Elects a stable leader; subsequent decisions skip the prepare phase.
+
+Used in: Google Chubby, Spanner, MongoDB internal coordination.
+
+### Raft (Ongaro & Ousterhout, 2014)
+
+Designed explicitly to be **understandable**. Strong leader model — one leader, replicated log, predictable failure semantics.
+
+<IconGrid cols={2} items={[
+  { icon: '👑', title: 'Leader election', body: 'Nodes start as followers. If they don\'t hear from a leader, they become candidate and request votes. Majority wins.' },
+  { icon: '📜', title: 'Log replication', body: 'Leader receives commands, appends to local log, replicates to followers. Once a majority commits, the entry is "committed."' },
+  { icon: '🛟', title: 'Safety', body: 'A committed entry is never lost or reordered. Even after leader changes.' },
+  { icon: '🔧', title: 'Membership changes', body: 'Joint consensus protocol for safely changing the cluster while preserving safety.' },
+]} />
+
+Used in: etcd, Consul, CockroachDB, TiKV, Vault. By far the most popular consensus algorithm in modern infrastructure.
+
+### ZAB (ZooKeeper Atomic Broadcast)
+
+Specifically designed as an atomic broadcast protocol — guarantees totally ordered message delivery. Used by ZooKeeper.
+
+Functionally similar to Multi-Paxos but optimized for the "primary-backup" model where a leader broadcasts updates to followers.
+
+### PBFT (Practical Byzantine Fault Tolerance)
+
+Extends consensus to handle **malicious nodes** that may lie. Critical for blockchain and multi-organization systems where you can't trust all participants.
+
+Higher overhead than Paxos/Raft (3f+1 nodes to tolerate f malicious failures, vs. 2f+1 for crash failures), but necessary in adversarial environments.
+
+## How They Work — The Common Pattern
+
+Despite differences in detail, consensus algorithms share a structure:
+
+```
+1. Propose:    Node proposes a value or operation.
+2. Promise:    Other nodes agree to consider it (and ignore older proposals).
+3. Accept:     Once majority agrees, the value is "accepted."
+4. Commit:     All nodes apply the value once they know it's accepted.
+```
+
+The key invariant: **a value can only be committed if a majority of nodes agree**. This majority requirement is what enables both safety (no two majorities can disagree — that's mathematically impossible) and progress (you don't wait forever for failed nodes).
+
+<Callout type="info" title="Why majority?">
+A majority guarantees overlap. Any two majority sets share at least one node — so any "decision" carries forward across leader changes. This is the geometric heart of consensus algorithms.
+</Callout>
+
+## Performance
+
+Consensus is **expensive**. Each operation requires:
+
+- Network round-trip to majority of nodes.
+- Persistent log writes (fsync) for durability.
+- Leader bottleneck (in leader-based protocols).
+
+Typical numbers: Raft cluster of 3-5 nodes processes thousands of ops/sec at low milliseconds latency. Spread across regions, latencies dominate.
+
+<Compare2
+  left={{
+    label: 'Same data center',
+    title: 'Sub-millisecond network',
+    body: 'Consensus latency dominated by fsync, not network. ~1-5ms per operation. Scale: tens of thousands of ops/sec.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Cross-region',
+    title: 'Tens of milliseconds network',
+    body: 'Consensus latency dominated by network round-trip. 50-200ms per operation. Scale: hundreds of ops/sec at best.',
+    accent: 'amber',
+  }}
+/>
+
+This is why most production systems use consensus only for **metadata operations** (leader election, configuration, membership) — not for every user request. User-facing reads/writes go through the elected leader, which doesn't need consensus per request.
+
+## Where You'll See This in Production
+
+<IconGrid cols={2} items={[
+  { icon: '🗃️', title: 'Distributed databases', body: 'CockroachDB, Spanner, TiKV use Raft for replicated logs. Aurora and Spanner use Paxos variants.' },
+  { icon: '📋', title: 'Coordination services', body: 'etcd (Raft), ZooKeeper (ZAB), Consul (Raft) — used as the "brain" of K8s, service discovery, distributed locks.' },
+  { icon: '🔗', title: 'Blockchain', body: 'Bitcoin uses proof-of-work; modern chains (Ethereum 2, Solana) use various BFT consensus protocols (Tendermint, HotStuff, etc.).' },
+  { icon: '⚙️', title: 'Cluster orchestration', body: 'Kubernetes control plane uses etcd. The Raft cluster behind etcd is what makes K8s itself reliable.' },
+]} />
+
+## Practical Implications for SaaS
+
+You'll rarely implement consensus yourself. But understanding it shapes operational decisions:
+
+- **Cluster sizing.** 3 nodes tolerate 1 failure; 5 nodes tolerate 2; 7 nodes tolerate 3. Always odd numbers (even doesn't help; majority of 4 = 3, same as majority of 5 with worse fault tolerance).
+- **Region placement.** Cross-region consensus is slow. Many systems (etcd, Consul) recommend single-region clusters with cross-region replication, not cross-region consensus.
+- **Failure budgets.** Losing majority means the system can't make progress. A 3-node cluster losing 2 nodes goes read-only or fully unavailable. Plan for this.
+- **Backups vs. replicas.** A consensus-replicated state isn't a backup. A bug or operator error replicates instantly. Always have point-in-time backups too.
+
+<Callout type="pitfall" title="Don't try to write your own Paxos">
+Consensus algorithms are notoriously hard to implement correctly. Subtle bugs lurk in edge cases of leader election, log truncation, membership changes. Use a battle-tested library (etcd's Raft library, Hashicorp's Raft, Apache Ratis) — don't roll your own.
+</Callout>
+
+## Recap
+
+- Consensus = getting multiple machines to agree on a value despite failures.
+- Two patterns: single-value (leader election, config) and sequence (replicated log).
+- Major algorithms: Paxos (the original), Raft (the popular modern one), ZAB (ZooKeeper), PBFT (Byzantine).
+- All require **majority agreement** for safety and progress.
+- Expensive — used for metadata operations, not every user request.
+- You'll see Raft underneath etcd, Consul, CockroachDB — and therefore underneath Kubernetes itself.

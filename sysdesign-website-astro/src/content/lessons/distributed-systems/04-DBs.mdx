@@ -1,0 +1,183 @@
+---
+title: Partitioning and Replication Strategies
+slug: DBs
+order: 4
+section: distributed-systems
+group: Core Concepts
+summary: How different database families scale — relational, document, wide-column, key-value. The architectures, the strengths, and how to pick.
+readingMinutes: 9
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Database performance becomes critical when application user counts go from hundreds to millions. Successful operation under load depends on understanding how different database families scale and choosing the right approach for your workload.
+
+This lesson is a tour of the main database families and how each one scales.
+
+## The Trade-offs to Balance
+
+<IconGrid cols={2} items={[
+  { icon: '📖', title: 'Read vs. write patterns', body: 'Read-heavy (content sites) vs. write-heavy (IoT data ingest). Different scaling strategies for each.' },
+  { icon: '⬆️', title: 'Vertical vs. horizontal', body: 'Bigger machines vs. more machines. Vertical is simpler; horizontal scales further but adds complexity.' },
+  { icon: '🔁', title: 'Replication vs. sharding', body: 'Replication = multiple copies of all data (read scale + redundancy). Sharding = data split across nodes (write scale).' },
+  { icon: '⚖️', title: 'Consistency vs. performance', body: 'Strong consistency = synchronous coordination. Eventual consistency = faster, may serve stale data.' },
+]} />
+
+## Relational Databases (Postgres, MySQL)
+
+Modern Postgres and MySQL have evolved significantly — supporting JSON documents, full-text search, and geospatial queries that used to require NoSQL. They remain the foundational data layer for most SaaS platforms.
+
+### Single-master architecture
+
+Postgres uses a single-master architecture: all writes through one primary server, reads scale via streaming replication to multiple read replicas.
+
+<Compare2
+  left={{
+    label: 'Strengths',
+    title: 'What Postgres scales well at',
+    body: 'Read-heavy workloads. Multiple replicas, each handling thousands of QPS at 10-50ms. ACID transactions. Mature SQL. Aurora-style separation of compute/storage extends this further.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Limitations',
+    title: 'Where it hits walls',
+    body: 'Write throughput is bounded by single primary. Vertical scaling has hard limits. Synchronous replication for full ACID becomes impractical when replicas slow down.',
+    accent: 'rose',
+  }}
+/>
+
+### Scaling writes in relational databases
+
+When write throughput maxes out a single primary:
+
+<IconGrid cols={2} items={[
+  { icon: '🔪', title: 'Table partitioning', body: 'Postgres native partitioning by date or ID range. Single DB, multiple physical tables.' },
+  { icon: '🌐', title: 'Citus, Vitess', body: 'Distribute tables across multiple nodes while preserving SQL semantics. Citus for Postgres, Vitess for MySQL. Tens of thousands of writes/sec.' },
+  { icon: '🏢', title: 'Application-level sharding', body: 'Facebook-style: thousands of MySQL instances; app-level routing by user ID. Maximum control, maximum operational complexity.' },
+  { icon: '🔁', title: 'Multi-leader replication', body: 'MySQL Group Replication, YugabyteDB. Multiple write nodes accept writes; conflict resolution required. Native or via add-ons (Postgres BDR, pglogical).' },
+]} />
+
+## Document Stores (MongoDB)
+
+MongoDB was built for horizontal scaling from day one. Sharded clusters distribute writes across multiple primaries simultaneously.
+
+### Architecture
+
+```
+[ Client ]
+    │
+    ▼
+[ mongos router ] ── shard key lookup
+    │
+    ├─► [ Shard A ─ Replica Set ]
+    ├─► [ Shard B ─ Replica Set ]
+    └─► [ Shard C ─ Replica Set ]
+```
+
+- Each shard = a replica set with its own primary and secondaries.
+- `mongos` is the routing layer — stateless, horizontally scalable.
+- Queries with shard key route to a single shard. Cross-shard queries fan out.
+- Shard key choice is **the** critical decision — bad keys create hot spots.
+
+<Callout type="info" title="MongoDB sharding shines for">
+Apps with flexible schemas, high write throughput, and clear sharding keys (user ID, tenant ID, time). Social platforms, IoT ingestion, multi-tenant SaaS where the natural shard key is tenant.
+</Callout>
+
+## Wide-Column Stores (Cassandra)
+
+Despite the name, "wide-column" doesn't mean columnar storage. It means flexible row schemas where rows can have different columns. Internally, Cassandra is row-oriented.
+
+### Peer-to-peer architecture
+
+```
+   [ Client ]
+       │
+       ▼
+   [ Any node — coordinator ] ──┐
+              │                  │
+   ┌──────────┼──────────┐       │  consistent hashing
+   ▼          ▼          ▼       │  → owner
+ [Node 1]  [Node 2]  [Node 3]    │
+```
+
+No master. Every node is equal. Data distribution via consistent hashing. Any node can act as coordinator.
+
+<IconGrid cols={2} items={[
+  { icon: '✍️', title: 'Optimized for writes', body: 'Append-only commit log + memtable + SSTable architecture. Tens of thousands of writes per second per node, predictable latency.' },
+  { icon: '🌍', title: 'Multi-datacenter native', body: 'Tunable replication strategies across DCs. Each region can be a separate "rack" or DC. Strong fit for global apps.' },
+  { icon: '🎚️', title: 'Tunable consistency', body: 'Per-query: ANY, ONE, QUORUM, ALL. Choose latency vs. consistency for each operation.' },
+  { icon: '🚀', title: 'Linear scalability', body: 'Add a node, capacity increases proportionally. Designed for massive scale (Netflix, Apple, Discord).' },
+]} />
+
+The cost: limited query flexibility (must design table layout per query pattern), no joins, eventual consistency by default.
+
+## Key-Value Stores (Redis, DynamoDB)
+
+Simplest data model: keys map to values. The simplicity enables extreme scale and low latency.
+
+### Redis
+
+In-memory key-value store. Sub-millisecond latency. Hugely versatile (strings, hashes, lists, sets, streams, pub/sub).
+
+- **Single-node** — up to 100k+ ops/sec at 1ms latency. Limited by RAM.
+- **Sentinel** — automatic failover for high availability.
+- **Cluster** — sharding across nodes via hash slots. Linear write scaling.
+
+Used as cache, session store, real-time analytics, leaderboards, message queues.
+
+### DynamoDB
+
+AWS-managed key-value with optional document features. Built on a Dynamo paper-style architecture.
+
+<IconGrid cols={2} items={[
+  { icon: '⚡', title: 'Single-digit ms latency', body: 'Predictable performance at any scale. SLA-backed.' },
+  { icon: '♾️', title: 'Effectively unlimited scale', body: 'AWS handles partition management, replication, scaling. You don\'t see infrastructure.' },
+  { icon: '💸', title: 'Pay-per-request or provisioned', body: 'On-demand mode for variable load; provisioned mode for predictable savings.' },
+  { icon: '🌍', title: 'Global tables', body: 'Multi-region active-active replication built in. Compliance-friendly for global SaaS.' },
+]} />
+
+The cost: limited query patterns (must design access patterns up front), join-less, item size limits.
+
+## NewSQL: SQL Without the Single-Master Limit
+
+A category that emerged to combine SQL semantics with horizontal scale.
+
+<IconGrid cols={2} items={[
+  { icon: '🌍', title: 'Spanner / CockroachDB', body: 'Distributed SQL with strong consistency. Spanner uses TrueTime; CockroachDB uses HLC. Real ACID across regions.' },
+  { icon: '🐮', title: 'YugabyteDB', body: 'Postgres-compatible distributed SQL. Multi-region active-active. Open source.' },
+  { icon: '🐯', title: 'TiDB', body: 'MySQL-compatible distributed SQL. Strong fit for migrations from MySQL.' },
+  { icon: '📈', title: 'When to consider', body: 'When you need both SQL semantics and write throughput beyond a single Postgres can give. The operational tax is real — adopt only when you actually need it.' },
+]} />
+
+## Choosing for Multi-Tenant SaaS
+
+A reasonable pattern for a SaaS platform:
+
+| Use case | Database choice |
+| --- | --- |
+| Tenant data, transactional | Postgres (with sharding or Aurora) |
+| Tenant data, append-heavy time series | Cassandra or DynamoDB |
+| User sessions, caching | Redis |
+| Search | Elasticsearch / OpenSearch |
+| Analytics aggregates | ClickHouse / BigQuery / Snowflake |
+| Object storage | S3 |
+
+Most SaaS platforms run **multiple databases** — each chosen for what it's best at. The pragmatic approach is "use the right database for the job," not "force everything into one."
+
+<KeyIdea>
+A single database to do everything is a tempting fantasy. Real production SaaS platforms always end up running multiple databases, each tuned for a specific access pattern. Pick the right tool per job.
+</KeyIdea>
+
+## Recap
+
+- Different database families have fundamentally different scaling architectures.
+- Relational (Postgres, MySQL) — single-master, scale reads via replicas, scale writes via sharding tools (Citus, Vitess) or app-level partitioning.
+- Document (MongoDB) — sharded clusters, multi-primary, native horizontal scale; shard key choice is critical.
+- Wide-column (Cassandra) — peer-to-peer, optimized for writes and multi-DC, tunable consistency.
+- Key-value (Redis, DynamoDB) — simple data model, extreme scale, predictable latency.
+- NewSQL (Spanner, CockroachDB, YugabyteDB) — SQL with horizontal write scale, at operational cost.
+- Real platforms run multiple databases. Pick the right one per access pattern.

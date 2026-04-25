@@ -1,0 +1,109 @@
+---
+title: Distributed Systems Overview
+slug: overview
+order: 1
+section: distributed-systems
+group: Core Concepts
+summary: How simple systems become distributed systems whether you planned for it or not. The fallacies, the new problem categories, and the modern toolkit that makes it manageable.
+readingMinutes: 7
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Distributed systems represent the fundamental architectural evolution that happens whenever software grows beyond what one machine can do. Modern SaaS applications inevitably become distributed systems — when they add a CDN, deploy across multiple availability zones, or use read replicas to keep up with load. These decisions transform simple applications into complex distributed environments that require careful coordination.
+
+This isn't an academic concern. It's the practical reality that drives the rest of this section.
+
+## The Inevitable Path
+
+Most systems start simple: one server, one database, maybe a load balancer. Growth turns simplicity into distribution.
+
+<IconGrid cols={2} items={[
+  { icon: '🌍', title: 'Geographic distribution', body: 'Users in different regions need lower latency. Add a CDN. Now you have cache invalidation problems across edge locations.' },
+  { icon: '📊', title: 'Database scaling', body: 'One DB can\'t keep up. Add read replicas. Now you have replication lag and consistency questions.' },
+  { icon: '🔌', title: 'Third-party integrations', body: 'Calling external APIs makes you dependent on someone else\'s availability and latency.' },
+  { icon: '⚡', title: 'Async processing', body: 'Background jobs need queues. Queues mean message ordering, deduplication, exactly-once semantics.' },
+]} />
+
+The shift from "single machine" to "many cooperating machines" turns simple applications into systems with dozens of services across multiple regions.
+
+## The Fallacies of Distributed Computing
+
+Peter Deutsch and colleagues identified eight assumptions that single-machine programmers carry into distributed systems — every one of which is wrong, and each of which creates a category of production failures.
+
+<IconGrid cols={2} items={[
+  { icon: '🚫', title: 'The network is reliable', body: 'Packet loss, connection timeouts, and full data center outages happen. Plan for them.' },
+  { icon: '⏱️', title: 'Latency is zero', body: 'Every network call costs measurable time, often milliseconds to seconds.' },
+  { icon: '📡', title: 'Bandwidth is infinite', body: 'Real bandwidth limits eventually constrain high-volume applications.' },
+  { icon: '🛡️', title: 'The network is secure', body: 'All network traffic can potentially be intercepted without proper encryption.' },
+  { icon: '🗺️', title: 'Topology doesn\'t change', body: 'Load balancers restart, services migrate, DNS changes. Constantly.' },
+  { icon: '👤', title: 'There is one administrator', body: 'Distributed systems need coordination across multiple teams and admin domains.' },
+  { icon: '💸', title: 'Transport cost is zero', body: 'Data transfer has real financial cost, especially between regions or providers.' },
+  { icon: '⚖️', title: 'The network is homogeneous', body: 'Different services run on different infrastructure with different performance characteristics.' },
+]} />
+
+Each fallacy represents a failure mode that shows up in production — often during critical operations.
+
+## New Categories of Complexity
+
+Distributed systems introduce problems that don't exist on a single machine.
+
+<KeyIdea>
+Single-machine systems have **shared memory, atomic operations, and OS-level consistency guarantees**. Distributed systems remove all three. New categories of complexity replace them.
+</KeyIdea>
+
+### Partial failures
+
+Single machines fail binarily: either everything works or nothing does. Distributed systems experience **partial failures** where individual components succeed or fail independently, creating inconsistent states.
+
+A classic example: payment processed successfully + email notification fails → customer gets charged but no confirmation. Recovering from these requires sophisticated error handling.
+
+### Time uncertainty
+
+Event ordering is hard when events happen on machines with independent clocks. Timestamp-based ordering becomes unreliable. Determining "did the profile update happen before or after the password change?" depends on clock sync and coordination protocols, not simple timestamp comparison.
+
+### Consensus protocols
+
+Reaching agreement across distributed components — leader election, operation ordering, transaction commit — requires multiple network round-trips and careful protocol implementation. Consensus is expensive; we'll cover it in detail later in this section.
+
+### State management
+
+Where does the truth live? Multi-master replication, eventual consistency, distributed transactions — all introduce trade-offs. The CAP theorem (next lesson) names the most fundamental of these trade-offs.
+
+## The Modern Toolkit
+
+The cloud-native ecosystem has developed sophisticated solutions for managing distributed-systems complexity. Most of what you'll see in the rest of this section uses these as foundational pieces.
+
+<IconGrid cols={2} items={[
+  { icon: '☸️', title: 'Kubernetes', body: 'Service discovery, failure recovery, declarative deployment. The de facto orchestration platform.' },
+  { icon: '🕸️', title: 'Service mesh', body: 'Automatic encryption, load balancing, observability for service-to-service traffic. Istio, Linkerd.' },
+  { icon: '🗃️', title: 'Managed databases', body: 'Aurora, Spanner, CockroachDB. Distributed consensus and replication handled for you.' },
+  { icon: '🌊', title: 'Event streaming', body: 'Kafka enables loosely coupled, eventually consistent architectures that fit distributed reality.' },
+  { icon: '🔍', title: 'Distributed tracing', body: 'Jaeger, OpenTelemetry. Visibility into request flows across services.' },
+  { icon: '📊', title: 'Observability platforms', body: 'Prometheus, Grafana, Datadog — metrics, logs, traces unified.' },
+]} />
+
+## What's Coming in This Section
+
+The rest of Section 4 covers the foundations:
+
+<IconGrid cols={2} items={[
+  { icon: '🔪', title: 'Sharding & replication', body: 'How data scales horizontally and survives failures.' },
+  { icon: '⚖️', title: 'CAP theorem', body: 'The fundamental trade-off — and how modern systems navigate it.' },
+  { icon: '🗄️', title: 'Database partitioning', body: 'Strategies for distributing relational and NoSQL data.' },
+  { icon: '🤝', title: 'Distributed consensus', body: 'Raft, Paxos, and how systems agree without a coordinator.' },
+  { icon: '☸️', title: 'Kubernetes deep dive', body: 'How K8s actually works under the hood — control plane, scheduling, networking.' },
+  { icon: '🏗️', title: 'AWS resource hierarchy', body: 'How accounts, regions, and services compose into platforms.' },
+]} />
+
+## Recap
+
+- Distributed systems aren't an academic concern. They emerge naturally as your SaaS grows.
+- The Eight Fallacies — network reliability, zero latency, infinite bandwidth, etc. — are wrong in production.
+- New complexity categories: partial failures, time uncertainty, consensus, state management.
+- The modern cloud-native toolkit gives you primitives for solving these — but doesn't eliminate the trade-offs.
+- The rest of this section covers the foundations: sharding, CAP, consensus, Kubernetes, and the platforms you'll build on.

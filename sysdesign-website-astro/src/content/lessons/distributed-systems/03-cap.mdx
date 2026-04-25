@@ -1,0 +1,143 @@
+---
+title: CAP Theorem and Practical Implications
+slug: cap
+order: 3
+section: distributed-systems
+group: Core Concepts
+summary: The fundamental trade-off — and the more useful PACELC refinement. CP vs AP, what consistency actually means, and when the trade-off matters in practice.
+readingMinutes: 8
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Every technical decision involves trade-offs. CAP theorem is the cleanest, most well-known illustration of one of the most fundamental trade-offs in distributed systems.
+
+## The CAP Theorem
+
+The CAP theorem (Brewer's theorem) states that any distributed system can guarantee at most **two of three** properties:
+
+<IconGrid cols={3} items={[
+  { icon: '🤝', title: 'Consistency (C)', body: 'All nodes see the same data at the same time. Linearizability — every read sees the most recent write.' },
+  { icon: '✅', title: 'Availability (A)', body: 'Every request gets a response — though not necessarily the most recent data.' },
+  { icon: '🌐', title: 'Partition tolerance (P)', body: 'System keeps working correctly when network partitions split nodes.' },
+]} />
+
+<KeyIdea>
+The CAP theorem is often misread as "you must give up one of three." The real point is more subtle: **the trade-off only happens during network partitions**. The rest of the time, you can have all three.
+</KeyIdea>
+
+## What This Means in Practice
+
+Network partitions are inevitable in distributed systems. So the practical question is: **when there's a partition, do you sacrifice consistency or availability?**
+
+<Compare2
+  left={{
+    label: 'CP — Strong consistency',
+    title: 'Consistency under partition',
+    body: 'During a partition, the system refuses requests it can\'t fulfill consistently. Some users see "service unavailable" — but no one sees stale or wrong data. Examples: banking, ledger systems, financial transactions.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'AP — High availability',
+    title: 'Availability under partition',
+    body: 'During a partition, the system always responds. Reads might be stale; recent writes might not be visible to all users yet. Examples: shopping carts, social feeds, recommendation systems.',
+    accent: 'emerald',
+  }}
+/>
+
+### Concrete examples
+
+<Compare2
+  left={{
+    label: 'CP system',
+    title: 'Bank transaction processing',
+    body: 'A bank prefers being unavailable for a few minutes over showing wrong balances or letting two ATMs withdraw the same money. Better to be down than wrong.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'AP system',
+    title: 'Amazon shopping cart',
+    body: 'A shopping cart that\'s slightly out of sync but always available beats one that\'s offline. Lost sales cost more than stale data. Conflicts get reconciled later.',
+    accent: 'emerald',
+  }}
+/>
+
+## What "Consistency" Actually Means
+
+CAP's "consistency" is **linearizability** — a strong form. There's a whole spectrum of consistency models:
+
+<IconGrid cols={2} items={[
+  { icon: '💎', title: 'Strict / linearizable', body: 'Every read sees the most recent committed write. Simulates a single, fast machine. Most expensive to provide.' },
+  { icon: '📋', title: 'Sequential consistency', body: 'All nodes see operations in the same order, but may see different "current" states.' },
+  { icon: '⏳', title: 'Eventual consistency', body: 'Without further updates, all replicas eventually converge. No bound on when. Cheapest, weakest.' },
+  { icon: '🎯', title: 'Causal consistency', body: 'Causally related operations are seen in the right order; concurrent operations can be seen in any order.' },
+  { icon: '👤', title: 'Read-your-writes', body: 'You always see your own latest writes (even if other users see stale).' },
+  { icon: '📈', title: 'Monotonic reads', body: 'Once you read a value, you\'ll never see an earlier value (no time travel).' },
+]} />
+
+Most production systems pick a model **per operation**, not for the whole system. Critical writes use strong consistency; reads of less-critical data accept eventual consistency.
+
+## PACELC: The More Useful Theorem
+
+CAP describes the trade-off **during partitions**. PACELC describes what happens **the rest of the time** — which is most of the time.
+
+> **PACELC.** **If P**artition then **A**vailability vs **C**onsistency. **E**lse, **L**atency vs **C**onsistency.
+
+<Compare2
+  left={{
+    label: 'During partition (PA / PC)',
+    title: 'Same as CAP',
+    body: 'PA: prioritize availability. PC: prioritize consistency.',
+    accent: 'amber',
+  }}
+  right={{
+    label: 'Normal operation (EL / EC)',
+    title: 'Latency vs Consistency',
+    body: 'EL: prioritize low latency (don\'t wait for all replicas). EC: prioritize consistency (wait for replicas to acknowledge).',
+    accent: 'indigo',
+  }}
+/>
+
+In practice, you classify systems by both letters:
+
+| System | CAP | PACELC | Notes |
+| --- | --- | --- | --- |
+| Cassandra | AP | PA/EL | Tunable but defaults to AP/low-latency |
+| DynamoDB | AP | PA/EL | Eventually consistent reads by default |
+| MongoDB | CP* | PC/EC | * Default; can be tuned |
+| HBase | CP | PC/EC | Strong consistency at cost of latency |
+| Spanner | CP | PC/EC | TrueTime to make CP feasible globally |
+
+## How Modern Systems Navigate This
+
+The mature view: don't pick one mode for the whole system. Pick per operation, per use case.
+
+<IconGrid cols={2} items={[
+  { icon: '🎚️', title: 'Tunable consistency', body: 'Cassandra, DynamoDB, Mongo let you choose consistency level per query: ONE, QUORUM, ALL. Trade latency for stronger guarantees on reads that matter.' },
+  { icon: '✍️', title: 'Asynchronous writes', body: 'Writes return immediately; consistency reconciles in the background. Right for many user-facing operations.' },
+  { icon: '👀', title: 'Read-your-own-writes', body: 'Cookie or session steers your reads to the leader for a few seconds after you write. Most users never notice the underlying eventual consistency.' },
+  { icon: '🔒', title: 'Strong only when needed', body: 'Payment, auth, ledger: strong consistency. Everything else: eventual. Most systems are 80% AP, 20% CP.' },
+]} />
+
+## The Multi-Tenant SaaS Lens
+
+For multi-tenant SaaS, CAP/PACELC choices ripple through:
+
+- **Per-tenant data** can be strongly consistent within a tenant — they're a small enough domain.
+- **Cross-tenant data** (analytics, billing aggregations) accept eventual consistency.
+- **User-facing flows** prioritize availability — a brief stale view beats a 500.
+- **Admin/billing flows** prioritize consistency — the bill must match reality.
+
+Different tenancy patterns also affect the trade-off. DB-per-tenant gives you per-tenant strong consistency easily; shared-schema multi-tenancy makes it harder to get the same guarantees.
+
+## Recap
+
+- CAP says: during partition, pick availability or consistency.
+- PACELC adds: during normal operation, pick latency or consistency.
+- "Consistency" in CAP means linearizability — a strong form. Real systems use a spectrum.
+- Most production systems pick per-operation, not for the whole system.
+- For multi-tenant SaaS: strong consistency where it matters (payments, auth, ledger); eventual everywhere else.

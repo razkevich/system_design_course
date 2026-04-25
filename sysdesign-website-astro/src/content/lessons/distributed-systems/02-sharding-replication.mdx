@@ -1,0 +1,188 @@
+---
+title: Sharding and Replication
+slug: sharding-replication
+order: 2
+section: distributed-systems
+group: Core Concepts
+summary: The two foundational techniques for scaling distributed data — and how they combine. Single-leader, multi-leader, leaderless. Sharding strategies and the trade-offs.
+readingMinutes: 9
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Sharding and replication are the two foundational approaches to building distributed data systems. They solve different problems — but most production systems combine them.
+
+<KeyIdea>
+**Replication** keeps copies of the same data on multiple nodes (for availability and read scaling). **Sharding** splits data across nodes (for write scaling). Real systems use both.
+</KeyIdea>
+
+## Single Instance — The Starting Point
+
+Everything happens on one node. Strong consistency, simple reasoning, but no horizontal scalability. Examples: single-instance Postgres, Redis without clustering, monolithic app servers.
+
+The only option for handling more load is **vertical scaling** — bigger CPU, more memory, more storage. Has physical and economic limits.
+
+## Replication
+
+### Single-leader replication
+
+The simplest replication setup: one **leader** (a.k.a. primary, master, write replica) accepts all writes. **Followers** (read replicas, hot standbys) receive a stream of changes from the leader and serve reads.
+
+<IconGrid cols={2} items={[
+  { icon: '✍️', title: 'Writes go to leader', body: 'Single point of write coordination. Easy to reason about ordering — natural linearizability.' },
+  { icon: '📖', title: 'Reads can scale', body: 'Spread read load across followers. Great for read-heavy workloads.' },
+  { icon: '🔄', title: 'Replication modes', body: 'Synchronous (slower writes, no data loss) vs. asynchronous (faster, possible staleness).' },
+  { icon: '🚨', title: 'Failover', body: 'Manual or automatic (via Raft, Paxos). Automatic = faster recovery; manual = avoids split-brain.' },
+]} />
+
+**Examples:** Postgres streaming replication, MySQL master-slave, MongoDB replica sets, Redis Sentinel.
+
+<Compare2
+  left={{
+    label: 'Synchronous replication',
+    title: 'No data loss, slower writes',
+    body: 'Leader waits for at least one follower to acknowledge before confirming the write. Strong consistency but increased latency and reduced availability if followers are slow or unreachable.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Asynchronous replication',
+    title: 'Fast writes, possible staleness',
+    body: 'Leader confirms writes immediately, replicates in background. Better performance, but readers can see stale data on followers — and recent writes can be lost if leader crashes before replication.',
+    accent: 'amber',
+  }}
+/>
+
+### Multi-leader replication
+
+Multiple nodes accept writes simultaneously. Each leader replicates to others; each leader can also have its own followers.
+
+**When you need it:**
+
+- **Geographic distribution.** Each region has a local leader for low-latency writes.
+- **Collaborative editing.** Mobile devices that can be offline for days are essentially leaders that sync.
+- **High write availability.** No single write bottleneck.
+
+The cost: **conflict resolution**. When the same data is written at two leaders concurrently, you must decide whose change wins.
+
+<IconGrid cols={2} items={[
+  { icon: '⏰', title: 'Last-write-wins (LWW)', body: 'Pick the most recent timestamp. Simplest, but clock skew can cause data loss when "wrong" write wins.' },
+  { icon: '🔢', title: 'Version vectors', body: 'Track causality between updates. More accurate; more complex to implement.' },
+  { icon: '🎯', title: 'Application-specific', body: 'Let the app decide based on business semantics (merge two carts, sum two counters).' },
+  { icon: '🤝', title: 'CRDTs', body: 'Conflict-free Replicated Data Types that automatically merge. Math-backed, but limited shape options.' },
+]} />
+
+Multi-leader systems generally **cannot guarantee linearizability**. Google Spanner uses atomic clocks (TrueTime) to approximate it, but that's specialized hardware and serious operational complexity.
+
+### Leaderless replication
+
+Every node accepts both reads and writes. No special coordinator. Used by Cassandra, DynamoDB, Riak.
+
+**Quorum consistency.** With N replicas, if you read from R replicas and write to W replicas where R + W > N, you're guaranteed to read the latest value.
+
+```
+N = 3 replicas
+W = 2 (write to 2)
+R = 2 (read from 2)
+W + R = 4 > N = 3  ✓ guaranteed consistent reads
+```
+
+<IconGrid cols={2} items={[
+  { icon: '🔧', title: 'Read repair', body: 'When clients read from multiple replicas, they detect and fix stale values inline.' },
+  { icon: '🌀', title: 'Anti-entropy', body: 'Background process that compares replicas and propagates differences.' },
+  { icon: '💧', title: 'Sloppy quorum', body: 'When some target nodes are unavailable, write to other nodes temporarily.' },
+  { icon: '📬', title: 'Hinted handoff', body: 'When original nodes recover, they receive writes that were temporarily held elsewhere.' },
+]} />
+
+## Sharding
+
+Sharding (also called horizontal partitioning) splits data across nodes. Each node holds only a slice. Writes scale horizontally because different shards can accept writes in parallel.
+
+### Sharding strategies
+
+<Compare2
+  left={{
+    label: 'Range-based',
+    title: 'Order-preserving',
+    body: 'Split by key range (e.g., A-F on shard 1, G-M on shard 2). Range queries are efficient. Risk: hot spots if traffic skews to one range.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Hash-based',
+    title: 'Even distribution',
+    body: 'Hash the key, mod by shard count. Even traffic distribution. Range queries become expensive (must scatter-gather).',
+    accent: 'emerald',
+  }}
+/>
+
+<Compare2
+  left={{
+    label: 'Directory-based',
+    title: 'Lookup table',
+    body: 'A directory service maps keys to shards. Maximum flexibility, easy to rebalance. Cost: directory becomes a bottleneck and SPOF.',
+    accent: 'amber',
+  }}
+  right={{
+    label: 'Consistent hashing',
+    title: 'Minimize remapping',
+    body: 'Adding/removing a node only relocates a fraction of keys. Used by Cassandra, DynamoDB, modern caches.',
+    accent: 'indigo',
+  }}
+/>
+
+### The hot-spot problem
+
+A single popular key (a celebrity user, a viral product) can overwhelm one shard. Mitigations:
+
+- **Salting keys** — append random suffix to spread writes across shards.
+- **Read replicas of hot shards** — let reads scale even if writes are concentrated.
+- **Caching layer** — most hot data should never reach the database.
+
+### Resharding
+
+Adding or removing shards is operationally expensive. Strategies:
+
+- **Pre-split shards** — start with more shards than you need, redistribute as you grow.
+- **Logical shards over physical** — many logical shards on fewer physical nodes; rebalance by moving logical shards.
+- **Online migration tools** — Vitess for MySQL, Citus for Postgres handle this with minimal downtime.
+
+## Combining Sharding and Replication
+
+Most production systems use both:
+
+- **Each shard is replicated** for fault tolerance and read scaling.
+- **Different shards live on different nodes** for write scaling.
+
+```
+Shard A (users a-h)            Shard B (users i-p)            Shard C (users q-z)
+   ┌───────────────┐                ┌───────────────┐                ┌───────────────┐
+   │  Leader  A    │ ──replication─►│   Leader B    │                │   Leader C    │
+   │  Follower A1  │                │   Follower B1 │                │   Follower C1 │
+   │  Follower A2  │                │   Follower B2 │                │   Follower C2 │
+   └───────────────┘                └───────────────┘                └───────────────┘
+```
+
+Each shard is independent. A query for user "k" routes to Shard B; cross-shard queries (e.g., "give me all users") fan out to all shards.
+
+## Multi-Tenant SaaS Patterns
+
+For multi-tenant SaaS, shard-by-tenant is often the right model:
+
+<IconGrid cols={2} items={[
+  { icon: '🏠', title: 'One shard per tenant', body: 'Strong isolation, easy GDPR compliance, simple per-tenant operations. Operational overhead grows with tenant count.' },
+  { icon: '🏘️', title: 'Many tenants per shard', body: 'Most efficient. Hash tenants to shards. Need to handle hot tenants (one big tenant overwhelming a shard).' },
+  { icon: '🎯', title: 'Hybrid', body: 'Big enterprise tenants get dedicated shards; smaller tenants share. Common pattern at scale.' },
+  { icon: '🌍', title: 'Region-per-tenant', body: 'For data residency compliance. Each tenant\'s data stays in their geographic region.' },
+]} />
+
+## Recap
+
+- **Replication** = same data on multiple nodes (availability + read scaling).
+- **Sharding** = different data on different nodes (write scaling).
+- Production systems combine them — each shard replicated for fault tolerance.
+- Three replication models: single-leader (simple, scales reads), multi-leader (writes scale, conflicts), leaderless (symmetric, quorum-based).
+- Sharding strategies: range-based, hash-based, directory-based, consistent hashing. Each has trade-offs.
+- For multi-tenant SaaS, shard-by-tenant (with hybrids for big customers) is usually the right model.
