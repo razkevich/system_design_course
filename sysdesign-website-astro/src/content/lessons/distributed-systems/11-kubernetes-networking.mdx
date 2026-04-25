@@ -1,0 +1,243 @@
+---
+title: Kubernetes Networking
+slug: kubernetes-networking
+order: 11
+section: distributed-systems
+group: Kubernetes & Orchestration
+summary: How packets actually flow in a Kubernetes cluster — pod networking, services, ingress, CNI plugins, and the distributed-systems patterns underneath.
+readingMinutes: 10
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Networking is the foundation of distributed Kubernetes systems. Understanding how packets actually flow lets you debug effectively, design resilient architectures, and reason about performance.
+
+This lesson covers pod-to-pod communication, services, ingress, CNI plugins, and network policies — the layers that make K8s networking work.
+
+## The Networking Model
+
+Kubernetes networking has four core principles:
+
+<IconGrid cols={2} items={[
+  { icon: '🆔', title: 'Each Pod has a unique IP', body: 'No port conflicts. No port mapping. App code doesn\'t need to know about deployment specifics.' },
+  { icon: '🤝', title: 'Direct Pod-to-Pod communication', body: 'Pods talk via IP without NAT. Flat network topology.' },
+  { icon: '🔄', title: 'Node-to-Pod communication', body: 'Nodes can reach pods directly. Required for kubelet, monitoring, kubectl exec.' },
+  { icon: '👁️', title: 'Consistent IP visibility', body: 'A pod sees the same IP that other pods use to reach it. No internal/external IP confusion.' },
+]} />
+
+External access is opt-in: pods are private by default; you have to explicitly expose them via Services or Ingress.
+
+## The Network Layers
+
+A typical K8s cluster has multiple overlapping networks:
+
+<IconGrid cols={2} items={[
+  { icon: '🏗️', title: 'Cluster network', body: 'Underlying data center network or cloud VPC. Connects all nodes. Kubernetes doesn\'t manage it directly.' },
+  { icon: '💻', title: 'Node network', body: 'Each node has its own IP on the cluster network. Used for node-to-node and node-to-API-server.' },
+  { icon: '📦', title: 'Pod network', body: 'Pods get IPs from a separate CIDR (e.g., 10.244.0.0/16). Implemented by CNI plugin. Spans across nodes.' },
+  { icon: '🆔', title: 'Service network', body: 'Virtual layer with ClusterIPs from another CIDR (e.g., 10.96.0.0/12). Not physical interfaces — managed by kube-proxy via iptables/IPVS.' },
+]} />
+
+## CNI: The Plugin That Makes Pod Networking Work
+
+Kubernetes itself doesn't implement pod networking. It delegates to a **CNI** (Container Network Interface) plugin.
+
+When a pod is created, the CNI plugin:
+
+1. Assigns an IP from the pod CIDR.
+2. Creates a virtual network interface in the pod's network namespace.
+3. Sets up routing rules so other pods can reach this one.
+4. Applies network policies (if supported).
+
+### Major CNI plugins
+
+<IconGrid cols={2} items={[
+  { icon: '🪶', title: 'Flannel', body: 'Simplest. Overlay network with VXLAN. No native NetworkPolicy support. Good for getting started; less common in production.' },
+  { icon: '🛡️', title: 'Calico', body: 'BGP-based. Strong NetworkPolicy support. Performance-focused. Used by many enterprise deployments.' },
+  { icon: '🕷️', title: 'Cilium', body: 'eBPF-based. Highest performance. Rich features: NetworkPolicy, transparent encryption, service mesh integration, deep observability. Default in many managed K8s distributions.' },
+  { icon: '☁️', title: 'Cloud-native CNIs', body: 'AWS VPC CNI, Azure CNI, GCP CNI. Use cloud-native networking — pods get cloud VPC IPs directly. Best performance but tied to the cloud.' },
+]} />
+
+<KeyIdea>
+Choose your CNI consciously. It affects performance, NetworkPolicy capabilities, observability, and what cloud features you can use. Cilium is becoming the modern default; Calico is the conservative choice.
+</KeyIdea>
+
+## Service Networking
+
+Pods are ephemeral. Services provide stable virtual IPs that proxy to the current set of healthy backend pods.
+
+### How Services actually work
+
+```
+Pod → ClusterIP (10.96.42.7)
+        │
+        ▼  (kube-proxy iptables/IPVS rules)
+        │
+   ┌────┴────┬────────┬────────┐
+   ▼         ▼        ▼        ▼
+ Pod IP1   Pod IP2   Pod IP3   Pod IP4
+ (the actual current backend pods)
+```
+
+`kube-proxy` watches Services and Endpoints, maintaining iptables (or IPVS) rules on every node. When a pod sends a packet to a ClusterIP, the kernel's netfilter rewrites the destination to a real pod IP — random or round-robin among the available backends.
+
+### Service types in detail
+
+<Compare2
+  left={{
+    label: 'ClusterIP',
+    title: 'Internal-only',
+    body: 'Default. Reachable only inside the cluster. DNS name like my-service.namespace.svc.cluster.local. The right choice for service-to-service.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'NodePort',
+    title: 'Expose via every node',
+    body: 'Opens a port on every node (30000-32767). External clients can reach the service via any node\'s IP at that port. Mostly used for dev/testing.',
+    accent: 'amber',
+  }}
+/>
+
+<Compare2
+  left={{
+    label: 'LoadBalancer',
+    title: 'Cloud LB integration',
+    body: 'Provisions a cloud load balancer (AWS ELB, GCP forwarding rule). Exposes the service via a stable public IP. Standard for public services.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'ExternalName',
+    title: 'DNS alias',
+    body: 'Maps a service name to an external DNS name (CNAME). No proxying, no IP allocation. Used to give external services in-cluster names.',
+    accent: 'rose',
+  }}
+/>
+
+## DNS
+
+`CoreDNS` runs in every cluster, exposing service names as DNS records:
+
+- `my-service.my-namespace.svc.cluster.local` → ClusterIP
+- `pod-ip.my-namespace.pod.cluster.local` → individual pod (rarely used directly)
+
+Pods get the cluster DNS in their `/etc/resolv.conf`, so a simple `curl http://my-service` (within namespace) or `curl http://my-service.my-namespace` (cross-namespace) resolves correctly.
+
+## Ingress: HTTP/HTTPS Routing
+
+Services give you Layer 4. Ingress gives you Layer 7.
+
+```
+                    [ Internet ]
+                          │
+                          ▼
+                  [ Cloud Load Balancer ]
+                          │
+                          ▼
+              [ Ingress Controller Pod ]
+              (nginx, Traefik, ALB, etc.)
+                          │
+        ┌─────────────────┼─────────────────┐
+        ▼                 ▼                 ▼
+   [Service A]      [Service B]      [Service C]
+   /api/*            /admin/*         /static/*
+```
+
+The Ingress resource is **declarative** routing config. The Ingress controller is the actual implementation — runs as pods, watches Ingress resources, configures itself accordingly.
+
+<IconGrid cols={3} items={[
+  { icon: '🌐', title: 'nginx-ingress', body: 'Most popular. Mature, well-documented, broad feature set. nginx under the hood.' },
+  { icon: '🔀', title: 'Traefik', body: 'Modern, dynamic config, native Let\'s Encrypt integration, easier UX. Strong choice for new clusters.' },
+  { icon: '🏢', title: 'Cloud-native', body: 'AWS ALB Controller, GCP GKE Ingress. Provision cloud load balancers natively.' },
+]} />
+
+### Gateway API: The Ingress Successor
+
+Gateway API is the modern replacement for Ingress. More expressive, role-oriented:
+
+<IconGrid cols={3} items={[
+  { icon: '🚪', title: 'Gateway', body: 'A network entry point. Owned by infrastructure team. Defines listeners, certificates.' },
+  { icon: '🛣️', title: 'HTTPRoute / GRPCRoute / TCPRoute', body: 'Route definitions. Owned by app teams. Defines paths/hostnames and target services.' },
+  { icon: '📋', title: 'GatewayClass', body: 'Defines what implementation provides Gateway resources. Like StorageClass but for networking.' },
+]} />
+
+Gateway API will eventually replace Ingress in most clusters. New clusters should use it; existing should migrate.
+
+## Network Policies
+
+By default, all pods can talk to all other pods. **NetworkPolicies** restrict this.
+
+```yaml
+# Allow only pods labeled "app=frontend" to talk to "app=api"
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-from-frontend-only
+spec:
+  podSelector:
+    matchLabels:
+      app: api
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+```
+
+<Callout type="warning" title="NetworkPolicies need a CNI that supports them">
+Flannel doesn't support NetworkPolicies natively. You need Calico, Cilium, Weave, or another supporting CNI. Without enforcement, a NetworkPolicy resource is just metadata — it doesn't actually restrict anything.
+</Callout>
+
+For production, default-deny is the right baseline:
+
+```yaml
+# Block all ingress to all pods unless explicitly allowed elsewhere
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+```
+
+## Service Mesh: Layer 7 Networking as Infrastructure
+
+Service meshes (Istio, Linkerd, Consul Connect) layer additional networking on top of the basic K8s networking:
+
+<IconGrid cols={2} items={[
+  { icon: '🔐', title: 'Universal mTLS', body: 'Automatic certificate management between services. Every service-to-service call is mutually authenticated and encrypted.' },
+  { icon: '🚦', title: 'Traffic management', body: 'Weighted routing, canary deploys, fault injection, retries — all without app code changes.' },
+  { icon: '📊', title: 'Observability', body: 'Automatic metrics, tracing, service topology visualization for every service-to-service call.' },
+  { icon: '🛡️', title: 'Authorization', body: 'Fine-grained authorization policies between services. "Service A can call Service B\'s /create endpoint."' },
+]} />
+
+We covered this in [Service Meshes](/lesson/networks-and-communication/service-meshes); in K8s context, it's typically deployed as sidecar proxies (Envoy for Istio, linkerd2-proxy for Linkerd) injected into every pod.
+
+## Multi-Cluster Networking
+
+For larger SaaS platforms running multiple K8s clusters:
+
+<IconGrid cols={2} items={[
+  { icon: '🌐', title: 'Multi-cluster service mesh', body: 'Istio multi-cluster, Linkerd multi-cluster. Services in different clusters can talk to each other transparently.' },
+  { icon: '🔗', title: 'Cluster mesh (Cilium)', body: 'Cilium\'s multi-cluster feature. Pods across clusters share a network plane. Tighter integration than service-mesh-based approaches.' },
+  { icon: '🚪', title: 'Submariner', body: 'Open-source multi-cluster networking. Connects clusters across cloud providers and on-prem.' },
+  { icon: '☁️', title: 'Cloud-native multi-region', body: 'AWS VPC peering / Transit Gateway between regional EKS clusters. Tighter coupling, less operational overhead.' },
+]} />
+
+## Recap
+
+- Kubernetes networking has four principles: unique pod IPs, direct pod-to-pod, node-to-pod, consistent IP visibility.
+- Four overlapping networks: cluster, node, pod, service. Each managed differently.
+- CNI plugins implement pod networking — pick consciously (Cilium, Calico, Flannel, cloud-native).
+- Services proxy stable virtual IPs to current backend pods via kube-proxy and iptables/IPVS.
+- Ingress provides L7 routing; Gateway API is the modern replacement.
+- NetworkPolicies restrict pod-to-pod traffic; need a CNI that supports them.
+- Service mesh layers L7 networking concerns (mTLS, traffic management, observability) as infrastructure.
+- Multi-cluster networking enables federated platforms across regions and providers.

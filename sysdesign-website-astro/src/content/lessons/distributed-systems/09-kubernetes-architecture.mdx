@@ -1,0 +1,187 @@
+---
+title: Kubernetes Deep Dive
+slug: kubernetes-architecture
+order: 9
+section: distributed-systems
+group: Kubernetes & Orchestration
+summary: How Kubernetes actually works under the hood. Control plane, data plane, the reconciliation loop, scheduling, and the distributed-systems patterns that make it tick.
+readingMinutes: 11
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Kubernetes is a sophisticated distributed system that demonstrates the core principles of modern container orchestration at scale. The platform implements fundamental distributed-systems concepts — coordination, consistency, fault tolerance — through a carefully designed architecture that separates control logic from execution.
+
+When you run `kubectl apply -f deployment.yaml`, you trigger a coordinated sequence across multiple distributed components — each implementing specific distributed-systems patterns.
+
+## Two Planes
+
+Kubernetes splits cleanly into a **control plane** (decision-making) and a **data plane** (execution).
+
+<Compare2
+  left={{
+    label: 'Control plane',
+    title: 'The brain',
+    body: 'Runs on master nodes. Manages cluster state. API server, etcd (state store), scheduler, controller managers. Stateless except for etcd.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Data plane',
+    title: 'The hands',
+    body: 'Runs on worker nodes. Executes workloads. kubelet (node agent), kube-proxy (service networking), container runtime (containerd, CRI-O).',
+    accent: 'emerald',
+  }}
+/>
+
+This split enables horizontal scaling, fault tolerance, and clear separation of concerns — the same architectural principles you'd use for any large distributed system.
+
+## Control Plane Components
+
+<IconGrid cols={2} items={[
+  { icon: '🌐', title: 'kube-apiserver', body: 'The single source of truth interface. All cluster state changes go through here. Validates, authenticates, persists to etcd. Horizontally scalable.' },
+  { icon: '🗄️', title: 'etcd', body: 'Distributed KV store backed by Raft consensus. Holds all cluster state. The reliability of etcd determines the reliability of Kubernetes.' },
+  { icon: '📅', title: 'kube-scheduler', body: 'Decides which node a new Pod should run on. Considers resource requests, affinity rules, taints/tolerations. Pluggable.' },
+  { icon: '🔄', title: 'kube-controller-manager', body: 'Runs the reconciliation loops (Deployment controller, ReplicaSet controller, Node controller, etc.). Watches state, makes it match desired state.' },
+  { icon: '☁️', title: 'cloud-controller-manager', body: 'Cloud-specific controllers (Load balancers, persistent volumes, node lifecycle). Lets the rest of K8s stay cloud-agnostic.' },
+]} />
+
+## Data Plane Components
+
+<IconGrid cols={2} items={[
+  { icon: '🤖', title: 'kubelet', body: 'Node agent. Watches the API server for Pods assigned to its node. Calls the container runtime to start/stop containers. Reports node and Pod status back.' },
+  { icon: '🔗', title: 'kube-proxy', body: 'Service networking on each node. Maintains iptables/IPVS rules to route service traffic to backend Pods. Or replaced by service-mesh proxies (Cilium, Linkerd).' },
+  { icon: '📦', title: 'Container runtime', body: 'Actually runs containers. containerd (the default), CRI-O. Implements the Container Runtime Interface (CRI) so K8s doesn\'t care which runtime you use.' },
+]} />
+
+## The Reconciliation Loop
+
+The pattern that makes Kubernetes work: **declare desired state, the system continuously moves actual state toward it**.
+
+```
+1. User declares desired state (Deployment YAML).
+2. Controller watches the API for changes.
+3. Controller compares desired vs. actual state.
+4. Controller takes action to reduce the difference.
+5. Loop forever.
+```
+
+<KeyIdea>
+This is a fundamentally different paradigm from "imperative" infrastructure. You don't tell K8s "run this script to create 3 pods." You tell K8s "I want 3 pods of this type" — and a controller continuously works to make that true. Pods crash? K8s notices and creates new ones. Node dies? Controller reschedules. You don't need to do anything.
+</KeyIdea>
+
+## Scheduling
+
+When a Pod is created, the scheduler picks a node. The decision involves:
+
+<IconGrid cols={2} items={[
+  { icon: '📊', title: 'Resource requests', body: 'Pod says "I need 100m CPU and 256Mi memory." Scheduler finds nodes with enough free capacity.' },
+  { icon: '🏷️', title: 'Node selectors', body: 'Pin pods to nodes with specific labels (e.g., GPU nodes, region-specific nodes).' },
+  { icon: '🤝', title: 'Affinity / anti-affinity', body: 'Pods that should run together (data + worker) or apart (replicas of the same service).' },
+  { icon: '🧂', title: 'Taints and tolerations', body: 'Nodes can repel pods unless the pod explicitly tolerates the taint. Used for dedicated node pools.' },
+  { icon: '⚖️', title: 'Topology spread', body: 'Distribute pod replicas across zones for HA.' },
+  { icon: '🔌', title: 'Custom plugins', body: 'Scheduler is pluggable. Custom scoring functions for specialized needs.' },
+]} />
+
+## Workload Resources
+
+A few of the most-used resource types:
+
+<IconGrid cols={2} items={[
+  { icon: '📦', title: 'Pod', body: 'Smallest deployable unit. One or more containers that share network and storage. Usually managed by higher-level resources.' },
+  { icon: '🎯', title: 'Deployment', body: 'Manages a stateless ReplicaSet. Provides rolling updates and rollback. The default for stateless services.' },
+  { icon: '💾', title: 'StatefulSet', body: 'For stateful workloads (databases, brokers). Stable network identity, ordered deployment, persistent storage.' },
+  { icon: '🔄', title: 'DaemonSet', body: 'One pod per node (or matching node selector). Used for log collectors, monitoring agents, network plugins.' },
+  { icon: '⏰', title: 'Job / CronJob', body: 'Run-to-completion workloads. Job for one-off; CronJob for scheduled.' },
+  { icon: '🎚️', title: 'HPA / VPA', body: 'Horizontal Pod Autoscaler (more replicas) and Vertical Pod Autoscaler (more resources per pod). Auto-scaling based on metrics.' },
+]} />
+
+## Service and Networking
+
+Pods are ephemeral and have changing IPs. **Services** provide stable endpoints:
+
+<IconGrid cols={2} items={[
+  { icon: '🏷️', title: 'ClusterIP', body: 'Internal-only virtual IP. Default service type. Other pods reach it by DNS name (my-service.namespace.svc.cluster.local).' },
+  { icon: '📡', title: 'NodePort', body: 'Exposes service on each node\'s IP at a static port. For dev/testing or specific use cases.' },
+  { icon: '⚖️', title: 'LoadBalancer', body: 'Provisions a cloud LB (ELB on AWS, etc.). Standard for public services in cloud environments.' },
+  { icon: '🌐', title: 'Ingress', body: 'HTTP/HTTPS routing. Path-based, host-based. nginx-ingress, Traefik, AWS ALB Controller. The right way to expose multiple services through one LB.' },
+]} />
+
+## Configuration and Secrets
+
+<Compare2
+  left={{
+    label: 'ConfigMap',
+    title: 'Non-sensitive config',
+    body: 'Key-value pairs. Mounted as files or environment variables. Application config, feature flags, public URLs.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Secret',
+    title: 'Sensitive data',
+    body: 'Same shape as ConfigMap, but base64-encoded and (optionally) encrypted at rest. Database passwords, API keys, certs.',
+    accent: 'amber',
+  }}
+/>
+
+For production, integrate with a real secret manager (AWS Secrets Manager, Vault) via External Secrets Operator. Native Secrets are not enough on their own.
+
+## Storage
+
+<IconGrid cols={2} items={[
+  { icon: '📁', title: 'Volume', body: 'Storage attached to a Pod. Many types: emptyDir (ephemeral), configMap, secret, hostPath, NFS, cloud volumes.' },
+  { icon: '🗃️', title: 'PersistentVolume / PersistentVolumeClaim', body: 'Decoupled storage. Cluster admin provisions PVs; users claim them via PVCs. Durable across pod restarts.' },
+  { icon: '⚙️', title: 'StorageClass', body: 'Defines how PVs are dynamically provisioned. EBS gp3, NFS, etc. Each cluster typically has multiple StorageClasses for different needs.' },
+  { icon: '🔌', title: 'CSI (Container Storage Interface)', body: 'Standard interface for storage drivers. Cloud providers, vendors implement CSI; Kubernetes stays storage-agnostic.' },
+]} />
+
+## Operators and CRDs
+
+Custom Resource Definitions (CRDs) let you extend the Kubernetes API. **Operators** package up CRDs with controllers — exposing higher-level abstractions specific to your domain.
+
+```yaml
+# A custom resource managed by an operator
+apiVersion: postgres.example.com/v1
+kind: PostgresCluster
+metadata:
+  name: my-db
+spec:
+  replicas: 3
+  storage: 100Gi
+  version: "15"
+```
+
+The operator watches PostgresCluster resources and reconciles them — provisioning Postgres clusters, handling failover, managing backups. The user thinks at the level of "I want a Postgres cluster" rather than "I want StatefulSets, PVCs, ConfigMaps...". Operators are how complex stateful systems get well-managed in K8s.
+
+## Multi-Tenancy in Kubernetes
+
+For multi-tenant SaaS, K8s supports multiple isolation strategies:
+
+<IconGrid cols={2} items={[
+  { icon: '🏢', title: 'Namespace per tenant', body: 'Logical separation, RBAC scoping, ResourceQuotas. Cheapest. Suits cooperative multi-tenancy where you trust your tenants.' },
+  { icon: '🏰', title: 'Cluster per tenant', body: 'Strongest isolation. Higher operational cost. Required for hard compliance (HIPAA per-tenant, certain regulated industries).' },
+  { icon: '🎭', title: 'Virtual clusters', body: 'vcluster, Capsule. Each tenant gets a virtualized control plane on a shared host cluster. Middle ground.' },
+  { icon: '🎯', title: 'Hybrid', body: 'Big enterprise tenants on dedicated clusters; everyone else on shared with namespace isolation. Common in B2B SaaS.' },
+]} />
+
+## What Makes Kubernetes Hard
+
+<Callout type="warning" title="The complexity is real">
+Kubernetes earned its reputation. Real K8s production work involves understanding: networking (CNI plugins), storage (CSI), security (Pod Security Standards, RBAC, NetworkPolicies), observability stack, ingress controllers, certificate management, GitOps tooling, autoscaling at multiple layers, and cluster lifecycle management. Adopting K8s is adopting all of that.
+</Callout>
+
+The flip side: when you do master it, you have a portable, declarative, self-healing, automation-friendly platform that the entire cloud-native ecosystem builds on.
+
+## Recap
+
+- Kubernetes splits into control plane (etcd, API server, scheduler, controllers) and data plane (kubelet, kube-proxy, runtime).
+- The reconciliation loop pattern: declare desired state, controllers continuously move actual state toward it.
+- Scheduling considers resources, affinity, taints/tolerations, topology.
+- Core resources: Pod, Deployment (stateless), StatefulSet (stateful), DaemonSet, Job/CronJob.
+- Services and Ingress provide stable endpoints and routing.
+- Configuration via ConfigMaps and Secrets; Operators + CRDs extend the API for domain-specific abstractions.
+- Multi-tenancy strategies range from namespace-per-tenant to cluster-per-tenant.
+- The learning curve is steep — but the operational payoff at scale is substantial.

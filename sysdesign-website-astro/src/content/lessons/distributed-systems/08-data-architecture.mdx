@@ -1,0 +1,185 @@
+---
+title: Data Architecture, Pipelines, and ETL
+slug: data-architecture
+order: 8
+section: distributed-systems
+group: Coordination & Infrastructure
+summary: The data lifecycle in modern SaaS — ingestion, storage, processing, security, ML. Lakes, warehouses, lakehouses, and the pipelines that connect them.
+readingMinutes: 10
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+For cloud SaaS applications, data architecture is the foundation that enables personalization, analytics, compliance, and real-time operations. As applications grow from thousands to millions of users, the path data takes — from generation to consumption — becomes increasingly complex.
+
+This lesson follows the natural data lifecycle: ingestion → storage → security → DR → processing → ML.
+
+## The Hard Problems
+
+Modern SaaS faces data problems that classic enterprise systems mostly didn't:
+
+<IconGrid cols={2} items={[
+  { icon: '📈', title: 'Scale + performance', body: 'Millions of concurrent users, sub-second response times, consistency across distributed systems.' },
+  { icon: '🎭', title: 'Workload diversity', body: 'OLTP needs low latency. Analytics needs throughput. ML needs both historical depth and real-time features. Observability needs fast ingest + fast query.' },
+  { icon: '🏘️', title: 'Multi-tenancy', body: 'Isolate tenant data without managing thousands of separate systems.' },
+  { icon: '🌍', title: 'Global distribution', body: 'Consistent performance regardless of user location. Data replication, edge optimization, latency-aware routing.' },
+  { icon: '⚖️', title: 'Compliance', body: 'GDPR, HIPAA, SOC 2 must be implemented at the architecture level — not bolted on.' },
+]} />
+
+## Ingestion
+
+How data enters the system. Three primary patterns:
+
+<Compare2
+  left={{
+    label: 'Batch',
+    title: 'Scheduled, high-volume',
+    body: 'Nightly warehouse loads, monthly compliance reports, ML training. Works for use cases where latency doesn\'t matter and volume does.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Streaming',
+    title: 'Real-time, event-driven',
+    body: 'Fraud detection, real-time dashboards, personalization engines. Events processed as they arrive.',
+    accent: 'emerald',
+  }}
+/>
+
+**Micro-batch** splits the difference: small batches every few minutes for near-real-time analytics. Many production systems combine all three — stream critical user events, batch reference data nightly.
+
+### Streaming platforms
+
+<IconGrid cols={2} items={[
+  { icon: '🌊', title: 'Apache Kafka', body: 'The dominant choice. Powers Netflix recommendations, Uber pricing. Append-only log; high throughput, low latency, replay capability.' },
+  { icon: '☁️', title: 'Cloud-managed', body: 'Amazon Kinesis, Azure Event Hubs, Google Pub/Sub, AWS MSK. Same patterns, less operational overhead.' },
+  { icon: '🌟', title: 'Apache Pulsar', body: 'Multi-tenant, geo-replication built in. Used at Yahoo, Tencent. Strong fit for multi-region SaaS.' },
+]} />
+
+These platforms handle millions of events per second while preserving order and durability. The append-only log model means once data is written, it stays for replay and recovery — making debugging dramatically easier.
+
+### Batch platforms
+
+<IconGrid cols={2} items={[
+  { icon: '🐳', title: 'Apache Airflow', body: 'Standard orchestrator for complex data workflows. Visual DAGs make pipeline structure clear.' },
+  { icon: '☁️', title: 'Cloud ETL', body: 'AWS Glue (serverless ETL), Azure Data Factory, Google Dataflow (unified batch + stream).' },
+  { icon: '🐍', title: 'Modern Python', body: 'Prefect, Dagster — Python-first orchestrators with better testing and debugging UX.' },
+]} />
+
+## Storage
+
+### Storage system categories
+
+<IconGrid cols={2} items={[
+  { icon: '🗃️', title: 'Operational databases', body: 'Real-time low-latency app data. Postgres, MySQL, MongoDB, DynamoDB, time-series DBs (InfluxDB, Timescale), search (Elasticsearch).' },
+  { icon: '🏞️', title: 'Data lakes', body: 'Raw data in original format, no upfront schema. S3, Azure Data Lake Storage, GCS, HDFS. For exploration and diverse analytics.' },
+  { icon: '🏛️', title: 'Data warehouses', body: 'Structured data optimized for analytics. Columnar storage (Parquet, ORC). Snowflake, BigQuery, Redshift. Pre-aggregated views, smart partitioning.' },
+  { icon: '🏠', title: 'Lakehouses', body: 'Metadata layer over data lakes adding ACID, time travel, schema evolution. Delta Lake, Apache Iceberg, Apache Hudi. Lake flexibility + warehouse reliability.' },
+]} />
+
+<KeyIdea>
+A modern SaaS data stack typically runs an operational database (Postgres) for live app, a data lake (S3) for raw events, a warehouse (Snowflake/BigQuery) for analytics, and a lakehouse layer (Delta/Iceberg) to unify them. No single store serves all needs.
+</KeyIdea>
+
+### The lakehouse value
+
+The lakehouse pattern earns its keep through:
+
+- **Schema evolution** — handle changing data structures without breaking existing queries.
+- **Time travel** — query historical versions for audit and debugging.
+- **ACID transactions** — consistency during complex multi-step operations.
+- **Unified analytics** — single system for batch and stream workloads.
+
+## Security
+
+Security isn't an afterthought in modern data architecture — it's a foundational requirement that shapes every design decision.
+
+<IconGrid cols={2} items={[
+  { icon: '🏷️', title: 'Data classification', body: 'Public, internal, confidential, restricted. Different controls per class. User emails ≠ anonymized usage metrics.' },
+  { icon: '🔐', title: 'Encryption everywhere', body: 'At rest (AES-256), in transit (TLS), increasingly in use (homomorphic encryption for processing encrypted data). Cloud KMS makes this near-default.' },
+  { icon: '🛡️', title: 'Zero trust access', body: 'Every data request authenticated and authorized. Fine-grained permissions (row-level, column-level). ABAC over simple RBAC.' },
+  { icon: '👁️', title: 'Audit trails', body: 'Every access logged. Critical for forensics and compliance. Immutable storage for audit logs themselves.' },
+]} />
+
+### Privacy-preserving techniques
+
+- **Anonymization** — strip PII before analytics use.
+- **Pseudonymization** — replace identifiers with tokens; reversible only with secure mapping.
+- **Differential privacy** — add controlled noise to aggregate stats; protect individuals while preserving statistical accuracy.
+- **Synthetic data** — generate fake data with the statistical properties of real data, for testing/dev.
+
+## Disaster Recovery
+
+DR planning is required, not optional. Two key metrics:
+
+<Compare2
+  left={{
+    label: 'RTO — Recovery Time Objective',
+    title: 'How fast must we recover?',
+    body: 'How long can the system be down before unacceptable business impact? Influences architecture (active-passive vs. active-active).',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'RPO — Recovery Point Objective',
+    title: 'How much data can we lose?',
+    body: 'What\'s the maximum acceptable data loss window? Drives backup frequency and replication strategy.',
+    accent: 'amber',
+  }}
+/>
+
+DR strategies, from cheapest to most expensive:
+
+| Strategy | RTO | RPO | Cost |
+| --- | --- | --- | --- |
+| Backup & restore | Hours-days | Hours | Low |
+| Pilot light | Tens of minutes | Minutes | Medium |
+| Warm standby | Minutes | Seconds-minutes | Medium-high |
+| Active-active | Seconds | Near-zero | High |
+
+For multi-tenant SaaS, regulatory tier and tenant SLA often dictate which strategy applies — different tiers may get different DR commitments.
+
+## Processing
+
+Three architectural styles for transformation:
+
+<IconGrid cols={2} items={[
+  { icon: '🔵', title: 'Lambda Architecture', body: 'Separate batch and speed layers. Batch for accuracy + reprocessing; speed for low latency. Two codebases — known maintenance cost.' },
+  { icon: '🔴', title: 'Kappa Architecture', body: 'Single stream-processing layer. Treats batch as a special case of streaming. Simpler operations, requires reprocessing through stream.' },
+  { icon: '🟢', title: 'Modern unified', body: 'Apache Beam, Dataflow, Flink. One codebase that runs in batch or streaming mode. Best of both worlds; tooling still maturing.' },
+  { icon: '🟡', title: 'ELT vs. ETL', body: 'Modern warehouses prefer Extract → Load → Transform — load raw data, transform in-warehouse with SQL. Cheaper to iterate than traditional ETL.' },
+]} />
+
+## ML and AI Considerations
+
+Modern SaaS data architectures need to support ML workloads alongside traditional analytics.
+
+<IconGrid cols={2} items={[
+  { icon: '🎯', title: 'Feature stores', body: 'Centralized repositories for ML features. Reuse features across models. Tecton, Feast, AWS SageMaker Feature Store.' },
+  { icon: '🔄', title: 'Online + offline parity', body: 'Same feature definition for training (offline) and serving (online). Prevents training-serving skew.' },
+  { icon: '⚡', title: 'Real-time features', body: 'Compute features on streaming data. Aggregations over recent windows. Used for fraud, personalization, recommendations.' },
+  { icon: '🧬', title: 'Vector databases', body: 'Pinecone, Weaviate, pgvector, Qdrant. For embeddings — semantic search, RAG, recommendations. The new must-have for AI applications.' },
+]} />
+
+## Multi-Tenancy in Data Layer
+
+For multi-tenant SaaS, data architecture decisions interact with tenancy:
+
+- **Per-tenant data warehouses** for big enterprise tenants — easy GDPR-style data deletion.
+- **Shared warehouse with tenant_id partitioning** for the long tail — efficient at scale.
+- **Hybrid** — usually correct in practice.
+
+The key tension: cost-efficiency wants shared infrastructure; isolation/compliance wants separation. Most platforms blend.
+
+## Recap
+
+- The data lifecycle: ingest → store → secure → DR-protect → process → ML.
+- Ingestion patterns: batch, streaming, micro-batch. Most production systems mix all three.
+- Storage categories: operational DBs, data lakes, warehouses, lakehouses. None of these alone is enough; you'll likely use all four.
+- Security is foundational: classification, encryption, zero trust, audit. Privacy techniques (anonymization, differential privacy) protect individuals.
+- DR is non-negotiable; tier strategies by criticality (cost-RTO trade-off).
+- Processing: Lambda, Kappa, or modern unified. ELT > ETL in modern warehouse stacks.
+- ML adds new requirements: feature stores, vector DBs, online-offline parity.
+- Multi-tenancy interacts with every layer; per-tenant separation for isolation, shared infrastructure for efficiency.

@@ -1,0 +1,180 @@
+---
+title: Distributed Coordination and Locking
+slug: locks
+order: 6
+section: distributed-systems
+group: Coordination & Infrastructure
+summary: Mutual exclusion across machines that don't share memory. The pitfalls, the safe patterns, and the trade-offs of Redis, Redlock, ZooKeeper, and etcd locks.
+readingMinutes: 9
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Distributed locks coordinate processes accessing shared resources across multiple machines. They're fundamental for preventing concurrent writes to the same record, ensuring single-leader behavior, and guarding non-idempotent operations.
+
+The hard part: distributed environments don't have shared memory or synchronized clocks. Network failures partition nodes without warning. Long GC pauses can make a healthy node look dead. Building a correct distributed lock is genuinely tricky.
+
+<KeyIdea>
+Local locks (mutex, file lock, OS-level synchronization) work only inside a single process. The moment you have multiple replicas of a service, those locks coordinate nothing. A distributed lock is a fundamentally different beast.
+</KeyIdea>
+
+## Why It's Hard
+
+<IconGrid cols={3} items={[
+  { icon: '💀', title: 'Partial failures', body: 'A node may crash while others run. Detecting "did the lock holder die or just go silent?" is genuinely undecidable in general.' },
+  { icon: '⏰', title: 'Clock skew', body: 'No global clock. Wall-clock timestamps are unreliable for ordering. NTP helps but doesn\'t guarantee tight bounds.' },
+  { icon: '🌐', title: 'Network partitions', body: 'Nodes can be isolated for arbitrary periods. Messages can be delayed, reordered, or lost.' },
+  { icon: '🛑', title: 'GC pauses', body: 'Long GC or VM pause makes a node appear dead. When it resumes, it doesn\'t know time has passed and may still think it holds the lock.' },
+  { icon: '🎯', title: 'Atomicity', body: '"Check if lock is free, then acquire it" must be a single atomic operation, not two steps.' },
+  { icon: '🚧', title: 'Fencing', body: 'Without monotonically increasing tokens, a delayed operation from an old lock holder can corrupt state after a new holder takes over.' },
+]} />
+
+## Common Pitfalls
+
+<IconGrid cols={2} items={[
+  { icon: '🏠', title: 'Local locks in distributed services', body: 'Junior engineers reach for OS mutex or file lock. Other replicas have no idea about it. Lock effectively does nothing.' },
+  { icon: '☠️', title: 'Single lock server with no failover', body: 'Centralized lock service crashes; whole system halts. Anything coordination-critical needs replication.' },
+  { icon: '⏳', title: 'No TTL', body: 'If client crashes while holding lock, lock is held forever. Always use leases / TTLs.' },
+  { icon: '🕰️', title: 'Wall-clock ordering', body: 'Using timestamps for lock priority. Clock skew breaks this. Logical clocks or fencing tokens for correctness-critical use.' },
+  { icon: '🚫', title: 'No fencing tokens', body: 'A lock holder pauses, lock expires, new holder takes over. Old holder resumes and writes to storage with stale "I have the lock" assumption.' },
+  { icon: '🔓', title: 'Non-atomic check-and-set', body: 'Separate "check available" + "acquire" creates race conditions. Use atomic compare-and-swap or single-call API.' },
+]} />
+
+## The Implementation Options
+
+### RDBMS locks
+
+Relational databases offer two approaches you can use without any extra infrastructure.
+
+<Compare2
+  left={{
+    label: 'Row-level locks',
+    title: 'SELECT FOR UPDATE',
+    body: 'Standard SQL row locking inside a transaction. Coordinated by the DB. Works only inside one DB; SQL transaction overhead.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Advisory locks',
+    title: 'Postgres pg_advisory_lock(key)',
+    body: 'Lightweight, integer-keyed mutex. Session or transaction scoped. Auto-released on disconnect. Postgres-only; no fencing token.',
+    accent: 'emerald',
+  }}
+/>
+
+Best for: scenarios where all clients use the same database, no need for cross-DB coordination, simple use cases like "guard one scheduled job."
+
+### Redis simple lock
+
+The canonical Redis lock pattern:
+
+```
+SET resource_key my_random_value NX PX 30000
+```
+
+`NX` = set only if key doesn't exist. `PX 30000` = expire in 30 seconds. `my_random_value` = unique token chosen by client.
+
+To release, use a Lua script that checks the value matches before deleting:
+
+```
+if redis.call("get", KEYS[1]) == ARGV[1]
+then return redis.call("del", KEYS[1])
+else return 0
+end
+```
+
+**Pros:** Very fast, simple. Lock auto-expires if client crashes.
+**Cons:** Single Redis instance is a SPOF. Replication is asynchronous — failover can produce two clients thinking they hold the lock. No fencing token. No safety beyond the TTL.
+
+### Redlock
+
+Redis's multi-master lock algorithm. Uses N independent Redis nodes (typically 5):
+
+1. Client attempts `SET NX PX` on each Redis master, recording timing.
+2. If set succeeds on a majority (3 of 5) **and** total time < TTL, lock acquired.
+3. Effective validity = TTL − elapsed time.
+4. Failure → delete any partial locks, retry later.
+
+<Callout type="warning" title="Redlock is controversial">
+Martin Kleppmann's well-known critique argues Redlock can violate mutual exclusion in genuinely asynchronous conditions, because it has no fencing tokens and relies on timing assumptions. The Redis docs themselves link to the critique. **Don't use Redlock for correctness-critical scenarios** unless you can enforce tight clock sync and low network jitter.
+</Callout>
+
+### ZooKeeper locks
+
+ZooKeeper's classic lock recipe uses **ephemeral sequential znodes**:
+
+1. Client creates `/locks/mylock/lock-NNNNN` with `EPHEMERAL` + `SEQUENTIAL` flags.
+2. Sequential flag appends a monotonically-increasing suffix.
+3. Client lists children, checks if its znode has the lowest number.
+4. If yes → it has the lock.
+5. If no → set a watch on the immediate predecessor, wait for it to be deleted.
+6. Release = delete the znode (or it auto-deletes when client disconnects).
+
+<IconGrid cols={2} items={[
+  { icon: '⚖️', title: 'Fair', body: 'Whoever requested first gets the lock first.' },
+  { icon: '🚫', title: 'No thundering herd', body: 'Each waiting client watches only its predecessor — single notification per release.' },
+  { icon: '🧹', title: 'Self-cleaning', body: 'Crashed client\'s znode auto-deletes via ephemeral semantics.' },
+  { icon: '🔢', title: 'Built-in fencing', body: 'The sequential number IS a fencing token.' },
+]} />
+
+The cost: you need to run and maintain a ZooKeeper ensemble.
+
+### etcd locks
+
+etcd is a Raft-based KV store with built-in concurrency primitives. The `Lock` API uses a **lease** (TTL) plus an atomic compare-and-swap:
+
+```
+lease = etcd.leaseGrant(ctx, 10)  // 10s TTL
+
+txn = etcd.txn(ctx)
+  .If(compare(CreateRevision(key), "=", 0))
+  .Then(put(key, "locked", WithLease(lease.ID)))
+  .Commit()
+```
+
+This atomically creates the key under the lease if it didn't exist. Lock held until `Unlock` or lease expires.
+
+<IconGrid cols={2} items={[
+  { icon: '🛡️', title: 'Strongly consistent', body: 'Backed by Raft consensus. Real safety guarantees, not timing assumptions.' },
+  { icon: '🆔', title: 'Lease IDs as fences', body: 'Use lease ID or revision number as fencing token for downstream operations.' },
+  { icon: '🔄', title: 'Auto-renewal', body: 'Client can keep refreshing the lease via heartbeats while it\'s working.' },
+  { icon: '☸️', title: 'Already running in K8s', body: 'If you have Kubernetes, you have etcd. Reusing it for app-level coordination is reasonable.' },
+]} />
+
+## Fencing Tokens: The Safety Mechanism
+
+A **fencing token** is a monotonically-increasing number issued with the lock. The protected resource (database, storage system) checks the token on every operation and **rejects operations with stale tokens**.
+
+```
+1. Acquire lock → get token N
+2. Operation: write_data(payload, token=N)
+3. Storage checks: latest_token >= N? Reject if smaller.
+```
+
+This protects against the "paused holder" problem. Even if your client paused for an hour past TTL, when it resumes and tries to write with token N, the storage rejects because someone else has token N+1.
+
+<Callout type="info" title="Fencing requires storage cooperation">
+The protected resource must check the token. If your downstream system doesn't support fencing checks, your lock is only as strong as the timing assumptions — i.e., not actually safe under adversarial conditions.
+</Callout>
+
+## Choosing the Right Tool
+
+| Use case | Recommendation |
+| --- | --- |
+| Simple mutex inside one Postgres app | Postgres advisory locks |
+| Cache invalidation, transient locks | Redis simple lock with TTL |
+| Multi-DB coordination, ok with rare anomalies | Redlock (with caveats) |
+| Correctness-critical (financial, leader election) | ZooKeeper or etcd, with fencing tokens |
+| Already running K8s | etcd Lock API (you have it anyway) |
+
+## Recap
+
+- Local locks coordinate one process. Distributed locks coordinate machines that don't share memory.
+- The hard parts: partial failures, clock skew, network partitions, GC pauses, atomicity, fencing.
+- Common pitfalls: no TTL, no fencing tokens, single point of failure, non-atomic acquire.
+- Tools: RDBMS advisory locks (simple), Redis (fast but unsafe under adversarial conditions), Redlock (controversial), ZooKeeper / etcd (strongly consistent, with fencing).
+- Fencing tokens are the difference between "looks safe" and "actually safe" — but require storage cooperation.
+- For correctness-critical use cases, prefer ZooKeeper or etcd. For convenience, Redis is fine.

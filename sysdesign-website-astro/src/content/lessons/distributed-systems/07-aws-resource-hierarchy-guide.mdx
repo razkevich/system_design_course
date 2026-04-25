@@ -1,0 +1,205 @@
+---
+title: AWS Resource Hierarchy
+slug: aws-resource-hierarchy-guide
+order: 7
+section: distributed-systems
+group: Coordination & Infrastructure
+summary: A working tour of how AWS services compose — Organizations, accounts, regions, AZs, compute, storage, security. The mental model for navigating the platform.
+readingMinutes: 9
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+AWS has hundreds of services. Understanding how they compose is the difference between effective architects and people who randomly click around the console. This lesson is a working tour, organized by functional category — what each service is, what it composes with, and how a typical SaaS uses it.
+
+## Foundation: Organizations & Accounts
+
+<IconGrid cols={2} items={[
+  { icon: '🏢', title: 'AWS Organization', body: 'Top-level container for multiple accounts. Centralized billing, policy inheritance, hierarchical management.' },
+  { icon: '📁', title: 'Organizational Unit (OU)', body: 'Groups accounts within an Org for management. Common: Production OU, Development OU, Sandbox OU.' },
+  { icon: '🔑', title: 'AWS Account', body: 'Primary boundary for billing and security. Multiple accounts → strong isolation between environments / business units / customers.' },
+  { icon: '📜', title: 'Service Control Policies (SCPs)', body: 'Permission boundaries enforced at the OU/Account level. Even account admins can\'t exceed them.' },
+]} />
+
+A typical multi-account setup:
+
+```
+AWS Organization
+ ├── Management Account (billing, IAM Identity Center)
+ ├── Security OU
+ │    ├── Audit Account
+ │    └── Log Archive Account
+ ├── Production OU
+ │    ├── Workload-A-Prod
+ │    └── Workload-B-Prod
+ └── Development OU
+      ├── Workload-A-Dev
+      └── Sandbox
+```
+
+## Regional Infrastructure
+
+<IconGrid cols={2} items={[
+  { icon: '🌍', title: 'Region', body: 'Geographic location (us-east-1, eu-west-1). Most resources are regional. Choice affects latency, cost, compliance, service availability.' },
+  { icon: '🏭', title: 'Availability Zone (AZ)', body: 'Isolated data center within a region (typically 3-6). Span AZs for HA — single-AZ deployments are fragile.' },
+  { icon: '🏠', title: 'VPC', body: 'Virtual Private Cloud. Isolated network within a region. CIDR block, subnets, route tables, security groups.' },
+  { icon: '🔌', title: 'Subnet', body: 'Subdivision of a VPC. Lives in one AZ. Public (internet-accessible) or private.' },
+]} />
+
+This was covered in detail in [Network in AWS](/lesson/networks-and-communication/network-aws). The hierarchy is shared across all the services below.
+
+## Compute
+
+<Compare2
+  left={{
+    label: 'EC2',
+    title: 'Virtual machines',
+    body: 'Full Linux/Windows servers. Instance types optimized for compute, memory, storage, GPU, network. Most flexible; most operational overhead.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'ECS / EKS',
+    title: 'Containers',
+    body: 'ECS = AWS-native container orchestration. EKS = managed Kubernetes. Run on EC2 (you manage scaling) or Fargate (serverless containers).',
+    accent: 'emerald',
+  }}
+/>
+
+<Compare2
+  left={{
+    label: 'Lambda',
+    title: 'Functions',
+    body: 'Serverless functions, event-triggered, pay per execution. 15-minute max runtime. Cold start latency. Best for spiky / event-driven workloads.',
+    accent: 'amber',
+  }}
+  right={{
+    label: 'Batch / Step Functions',
+    title: 'Orchestrated workloads',
+    body: 'Batch = job queue + worker fleet for compute-heavy jobs. Step Functions = visual state-machine orchestration across services.',
+    accent: 'indigo',
+  }}
+/>
+
+<Callout type="tip" title="When to pick what">
+- **Lambda** for stateless, event-driven, infrequent compute.
+- **Fargate (ECS or EKS)** for stateless services that need more flexibility than Lambda.
+- **EKS on EC2** for stateful or scale-sensitive workloads, when you need full container orchestration.
+- **EC2** when you need OS-level control or specialized instance types.
+</Callout>
+
+## Storage
+
+<IconGrid cols={3} items={[
+  { icon: '🪣', title: 'S3', body: 'Object storage. Durable, scalable, eleven 9s of durability. Storage classes (Standard, IA, Glacier) for cost optimization. The default for unstructured data.' },
+  { icon: '💾', title: 'EBS', body: 'Block storage. Attached to EC2 instances like a hard drive. SSD (gp3, io2) or magnetic. Backed by snapshots in S3.' },
+  { icon: '🗂️', title: 'EFS', body: 'Network file system. POSIX-compliant. Mountable from many EC2 instances or Lambda. For shared file storage.' },
+]} />
+
+## Databases
+
+<IconGrid cols={2} items={[
+  { icon: '🐘', title: 'RDS', body: 'Managed relational. Postgres, MySQL, MariaDB, Oracle, SQL Server. Multi-AZ for HA. Read replicas. Automated backups.' },
+  { icon: '🌟', title: 'Aurora', body: 'AWS-built Postgres / MySQL with separated compute/storage. 5x throughput of MySQL, 3x of Postgres. Up to 15 read replicas. Serverless option (Aurora Serverless v2).' },
+  { icon: '⚡', title: 'DynamoDB', body: 'Managed key-value / document. Single-digit ms latency at any scale. Pay-per-request or provisioned capacity. Global tables for multi-region.' },
+  { icon: '🔥', title: 'ElastiCache', body: 'Managed Redis or Memcached. In-memory cache. Cluster mode for sharding. Used for sessions, caching, real-time leaderboards.' },
+  { icon: '📊', title: 'Redshift', body: 'Managed columnar data warehouse. Analytical queries on TB-PB datasets. Decoupled compute and storage in newer generation.' },
+  { icon: '🌐', title: 'Neptune', body: 'Managed graph database. Property graph (Gremlin) and RDF (SPARQL). For relationship-heavy data — fraud detection, knowledge graphs, social networks.' },
+]} />
+
+## Networking
+
+<IconGrid cols={2} items={[
+  { icon: '⚖️', title: 'ALB / NLB / CLB', body: 'Application Load Balancer (Layer 7), Network Load Balancer (Layer 4), Classic (legacy). Almost everyone uses ALB.' },
+  { icon: '🌐', title: 'API Gateway', body: 'Managed API gateway for REST and HTTP APIs. WebSocket support. Tightly integrated with Lambda.' },
+  { icon: '☁️', title: 'CloudFront', body: 'CDN. 400+ edge locations globally. Origin can be S3, EC2, ALB, or any HTTP endpoint. Lambda@Edge for edge compute.' },
+  { icon: '🛣️', title: 'Route 53', body: 'DNS service. Health checks, geographic routing, latency-based routing, weighted records. Domain registration too.' },
+  { icon: '🚦', title: 'Transit Gateway', body: 'Hub-and-spoke connectivity for many VPCs. Replaces complex VPC peering meshes.' },
+  { icon: '🏠', title: 'PrivateLink', body: 'Expose a service privately to other VPCs without public IPs or peering.' },
+]} />
+
+## Identity & Security
+
+<IconGrid cols={2} items={[
+  { icon: '🆔', title: 'IAM', body: 'Identity and Access Management. Users, groups, roles, policies. Roles for service-to-service auth (no long-lived credentials).' },
+  { icon: '🔐', title: 'KMS', body: 'Key Management Service. Managed encryption keys. Hardware-backed (CloudHSM available). Used by S3, RDS, EBS for encryption-at-rest.' },
+  { icon: '🛡️', title: 'WAF / Shield', body: 'Web Application Firewall (Layer 7 filtering). Shield = DDoS protection. Both integrate with ALB, CloudFront, API Gateway.' },
+  { icon: '🤐', title: 'Secrets Manager / SSM Parameter Store', body: 'Secret storage with rotation. Parameter Store for config; Secrets Manager for credentials with rotation policies.' },
+  { icon: '👥', title: 'Cognito', body: 'User pools for app authentication. OAuth 2.0 / OIDC. Federation with Google, Facebook, SAML, OIDC providers.' },
+  { icon: '🌐', title: 'Certificate Manager', body: 'Free public TLS certs, auto-renewal. Private CA also available.' },
+]} />
+
+## Messaging & Events
+
+<IconGrid cols={2} items={[
+  { icon: '📬', title: 'SQS', body: 'Managed queue. Standard (high throughput, at-least-once) or FIFO (ordered, exactly-once). Dead-letter queues built in.' },
+  { icon: '📢', title: 'SNS', body: 'Managed pub/sub. Topics, multiple subscribers (SQS, Lambda, HTTP). Fan-out pattern.' },
+  { icon: '🌊', title: 'Kinesis', body: 'Managed streams. Data Streams (Kafka-like), Firehose (delivery to S3/Redshift), Analytics. For real-time data ingestion.' },
+  { icon: '🔄', title: 'EventBridge', body: 'Managed event bus. Source apps publish events; rules route to targets. Schema registry, archive, replay.' },
+  { icon: '🐝', title: 'MSK', body: 'Managed Kafka. Same Kafka API; AWS handles cluster operations. The right call when you need Kafka semantics specifically.' },
+]} />
+
+## Observability
+
+<IconGrid cols={2} items={[
+  { icon: '📊', title: 'CloudWatch', body: 'Metrics, logs, alarms, dashboards. The default for any AWS service. Custom metrics from your apps too.' },
+  { icon: '🔍', title: 'X-Ray', body: 'Distributed tracing. Auto-instrumentation for Lambda, ECS, EC2. Service map visualizes request flow.' },
+  { icon: '📋', title: 'CloudTrail', body: 'API audit log. Every action against AWS APIs is recorded. Critical for security forensics and compliance.' },
+  { icon: '⚙️', title: 'Config', body: 'Resource configuration history. "What did this S3 bucket\'s policy look like 30 days ago?" answers via Config.' },
+]} />
+
+## A Realistic SaaS Composition
+
+Here's how a multi-tenant SaaS might compose AWS services:
+
+```
+                            [ Route 53 + CloudFront + WAF ]
+                                          │
+                                          ▼
+                            [ ALB across 3 AZs ]
+                                          │
+                       ┌──────────────────┼──────────────────┐
+                       ▼                  ▼                  ▼
+              [ ECS Fargate ]    [ ECS Fargate ]    [ ECS Fargate ]
+              (App service)      (App service)      (App service)
+                       │                  │                  │
+                       └──────────────────┼──────────────────┘
+                                          ▼
+                             [ Aurora Multi-AZ ]
+                             (Postgres, with read replicas)
+                                          │
+                       ┌──────────────────┼──────────────────┐
+                       ▼                  ▼                  ▼
+                  [ Redis ]          [ S3 ]           [ DynamoDB ]
+              (sessions/cache)   (file storage)    (high-throughput)
+
+   [ Cognito ] ──→ [ API Gateway ] ──→ [ Lambda functions ]
+   (user auth)     (public API)        (webhooks, async jobs)
+
+   [ Kinesis ] ──→ [ Lambda ]    [ EventBridge ] ──→ [ Lambda / SQS ]
+   (events in)     (process)     (cross-service)     (downstream)
+
+   [ CloudWatch + X-Ray + CloudTrail ]   [ Secrets Manager + KMS ]
+   (observability)                        (secrets + encryption)
+```
+
+This is a typical reference architecture. Most SaaS platforms run a variant of it.
+
+<KeyIdea>
+The skill isn't memorizing every AWS service — it's understanding how they compose. The same services appear in nearly every architecture; the choices are about which to pick and how they fit together.
+</KeyIdea>
+
+## Recap
+
+- AWS resources hang off the Organization → OU → Account → Region → AZ hierarchy.
+- Compute: EC2 (VMs), ECS/EKS (containers), Lambda (functions), Batch/Step Functions (orchestration).
+- Storage: S3 (objects), EBS (block), EFS (file).
+- Databases: RDS/Aurora (relational), DynamoDB (key-value), ElastiCache (cache), Redshift (analytics), Neptune (graph).
+- Networking: ALB/NLB, API Gateway, CloudFront, Route 53, Transit Gateway, PrivateLink.
+- Identity: IAM, KMS, WAF/Shield, Secrets Manager, Cognito, ACM.
+- Messaging: SQS, SNS, Kinesis, EventBridge, MSK.
+- Observability: CloudWatch, X-Ray, CloudTrail, Config.
+- The skill is composition — knowing which services play together for which use case.

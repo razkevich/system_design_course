@@ -1,0 +1,176 @@
+---
+title: Kubernetes Resource Hierarchy
+slug: kubernetes-resource-hierarchy-guide
+order: 10
+section: distributed-systems
+group: Kubernetes & Orchestration
+summary: A working tour of the Kubernetes object model — what each resource type is for, how they compose, and the patterns you'll see in production.
+readingMinutes: 9
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Kubernetes is built around a small set of composable resource types. Understanding how they fit together is the difference between "running random YAML files" and actually designing systems. This lesson is a tour, organized by what each resource is for.
+
+## Cluster, Node, Namespace
+
+<IconGrid cols={3} items={[
+  { icon: '🏢', title: 'Cluster', body: 'The whole Kubernetes installation. One control plane, many worker nodes.' },
+  { icon: '💻', title: 'Node', body: 'A machine (VM or physical). Runs kubelet, kube-proxy, container runtime. Can host many pods.' },
+  { icon: '🏷️', title: 'Namespace', body: 'Virtual cluster within a cluster. Isolation boundary for resources, RBAC, network policies.' },
+]} />
+
+Most resources are **namespaced** — they live inside a namespace. A few are **cluster-scoped** (Nodes, ClusterRoles, PersistentVolumes, StorageClasses).
+
+## Workload Resources
+
+The "what is running" layer.
+
+<IconGrid cols={2} items={[
+  { icon: '📦', title: 'Pod', body: 'One or more co-located containers with shared network and storage. Smallest unit. Usually managed by higher-level resources, not created directly.' },
+  { icon: '🎯', title: 'Deployment', body: 'For stateless services. Manages a ReplicaSet. Rolling updates, rollback, scaling. Default workload type for most services.' },
+  { icon: '🔁', title: 'ReplicaSet', body: 'Maintains N replicas of a Pod. Usually created by Deployment, not directly.' },
+  { icon: '💾', title: 'StatefulSet', body: 'For stateful workloads (databases, brokers). Stable identity, ordered deployment, persistent volume per pod.' },
+  { icon: '🤖', title: 'DaemonSet', body: 'One pod per node (or matching node selector). For log collectors, monitoring agents, CSI drivers, network plugins.' },
+  { icon: '⏰', title: 'Job / CronJob', body: 'Run-to-completion workloads. Job for one-off; CronJob for scheduled (cron syntax).' },
+]} />
+
+### Choosing the right workload type
+
+<Compare2
+  left={{
+    label: 'Deployment',
+    title: 'Stateless, swappable',
+    body: 'Web servers, API services, workers without local state. Can scale freely; pods are interchangeable.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'StatefulSet',
+    title: 'Stateful, identity-bound',
+    body: 'Databases, brokers, anything where pod identity or ordering matters. Pod gets a stable hostname, stable storage. Ordered scaling.',
+    accent: 'amber',
+  }}
+/>
+
+## Service and Networking
+
+Pods are ephemeral; their IPs change. Services provide stable endpoints.
+
+<IconGrid cols={2} items={[
+  { icon: '🆔', title: 'Service', body: 'Virtual IP and DNS name targeting a set of Pods (selected by label). Types: ClusterIP, NodePort, LoadBalancer, ExternalName.' },
+  { icon: '🏷️', title: 'Endpoints / EndpointSlice', body: 'The actual list of Pod IPs backing a Service. Updated by the endpoints controller. EndpointSlice is the modern, scalable form.' },
+  { icon: '🌐', title: 'Ingress', body: 'HTTP/HTTPS L7 routing — path-based, host-based, TLS termination. Backed by an Ingress controller (nginx, Traefik, AWS ALB, etc.).' },
+  { icon: '🚪', title: 'Gateway API', body: 'Modern replacement for Ingress. More expressive, role-oriented (Gateway, HTTPRoute, GRPCRoute). Will eventually replace Ingress in most clusters.' },
+  { icon: '🛡️', title: 'NetworkPolicy', body: 'Firewall rules between pods. Restricts pod-to-pod traffic. Without them, all pods can talk to all pods.' },
+  { icon: '🕸️', title: 'Service mesh resources', body: 'Istio VirtualService, DestinationRule. Linkerd ServerAuthorization. CRDs that layer over the standard resources.' },
+]} />
+
+## Configuration and Secrets
+
+<IconGrid cols={2} items={[
+  { icon: '📋', title: 'ConfigMap', body: 'Non-sensitive key-value config. Mounted as files or env vars in pods. Feature flags, public URLs, log levels.' },
+  { icon: '🔐', title: 'Secret', body: 'Sensitive data. Base64-encoded; encrypted at rest if etcd encryption is configured. DB passwords, API keys, TLS certs.' },
+]} />
+
+For production secrets, integrate with a real secret manager (AWS Secrets Manager, Vault, GCP Secret Manager) via the External Secrets Operator.
+
+## Storage
+
+<IconGrid cols={2} items={[
+  { icon: '📁', title: 'Volume', body: 'Storage attached to a Pod. Lifetime tied to the pod. Many types — emptyDir, hostPath, configMap, etc.' },
+  { icon: '🗄️', title: 'PersistentVolume (PV)', body: 'Cluster-level storage resource. Backed by EBS, NFS, etc. Lifecycle independent of any pod.' },
+  { icon: '🎫', title: 'PersistentVolumeClaim (PVC)', body: 'A pod\'s request for storage. Binds to an available PV (or triggers dynamic provisioning).' },
+  { icon: '⚙️', title: 'StorageClass', body: 'Template for dynamic PV provisioning. "gp3-encrypted-iops3000" — a class your StatefulSets ask for.' },
+]} />
+
+## Identity and Access
+
+<IconGrid cols={2} items={[
+  { icon: '👤', title: 'ServiceAccount', body: 'Identity for processes running in pods. By default each pod gets the namespace\'s default ServiceAccount. Use distinct ones for least-privilege.' },
+  { icon: '🎭', title: 'Role / ClusterRole', body: 'Permissions definitions. Role is namespace-scoped; ClusterRole is cluster-wide. Verbs (get/list/create/update/delete) on resources.' },
+  { icon: '🔗', title: 'RoleBinding / ClusterRoleBinding', body: 'Attach a Role to a User, Group, or ServiceAccount. The "X can do Y in namespace Z" mapping.' },
+  { icon: '📦', title: 'Pod Security Standards', body: 'Cluster-level policies enforcing security defaults. Privileged / Baseline / Restricted profiles.' },
+]} />
+
+## Resource Management
+
+<IconGrid cols={2} items={[
+  { icon: '📊', title: 'ResourceQuota', body: 'Per-namespace limits — total CPU/memory/pod count. Prevents one tenant from consuming everything.' },
+  { icon: '📏', title: 'LimitRange', body: 'Default and maximum requests/limits per pod or container in a namespace. Catches "no resource requests" mistakes.' },
+  { icon: '⚖️', title: 'PriorityClass', body: 'When the cluster is under pressure, higher-priority pods can preempt lower-priority ones.' },
+  { icon: '🧂', title: 'Taints and Tolerations', body: 'Nodes can repel pods (taint); pods can opt to tolerate specific taints. Used for dedicated node pools.' },
+]} />
+
+## Autoscaling
+
+<IconGrid cols={2} items={[
+  { icon: '↕️', title: 'HPA — Horizontal Pod Autoscaler', body: 'Adds/removes pod replicas based on metrics (CPU, memory, custom). The most common autoscaler.' },
+  { icon: '📐', title: 'VPA — Vertical Pod Autoscaler', body: 'Adjusts CPU/memory requests of existing pods. Less common; useful for right-sizing workloads.' },
+  { icon: '➕', title: 'Cluster Autoscaler', body: 'Adds/removes nodes from the cluster based on pod scheduling pressure.' },
+  { icon: '🚀', title: 'KEDA', body: 'Event-driven autoscaling. Scale based on Kafka lag, queue depth, custom metrics. Goes beyond CPU.' },
+]} />
+
+## Custom Resources and Operators
+
+<KeyIdea>
+The same API mechanisms used for built-in resources are exposed for your own resources. CRDs + controllers = Operators. This is what turns Kubernetes from "container scheduler" into "platform for any distributed system."
+</KeyIdea>
+
+<IconGrid cols={2} items={[
+  { icon: '🧩', title: 'CustomResourceDefinition (CRD)', body: 'Declares a new resource type. K8s starts validating and storing instances of the new type the same way it does built-in types.' },
+  { icon: '🤖', title: 'Operator', body: 'A controller that manages CRDs. Encodes domain knowledge — how to operate a Postgres cluster, a Kafka cluster, a backup schedule.' },
+  { icon: '📚', title: 'OperatorHub', body: 'Catalog of community operators. Don\'t write your own for common systems — there\'s usually a battle-tested one.' },
+]} />
+
+## A Realistic Composition
+
+What a typical SaaS service looks like in K8s:
+
+```yaml
+Namespace: app-prod
+
+  Deployment: api-server
+    ├── 3 Pods × (api-server container + sidecar log-collector)
+    ├── envFrom: ConfigMap "api-config" + Secret "api-secrets"
+    └── ServiceAccount: api-server-sa
+        └── RoleBinding to Role "read-configs"
+
+  Service: api-server (ClusterIP)
+    └── targets pods with label app=api-server
+
+  Ingress: api-public
+    └── routes /v1/* to Service api-server
+
+  HorizontalPodAutoscaler: api-server-hpa
+    └── scales api-server Deployment 3-20 replicas based on CPU
+
+  ResourceQuota: app-prod-quota
+    └── limits namespace to 50 CPUs, 100Gi memory
+
+  NetworkPolicy: api-server-policy
+    └── allows ingress only from ingress controller; egress only to DB
+
+  StatefulSet: postgres
+    ├── 3 Pods, each with 100Gi PVC from gp3-encrypted StorageClass
+    └── Headless Service for stable DNS
+
+  ExternalSecret: db-creds
+    └── pulls from AWS Secrets Manager into Secret "postgres-creds"
+```
+
+This is what a "real" production service looks like. Lots of resources composing — but each one has a single, focused responsibility.
+
+## Recap
+
+- Kubernetes resources cluster into themed groups: workloads, services/networking, config/secrets, storage, identity, resource management, autoscaling, custom.
+- Workload types: Deployment (stateless), StatefulSet (stateful), DaemonSet (per-node), Job / CronJob (run-to-completion).
+- Services + Ingress give stable endpoints. NetworkPolicies provide pod-to-pod firewalling.
+- ConfigMaps and Secrets for config; integrate with real secret managers for production.
+- PVs / PVCs / StorageClasses decouple storage from pods.
+- ServiceAccounts + RBAC for identity. Pod Security Standards for cluster-wide defaults.
+- HPA / VPA / Cluster Autoscaler / KEDA for autoscaling at different layers.
+- CRDs + Operators extend Kubernetes into a platform for any distributed system.
