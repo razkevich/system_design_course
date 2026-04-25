@@ -1,0 +1,22 @@
+---
+interface NavLink { href: string; title: string; }
+interface Props {
+  prev?: NavLink;
+  next?: NavLink;
+}
+const { prev, next } = Astro.props;
+---
+<nav class="mt-12 pt-8 border-t border-[color:var(--color-border)] flex flex-col sm:flex-row gap-4 justify-between">
+  {prev ? (
+    <a href={prev.href} class="group flex-1 rounded-lg border border-[color:var(--color-border)] p-4 hover:border-[color:var(--color-accent)] transition-colors">
+      <div class="text-xs uppercase tracking-wider text-[color:var(--color-text-faint)] mb-1">← Previous</div>
+      <div class="text-[color:var(--color-text)] font-semibold group-hover:text-[color:var(--color-accent)]">{prev.title}</div>
+    </a>
+  ) : <div class="flex-1"></div>}
+  {next ? (
+    <a href={next.href} class="group flex-1 rounded-lg border border-[color:var(--color-border)] p-4 hover:border-[color:var(--color-accent)] transition-colors text-right">
+      <div class="text-xs uppercase tracking-wider text-[color:var(--color-text-faint)] mb-1">Next →</div>
+      <div class="text-[color:var(--color-text)] font-semibold group-hover:text-[color:var(--color-accent)]">{next.title}</div>
+    </a>
+  ) : <div class="flex-1"></div>}
+</nav>

@@ -1,0 +1,27 @@
+---
+type Variant = 'info' | 'tip' | 'warning' | 'pitfall';
+interface Props {
+  type?: Variant;
+  title?: string;
+}
+const { type = 'info', title } = Astro.props;
+
+const config: Record<Variant, { emoji: string; label: string; bgVar: string; borderVar: string }> = {
+  info:    { emoji: 'ℹ️', label: 'Note',           bgVar: 'var(--color-callout-info-bg)',    borderVar: 'var(--color-callout-info-border)' },
+  tip:     { emoji: '💡', label: 'Tip',            bgVar: 'var(--color-callout-tip-bg)',     borderVar: 'var(--color-callout-tip-border)' },
+  warning: { emoji: '⚠️', label: 'Watch out',      bgVar: 'var(--color-callout-warning-bg)', borderVar: 'var(--color-callout-warning-border)' },
+  pitfall: { emoji: '🕳️', label: 'Common pitfall', bgVar: 'var(--color-callout-pitfall-bg)', borderVar: 'var(--color-callout-pitfall-border)' },
+};
+const c = config[type];
+---
+<aside
+  class="my-6 rounded-lg border-l-4 px-4 py-3"
+  style={`background:${c.bgVar}; border-color:${c.borderVar};`}
+>
+  <div class="text-xs font-semibold uppercase tracking-wider mb-1 text-[color:var(--color-text)]">
+    {c.emoji} {title ?? c.label}
+  </div>
+  <div class="text-[color:var(--color-text)] text-[0.95rem] leading-relaxed">
+    <slot />
+  </div>
+</aside>

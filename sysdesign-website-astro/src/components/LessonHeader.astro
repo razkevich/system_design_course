@@ -1,0 +1,24 @@
+---
+interface Props {
+  title: string;
+  readingMinutes: number;
+  lastUpdated: string;
+  sectionTitle: string;
+  sectionHref: string;
+  order: number;
+}
+const { title, readingMinutes, lastUpdated, sectionTitle, sectionHref, order } = Astro.props;
+---
+<header class="mb-8">
+  <nav class="text-xs text-[color:var(--color-text-muted)] mb-3">
+    <a href="/course" class="hover:text-[color:var(--color-text)]">Course</a>
+    <span class="mx-1.5">/</span>
+    <a href={sectionHref} class="hover:text-[color:var(--color-text)]">{sectionTitle}</a>
+    <span class="mx-1.5">/</span>
+    <span>Lesson {order}</span>
+  </nav>
+  <h1 class="text-3xl sm:text-4xl font-bold text-[color:var(--color-text)] tracking-tight mb-3">{title}</h1>
+  <div class="text-sm text-[color:var(--color-text-faint)]">
+    {readingMinutes} min read · Updated {lastUpdated}
+  </div>
+</header>

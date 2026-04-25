@@ -1,0 +1,24 @@
+---
+interface Props {
+  sections: number;
+  lessons: number;
+  hours: number;
+}
+const { sections, lessons, hours } = Astro.props;
+---
+<section class="border-y border-[color:var(--color-border)] bg-[color:var(--color-bg-elevated)]">
+  <div class="mx-auto max-w-4xl px-4 py-6 grid grid-cols-3 gap-4 text-center">
+    <div>
+      <div class="text-2xl font-bold text-[color:var(--color-text)]">{sections}</div>
+      <div class="text-xs uppercase tracking-wider text-[color:var(--color-text-muted)]">Sections</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-[color:var(--color-text)]">{lessons}+</div>
+      <div class="text-xs uppercase tracking-wider text-[color:var(--color-text-muted)]">Lessons</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-[color:var(--color-text)]">~{hours}h</div>
+      <div class="text-xs uppercase tracking-wider text-[color:var(--color-text-muted)]">Reading time</div>
+    </div>
+  </div>
+</section>

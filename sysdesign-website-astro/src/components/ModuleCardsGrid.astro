@@ -1,0 +1,40 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  sections: CollectionEntry<'sections'>[];
+  lessonCounts: Record<string, number>;
+}
+const { sections, lessonCounts } = Astro.props;
+---
+<section class="mx-auto max-w-6xl px-4 py-16">
+  <h2 class="text-2xl sm:text-3xl font-bold text-[color:var(--color-text)] mb-2 text-center">What you'll learn</h2>
+  <p class="text-[color:var(--color-text-muted)] text-center mb-10">Seven sections covering every layer of a modern SaaS platform.</p>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    {sections.map((s) => {
+      const ready = s.data.status === 'ready';
+      const count = lessonCounts[s.data.slug] ?? 0;
+      const href = ready ? `/section/${s.data.slug}` : '#';
+      return (
+        <a
+          href={href}
+          aria-disabled={!ready}
+          class:list={[
+            'group rounded-xl border p-5 transition-all',
+            ready
+              ? 'border-[color:var(--color-border)] hover:border-[color:var(--color-accent)] hover:shadow-md bg-[color:var(--color-bg-elevated)]'
+              : 'border-dashed border-[color:var(--color-border)] bg-[color:var(--color-bg-muted)] opacity-60 cursor-not-allowed pointer-events-none'
+          ]}
+        >
+          <div class="text-xs font-semibold uppercase tracking-widest text-[color:var(--color-accent)] mb-2">Section {s.data.order}</div>
+          <h3 class="text-lg font-semibold text-[color:var(--color-text)] mb-1">{s.data.title}</h3>
+          <p class="text-sm text-[color:var(--color-text-muted)] mb-4 line-clamp-3">{s.data.summary}</p>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-[color:var(--color-text-faint)]">{count} {count === 1 ? 'lesson' : 'lessons'}</span>
+            <span class="text-[color:var(--color-accent)] font-semibold">{ready ? 'READY →' : 'COMING SOON'}</span>
+          </div>
+        </a>
+      );
+    })}
+  </div>
+</section>

@@ -1,0 +1,19 @@
+---
+import ThemeToggle from './ThemeToggle.tsx';
+import SearchWidget from './SearchWidget.tsx';
+---
+<header class="sticky top-0 z-40 border-b border-[color:var(--color-border)] bg-[color:var(--color-bg)]/85 backdrop-blur">
+  <nav class="mx-auto max-w-7xl px-4 py-3 flex items-center gap-6">
+    <a href="/" class="flex items-center gap-2 shrink-0">
+      <div class="w-8 h-8 rounded-lg bg-[color:var(--color-accent)] flex items-center justify-center text-white font-bold text-sm">S</div>
+      <span class="font-semibold text-[color:var(--color-text)]">System Design Course</span>
+    </a>
+    <div class="hidden sm:flex items-center gap-5 flex-1">
+      <a href="/course" class="text-sm text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)] transition-colors">Sections</a>
+      <a href="/section/architecture-basics" class="text-sm text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)] transition-colors">Section 1</a>
+    </div>
+    <a href="https://github.com/razkevich/system_design_course" target="_blank" rel="noopener noreferrer" class="text-sm text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)] transition-colors hidden sm:inline">GitHub</a>
+    <SearchWidget client:load />
+    <ThemeToggle client:load />
+  </nav>
+</header>

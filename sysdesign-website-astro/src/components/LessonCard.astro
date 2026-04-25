@@ -1,0 +1,23 @@
+---
+interface Props {
+  href: string;
+  order: number;
+  parentOrder: number;
+  title: string;
+  summary: string;
+  readingMinutes: number;
+}
+const { href, order, parentOrder, title, summary, readingMinutes } = Astro.props;
+---
+<a href={href} class="group block border-b border-[color:var(--color-border)] py-4 hover:bg-[color:var(--color-bg-muted)] -mx-4 px-4 transition-colors">
+  <div class="flex items-baseline gap-3">
+    <span class="text-sm font-mono text-[color:var(--color-text-faint)] shrink-0">{parentOrder}.{order}</span>
+    <div class="flex-1">
+      <div class="flex items-baseline justify-between gap-3">
+        <h3 class="text-base font-semibold text-[color:var(--color-text)] group-hover:text-[color:var(--color-accent)]">{title}</h3>
+        <span class="text-xs text-[color:var(--color-text-faint)] shrink-0">{readingMinutes} min →</span>
+      </div>
+      <p class="text-sm text-[color:var(--color-text-muted)] mt-1">{summary}</p>
+    </div>
+  </div>
+</a>
