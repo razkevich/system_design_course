@@ -31,7 +31,7 @@ const { sections, lessonCounts } = Astro.props;
           <p class="text-sm text-[color:var(--color-text-muted)] mb-4 line-clamp-3">{s.data.summary}</p>
           <div class="flex items-center justify-between text-xs">
             <span class="text-[color:var(--color-text-faint)]">{count} {count === 1 ? 'lesson' : 'lessons'}</span>
-            <span class="text-[color:var(--color-accent)] font-semibold">{ready ? 'READY →' : 'COMING SOON'}</span>
+            <span class="text-[color:var(--color-accent)] font-semibold">{ready ? 'STUDY →' : 'COMING SOON'}</span>
           </div>
         </a>
       );
