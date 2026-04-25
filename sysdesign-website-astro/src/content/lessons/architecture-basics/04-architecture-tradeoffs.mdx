@@ -10,29 +10,52 @@ lastUpdated: "2026-04-25"
 ---
 
 import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import NumberCards from '../../../components/NumberCards.astro';
+import StatStrip from '../../../components/StatStrip.astro';
+import BigQuote from '../../../components/BigQuote.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
 
-Every architectural decision is a trade-off. Choosing one path quietly closes off others. Understanding the consequences of those choices is what separates senior architects from people with theoretical knowledge.
+<BigQuote>
+Every architectural decision is a trade-off. Choosing one path quietly closes off others.
+</BigQuote>
+
+Understanding the consequences of those choices is what separates senior architects from people with theoretical knowledge.
 
 ## The Nature of Architectural Decisions
 
 Architecture lives in the tension between properties that pull against each other:
 
-- **Performance vs. maintainability**
-- **Security vs. usability**
-- **Consistency vs. availability**
-- **Time-to-market vs. technical debt**
-- **Scalability vs. simplicity**
+<IconGrid cols={2} items={[
+  { icon: '⚡', title: 'Performance vs. maintainability', body: 'Fast code is rarely the easy-to-read code.' },
+  { icon: '🔒', title: 'Security vs. usability', body: 'Every guard rail adds friction somewhere.' },
+  { icon: '🌐', title: 'Consistency vs. availability', body: 'Distributed systems force you to pick one under partition.' },
+  { icon: '⏱️', title: 'Time-to-market vs. tech debt', body: 'Shortcuts ship features and create future work.' },
+]} />
 
 There is no universal "best" architecture. The right design depends on the context, constraints, and business priorities.
 
-<Callout type="info" title="Quality attributes pull against each other">
+<KeyIdea label="Quality attributes pull against each other">
 Higher performance often sacrifices maintainability. Strong consistency can hurt availability. Better security usually adds friction. Recognizing these tensions is the foundation of architectural thinking.
-</Callout>
+</KeyIdea>
 
 A couple of well-known examples of this in practice:
 
-- **Netflix.** Streaming-video architecture prioritizes availability and performance over consistency. Even if the recommendation algorithm shows slightly stale data, users still get a great experience. Eventual consistency is the right call here.
-- **Banking systems.** Will sacrifice some performance to guarantee consistency and security on every transaction. Showing wrong account balances can be catastrophic — staleness is not an option.
+<Compare2
+  left={{
+    label: 'Optimize for availability',
+    title: 'Netflix',
+    body: 'Streaming-video architecture prioritizes availability and performance over consistency. Slightly stale recommendations are fine; the home screen always loads.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Optimize for consistency',
+    title: 'Banking systems',
+    body: 'A bank will sacrifice some performance to guarantee consistency and security on every transaction. Showing the wrong balance is catastrophic — a few extra ms is not.',
+    accent: 'rose',
+  }}
+/>
 
 ## Performance vs. Maintainability
 
@@ -53,12 +76,22 @@ WHERE u.status = 'active'
 
 The optimized version performs better on a large `users` table but ties the query to a specific index strategy. If you drop the index later, performance regresses silently. The simple version stays correct but might be slow.
 
-The architectural-style version of the same trade-off: **microservices vs. monoliths**.
+The architectural-style version of the same trade-off is **microservices vs. monoliths**:
 
-| Approach | Wins | Costs |
-| --- | --- | --- |
-| Microservices | Horizontal scalability, independent deployments, polyglot tech | Operational complexity, network failures, distributed debugging |
-| Monolith | Simpler to develop, easier to debug, atomic transactions | Hard to scale parts independently, single technology choice |
+<Compare2
+  left={{
+    label: 'Microservices',
+    title: 'Independent scale, independent deploys',
+    body: 'Horizontal scalability, polyglot tech, team autonomy. Costs: operational complexity, network failures, distributed debugging, and a much higher floor of infrastructure spend.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Monolith',
+    title: 'Simple to develop, easy to debug',
+    body: 'One process, atomic transactions, less infrastructure. Costs: hard to scale parts independently, single tech stack, deployment coupling.',
+    accent: 'amber',
+  }}
+/>
 
 The right answer depends on context:
 
@@ -76,9 +109,11 @@ Every shortcut to a faster release creates technical debt that eventually has to
 
 Three flavors of technical debt to keep separate:
 
-1. **Temporary debt.** Quick fixes for urgent problems, with a planned cleanup. Recordable, manageable.
-2. **Ongoing debt.** Architectural decisions that will need to evolve, but don't need immediate fixes.
-3. **Crisis debt.** Genuinely awful code that's actively slowing development. Stop the bleeding first, then refactor.
+<NumberCards items={[
+  { title: 'Temporary debt', body: 'Quick fixes for urgent problems with a planned cleanup. Recordable, manageable, and intentional.' },
+  { title: 'Ongoing debt', body: 'Architectural decisions that will need to evolve, but don\'t need immediate fixes. Track and revisit.' },
+  { title: 'Crisis debt', body: 'Genuinely awful code actively slowing development. Stop the bleeding, then refactor with a real plan.' },
+]} />
 
 The deciding factor is whether trade-offs are *conscious* or *accidental*. Effective teams keep a "debt register" alongside the feature register so they know exactly what they owe.
 
@@ -103,10 +138,20 @@ The middle path is to design for *evolvability*, not for hypothetical future sca
 
 The CAP theorem says distributed systems can't simultaneously guarantee consistency, availability, and partition tolerance. Since network partitions are inevitable in distributed systems, you have to choose between consistency (CP) and availability (AP) under partition.
 
-| System | Choice | Reasoning |
-| --- | --- | --- |
-| **Amazon shopping cart** | Availability | A cart that's slightly out of sync but always available is better than one that's offline. Lost sales cost more than stale data. |
-| **Banking transactions** | Consistency | Better to be unavailable for a few minutes than to display incorrect balances or duplicate a payment. |
+<Compare2
+  left={{
+    label: 'AP — Pick availability',
+    title: 'Amazon shopping cart',
+    body: 'A cart that\'s slightly out of sync but always available beats one that\'s offline. Lost sales cost more than stale data.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'CP — Pick consistency',
+    title: 'Banking transactions',
+    body: 'Better unavailable for a few minutes than displaying wrong balances or duplicating a payment. Correctness > uptime.',
+    accent: 'rose',
+  }}
+/>
 
 Modern systems rarely make a single, system-wide choice. They mix and match per operation:
 
@@ -120,19 +165,24 @@ We'll go deep on CAP and consistency models later in the course.
 
 The law of diminishing returns is unforgiving here. Every additional "nine" of availability costs disproportionately more than the previous one.
 
-| Availability | Cost (relative) | Annual downtime |
-| --- | --- | --- |
-| 99% | 100 | ~3.65 days |
-| 99.9% | 103 (+3) | ~8.76 hours |
-| 99.99% | 110 (+7) | ~52.56 minutes |
-| 99.999% | 130 (+20) | ~5.26 minutes |
+<StatStrip
+  caption="Each step up multiplies the cost of staying up. Pick the right target — don't reflexively chase 99.99%."
+  stats={[
+    { value: '99%',     label: 'baseline',  sub: '~3.65 days/yr down' },
+    { value: '99.9%',   label: '+3% cost',   sub: '~8.76 hours/yr' },
+    { value: '99.99%',  label: '+10% cost',  sub: '~52.6 minutes/yr' },
+    { value: '99.999%', label: '+30% cost',  sub: '~5.26 minutes/yr' },
+  ]}
+/>
 
 Going from 99% to 99.9% might be a configuration change. Going from 99.99% to 99.999% likely requires multi-region active-active, sophisticated failover, deep observability, and a team that's available 24/7. Quality has cost factors:
 
-- **Infrastructure** — more servers, databases, monitoring.
-- **Engineering time** — robust error handling, testing, deployment processes.
-- **Operational complexity** — more components mean more things that can break.
-- **Team expertise** — high-quality systems often require specialized knowledge.
+<IconGrid cols={4} items={[
+  { icon: '🏗️', title: 'Infrastructure', body: 'More servers, databases, monitoring.' },
+  { icon: '🛠️', title: 'Engineering time', body: 'Robust error handling, testing, deploy.' },
+  { icon: '🔧', title: 'Operational complexity', body: 'More components, more failure modes.' },
+  { icon: '🎓', title: 'Team expertise', body: 'High-quality systems need specialists.' },
+]} />
 
 The right availability target is whatever balances the *cost of one minute of downtime* against the *cost of preventing it*.
 
@@ -140,12 +190,24 @@ The right availability target is whatever balances the *cost of one minute of do
 
 Abstraction can eliminate duplication and make code more flexible. It also makes code harder to understand and debug. Every layer of abstraction adds cognitive load and a new place for bugs to hide.
 
-- **Good abstraction** — eliminates real complexity behind a stable, clearly named interface. (Example: an HTTP client library.)
-- **Bad abstraction** — wraps simple code in a complicated, ever-changing interface. (Example: an in-house framework that re-implements three lines of `fetch`.)
+<Compare2
+  left={{
+    label: 'Good abstraction',
+    title: 'Hides real complexity',
+    body: 'Stable, clearly named interface. Pulls its weight in eliminated code volume and conceptual load. Example: an HTTP client library.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Bad abstraction',
+    title: 'Wraps simple code in complicated wrapping',
+    body: 'Complex, ever-changing interface that hides three lines of code. Costs more cognitive overhead than it saves. Example: an in-house framework that re-implements `fetch`.',
+    accent: 'rose',
+  }}
+/>
 
 A useful heuristic for when to introduce abstraction at all:
 
-- **The Rule of Three** (Sandi Metz, originally Martin Fowler): duplicate twice, extract on the third occurrence. Prevents premature abstraction.
+- **The Rule of Three** (Martin Fowler / Sandi Metz): duplicate twice, extract on the third occurrence. Prevents premature abstraction.
 - **Coincidental duplication.** Code that *looks* similar but serves different purposes and should be allowed to evolve independently. Don't unify it.
 - **Real duplication.** Identical logic that must change together. Safe to extract.
 
@@ -155,18 +217,22 @@ When you're not sure which kind of duplication you have, leave it duplicated for
 
 A four-step playbook for any architectural trade-off:
 
-1. **Identify constraints.** What's the actual performance requirement? Acceptable downtime budget? Team expertise? Budget? Don't decide until you have numbers.
-2. **Understand the consequences.** What options does this choice eliminate? What technical debt are you accepting? How will this affect future change?
-3. **Start simple.** Pick the simplest design that meets current requirements. Add measurement and monitoring. Plan for evolution as requirements change.
-4. **Document your thinking.** Record not just what you chose, but *why*. Note alternatives considered. Track when assumptions change so future-you can revisit.
+<NumberCards cols={2} items={[
+  { title: 'Identify constraints', body: 'Pin down the actual performance requirement, the acceptable downtime budget, the team\'s expertise, and the budget. Don\'t decide until you have numbers.' },
+  { title: 'Understand the consequences', body: 'What options does this choice eliminate? What technical debt are you accepting? How does it affect future change?' },
+  { title: 'Start simple', body: 'Pick the simplest design that meets current requirements. Add measurement and monitoring. Plan for evolution as requirements change.' },
+  { title: 'Document your thinking', body: 'Record not just what you chose, but why. Note alternatives considered. Track when assumptions change so future-you can revisit.' },
+]} />
 
 This is the essence of an Architecture Decision Record (ADR), and a habit worth building.
 
 ## Key Takeaways
 
-- **Trade-offs are unavoidable.** Architecture is mostly about making them with incomplete information. The goal is to make them *consciously*.
-- **Patterns repeat.** Every system is unique, but the trade-off shapes are remarkably consistent across projects.
-- **Adaptability beats perfection.** Effective architecture focuses on systems that can grow and change with time, not on locking in the optimal current design.
+<IconGrid cols={3} items={[
+  { icon: '⚖️', title: 'Trade-offs are unavoidable', body: 'Architecture is mostly about making them with incomplete information. The goal is to make them consciously.' },
+  { icon: '🔁', title: 'Patterns repeat', body: 'Every system is unique, but the trade-off shapes are remarkably consistent across projects.' },
+  { icon: '🌱', title: 'Adaptability beats perfection', body: 'Effective architecture focuses on systems that can grow and change — not on locking in the optimal current design.' },
+]} />
 
 The most important skills are understanding the constraints, anticipating the consequences, and building systems that can adapt — not memorizing patterns or technologies.
 

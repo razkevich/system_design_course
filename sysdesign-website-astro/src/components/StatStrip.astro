@@ -1,0 +1,24 @@
+---
+interface Stat {
+  value: string;
+  label: string;
+  sub?: string;
+}
+interface Props {
+  stats: Stat[];
+  caption?: string;
+}
+const { stats, caption } = Astro.props;
+---
+<figure class="stat-strip my-8 not-prose">
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-bg-elevated)] p-5">
+    {stats.map((s) => (
+      <div class="text-center px-2">
+        <div class="text-2xl sm:text-3xl font-extrabold tracking-tight text-[color:var(--color-text)]">{s.value}</div>
+        <div class="text-[0.7rem] font-semibold uppercase tracking-widest text-[color:var(--color-accent)] mt-1">{s.label}</div>
+        {s.sub && <div class="text-xs text-[color:var(--color-text-faint)] mt-1.5">{s.sub}</div>}
+      </div>
+    ))}
+  </div>
+  {caption && <figcaption class="text-xs text-[color:var(--color-text-faint)] mt-2 text-center">{caption}</figcaption>}
+</figure>

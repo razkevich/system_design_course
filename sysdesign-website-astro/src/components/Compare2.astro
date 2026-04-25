@@ -1,0 +1,38 @@
+---
+interface Side {
+  label?: string;
+  title: string;
+  body: string;
+  accent?: 'indigo' | 'emerald' | 'rose' | 'amber';
+}
+interface Props {
+  left: Side;
+  right: Side;
+}
+const { left, right } = Astro.props;
+
+const accents = {
+  indigo:  { ring: 'rgba(99,102,241,0.25)',   bg: 'rgba(99,102,241,0.06)',   text: '#6366f1' },
+  emerald: { ring: 'rgba(16,185,129,0.30)',   bg: 'rgba(16,185,129,0.06)',   text: '#10b981' },
+  rose:    { ring: 'rgba(244,63,94,0.30)',    bg: 'rgba(244,63,94,0.06)',    text: '#f43f5e' },
+  amber:   { ring: 'rgba(245,158,11,0.30)',   bg: 'rgba(245,158,11,0.06)',   text: '#f59e0b' },
+};
+const la = accents[left.accent  ?? 'indigo'];
+const ra = accents[right.accent ?? 'rose'];
+---
+<div class="compare-2 my-8 grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose">
+  <div class="rounded-xl border p-5" style={`border-color:${la.ring}; background:${la.bg};`}>
+    {left.label && <div class="text-[0.7rem] font-semibold uppercase tracking-widest mb-2" style={`color:${la.text};`}>{left.label}</div>}
+    <div class="text-base font-semibold mb-1.5 text-[color:var(--color-text)]">{left.title}</div>
+    <div class="text-sm text-[color:var(--color-text-muted)] leading-relaxed">{left.body}</div>
+  </div>
+  <div class="rounded-xl border p-5" style={`border-color:${ra.ring}; background:${ra.bg};`}>
+    {right.label && <div class="text-[0.7rem] font-semibold uppercase tracking-widest mb-2" style={`color:${ra.text};`}>{right.label}</div>}
+    <div class="text-base font-semibold mb-1.5 text-[color:var(--color-text)]">{right.title}</div>
+    <div class="text-sm text-[color:var(--color-text-muted)] leading-relaxed">{right.body}</div>
+  </div>
+</div>
+
+<style>
+  .compare-2 { /* prose escape */ }
+</style>

@@ -2,6 +2,12 @@
 import { getCollection, render } from 'astro:content';
 import LessonLayout from '../../../layouts/LessonLayout.astro';
 import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import NumberCards from '../../../components/NumberCards.astro';
+import StatStrip from '../../../components/StatStrip.astro';
+import BigQuote from '../../../components/BigQuote.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
 
 export async function getStaticPaths() {
   const lessons = await getCollection('lessons');
@@ -60,5 +66,5 @@ const next = nextLesson ? { href: `/lesson/${section.data.slug}/${nextLesson.dat
   prev={prev}
   next={next}
 >
-  <Content components={{ Callout }} />
+  <Content components={{ Callout, Compare2, NumberCards, StatStrip, BigQuote, KeyIdea, IconGrid }} />
 </LessonLayout>

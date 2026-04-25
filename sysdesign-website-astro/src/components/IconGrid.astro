@@ -1,0 +1,22 @@
+---
+interface Item {
+  icon: string;
+  title: string;
+  body: string;
+}
+interface Props {
+  items: Item[];
+  cols?: 2 | 3 | 4;
+}
+const { items, cols = 3 } = Astro.props;
+const gridClass = cols === 2 ? 'sm:grid-cols-2' : cols === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3';
+---
+<div class={`icon-grid my-8 grid grid-cols-1 ${gridClass} gap-4 not-prose`}>
+  {items.map((it) => (
+    <div class="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-bg-elevated)] p-5">
+      <div class="text-2xl mb-2" aria-hidden="true">{it.icon}</div>
+      <div class="text-sm font-semibold text-[color:var(--color-text)] mb-1">{it.title}</div>
+      <div class="text-sm text-[color:var(--color-text-muted)] leading-relaxed">{it.body}</div>
+    </div>
+  ))}
+</div>

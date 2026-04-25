@@ -1,0 +1,12 @@
+---
+interface Props {
+  label?: string;
+}
+const { label = 'Key idea' } = Astro.props;
+---
+<aside class="key-idea my-8 not-prose rounded-2xl border border-[color:var(--color-accent)]/30 bg-gradient-to-br from-[color:var(--color-accent-soft)] to-transparent p-6">
+  <div class="text-[0.7rem] font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--color-accent);">★ {label}</div>
+  <div class="text-base sm:text-lg font-medium text-[color:var(--color-text)] leading-relaxed">
+    <slot />
+  </div>
+</aside>

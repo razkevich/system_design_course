@@ -1,0 +1,30 @@
+---
+interface Item {
+  title: string;
+  body: string;
+}
+interface Props {
+  items: Item[];
+  cols?: 2 | 3 | 4;
+}
+const { items, cols = 3 } = Astro.props;
+const gridClass = cols === 2 ? 'sm:grid-cols-2' : cols === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3';
+---
+<div class={`number-cards my-8 grid grid-cols-1 ${gridClass} gap-4 not-prose`}>
+  {items.map((item, i) => (
+    <div class="relative rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-bg-elevated)] p-5 overflow-hidden">
+      <div
+        aria-hidden="true"
+        class="absolute right-3 top-1 text-7xl font-extrabold leading-none select-none"
+        style="color: var(--color-accent); opacity: 0.10;"
+      >
+        {String(i + 1).padStart(2, '0')}
+      </div>
+      <div class="text-[0.7rem] font-semibold uppercase tracking-widest mb-2" style="color: var(--color-accent);">
+        Step {String(i + 1).padStart(2, '0')}
+      </div>
+      <div class="text-base font-semibold text-[color:var(--color-text)] mb-1.5 relative">{item.title}</div>
+      <div class="text-sm text-[color:var(--color-text-muted)] leading-relaxed relative">{item.body}</div>
+    </div>
+  ))}
+</div>
