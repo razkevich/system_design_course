@@ -130,3 +130,62 @@ body { min-height: 100vh; }
   background: var(--color-bg-muted);
   font-weight: 600;
 }
+
+/* Lesson 3-column shell with collapsible side panels */
+.lesson-shell {
+  display: block;
+}
+@media (min-width: 1024px) {
+  .lesson-shell {
+    --left-w: 240px;
+    --right-w: 220px;
+    --side-collapsed-w: 36px;
+    display: grid;
+    grid-template-columns: var(--left-w) minmax(0, 1fr) var(--right-w);
+    gap: 2.5rem;
+    transition: grid-template-columns 0.2s ease;
+  }
+  .lesson-shell[data-left-collapsed="true"]  { --left-w: var(--side-collapsed-w); }
+  .lesson-shell[data-right-collapsed="true"] { --right-w: var(--side-collapsed-w); }
+
+  .lesson-side {
+    position: sticky;
+    top: 5rem;
+    align-self: start;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-width: 0;
+  }
+  .lesson-shell[data-left-collapsed="true"]  .lesson-side-left  .lesson-side-content,
+  .lesson-shell[data-right-collapsed="true"] .lesson-side-right .lesson-side-content {
+    display: none;
+  }
+
+  .lesson-collapse {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    margin-bottom: 12px;
+  }
+  .lesson-collapse:hover {
+    background: var(--color-bg-muted);
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+  .lesson-side-right .lesson-collapse { margin-left: auto; }
+  .lesson-collapse .icon-collapsed { display: none; }
+  .lesson-shell[data-left-collapsed="true"]  .lesson-side-left  .lesson-collapse .icon-expanded,
+  .lesson-shell[data-right-collapsed="true"] .lesson-side-right .lesson-collapse .icon-expanded { display: none; }
+  .lesson-shell[data-left-collapsed="true"]  .lesson-side-left  .lesson-collapse .icon-collapsed,
+  .lesson-shell[data-right-collapsed="true"] .lesson-side-right .lesson-collapse .icon-collapsed { display: inline; }
+}

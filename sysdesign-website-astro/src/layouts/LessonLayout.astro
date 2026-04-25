@@ -31,15 +31,27 @@ const { pageTitle, sectionTitle, sectionHref, lessonTitle, lessonOrder, readingM
 ---
 <BaseLayout title={pageTitle}>
   <Navbar />
-  <div class="mx-auto max-w-7xl px-4 lg:grid lg:grid-cols-[240px_minmax(0,1fr)_220px] lg:gap-10 py-8">
-    <div class="lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto pb-6">
-      <CourseSidebar
-        client:load
-        sectionTitle={sidebar.sectionTitle}
-        sectionHref={sidebar.sectionHref}
-        lessons={sidebar.lessons}
-        currentSlug={sidebar.currentSlug}
-      />
+  <div id="lesson-shell" class="lesson-shell mx-auto max-w-7xl px-4 py-8">
+    <div class="lesson-side lesson-side-left">
+      <button
+        type="button"
+        class="lesson-collapse"
+        data-side="left"
+        aria-label="Toggle course sidebar"
+        title="Collapse sidebar"
+      >
+        <span class="icon-expanded" aria-hidden="true">◀</span>
+        <span class="icon-collapsed" aria-hidden="true">▶</span>
+      </button>
+      <div class="lesson-side-content">
+        <CourseSidebar
+          client:load
+          sectionTitle={sidebar.sectionTitle}
+          sectionHref={sidebar.sectionHref}
+          lessons={sidebar.lessons}
+          currentSlug={sidebar.currentSlug}
+        />
+      </div>
     </div>
 
     <article class="prose-lesson mx-auto">
@@ -55,9 +67,42 @@ const { pageTitle, sectionTitle, sectionHref, lessonTitle, lessonOrder, readingM
       <PrevNextNav prev={prev} next={next} />
     </article>
 
-    <div class="hidden lg:block lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-      <OnPageTOC client:load entries={toc} />
+    <div class="lesson-side lesson-side-right hidden lg:block">
+      <button
+        type="button"
+        class="lesson-collapse"
+        data-side="right"
+        aria-label="Toggle on-page TOC"
+        title="Collapse on-page TOC"
+      >
+        <span class="icon-expanded" aria-hidden="true">▶</span>
+        <span class="icon-collapsed" aria-hidden="true">◀</span>
+      </button>
+      <div class="lesson-side-content">
+        <OnPageTOC client:load entries={toc} />
+      </div>
     </div>
   </div>
   <Footer />
 </BaseLayout>
+
+<script is:inline>
+  (function () {
+    var shell = document.getElementById('lesson-shell');
+    if (!shell) return;
+    function apply() {
+      shell.dataset.leftCollapsed  = localStorage.getItem('lesson-left-collapsed')  === 'true' ? 'true' : 'false';
+      shell.dataset.rightCollapsed = localStorage.getItem('lesson-right-collapsed') === 'true' ? 'true' : 'false';
+    }
+    apply();
+    shell.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest && e.target.closest('.lesson-collapse');
+      if (!btn) return;
+      var side = btn.dataset.side;
+      var key = side === 'left' ? 'lesson-left-collapsed' : 'lesson-right-collapsed';
+      var next = localStorage.getItem(key) !== 'true';
+      localStorage.setItem(key, String(next));
+      apply();
+    });
+  })();
+</script>
