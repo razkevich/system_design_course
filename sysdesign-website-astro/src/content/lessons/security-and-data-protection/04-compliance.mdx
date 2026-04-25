@@ -1,0 +1,208 @@
+---
+title: Compliance Frameworks, Audits and Standards
+slug: compliance
+order: 4
+section: security-and-data-protection
+summary: Navigating GDPR, HIPAA, SOC 2, PCI DSS, and the audit cycle. What each requires, how to architect for compliance, and how to operationalize it.
+readingMinutes: 10
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Compliance is the part of security you can\'t engineer your way out of. Whatever your security posture, an auditor will eventually look at your processes, your architecture, your data flows, and your evidence. Designing for compliance from day one is dramatically cheaper than retrofitting.
+
+This lesson covers the major frameworks SaaS companies typically encounter, what they actually require, and how to architect for them.
+
+<KeyIdea>
+Compliance ≠ security. Strong security doesn\'t automatically mean compliant; compliance doesn\'t automatically mean secure. They overlap heavily, but each has its own requirements. Treat them as related but distinct concerns.
+</KeyIdea>
+
+## SOC 2 — The Default for B2B SaaS
+
+SOC 2 (System and Organization Controls) is the most common compliance framework for B2B SaaS. Most enterprise customers will ask for a SOC 2 report before signing.
+
+### The Trust Service Criteria
+
+SOC 2 evaluates against five "Trust Service Criteria" — pick which apply:
+
+<IconGrid cols={2} items={[
+  { icon: '🛡️', title: 'Security (always required)', body: 'Information protected against unauthorized access. Foundation criterion.' },
+  { icon: '✅', title: 'Availability (optional)', body: 'System available for operation as committed. SLAs, uptime, capacity planning.' },
+  { icon: '⚙️', title: 'Processing Integrity (optional)', body: 'System processing complete, valid, accurate, timely, authorized.' },
+  { icon: '🔒', title: 'Confidentiality (optional)', body: 'Confidential information protected. Mostly relevant if you handle confidential data beyond personal info.' },
+  { icon: '👤', title: 'Privacy (optional)', body: 'Personal information collected, used, retained, disclosed per privacy notice. Less common — most companies cover privacy via GDPR/CCPA instead.' },
+]} />
+
+Most SaaS companies start with **Security only**, then add Availability and others as customer demands grow.
+
+### Type I vs. Type II
+
+<Compare2
+  left={{
+    label: 'SOC 2 Type I',
+    title: 'Snapshot',
+    body: 'Auditor verifies controls are designed correctly at a point in time. 1-2 weeks. Cheaper. First step.',
+    accent: 'amber',
+  }}
+  right={{
+    label: 'SOC 2 Type II',
+    title: 'Operating effectiveness over time',
+    body: 'Auditor verifies controls operated correctly over a 6-12 month window. The one customers actually want. Annual.',
+    accent: 'emerald',
+  }}
+/>
+
+### What auditors look for
+
+<IconGrid cols={2} items={[
+  { icon: '📋', title: 'Documented policies', body: 'Information security policy, incident response, access control, change management. Written, approved, reviewed annually.' },
+  { icon: '🔐', title: 'Access controls', body: 'Least privilege. MFA for admin access. Periodic access reviews. Provisioning/deprovisioning processes.' },
+  { icon: '📊', title: 'Logging and monitoring', body: 'Centralized logging. Anomaly detection. Alerting. Audit trail for privileged actions.' },
+  { icon: '🛠️', title: 'Change management', body: 'Code reviews, CI/CD, deployment approvals, rollback procedures.' },
+  { icon: '🚨', title: 'Incident response', body: 'Documented IR plan. Tabletop exercises. Postmortems. Customer notification procedures.' },
+  { icon: '🔍', title: 'Vulnerability management', body: 'Scanning, patching, penetration testing. Track and remediate findings.' },
+]} />
+
+### Tooling
+
+SOC 2 tooling has matured significantly:
+
+- **Drata, Vanta, Secureframe** — automated SOC 2 platforms. Connect to your infrastructure; auto-collect evidence; manage policies. Most early-stage companies use one of these.
+- **Audit firms** — A-LIGN, Schellman, BDO. Many specialize in SOC 2 for tech companies. Pick one familiar with cloud-native architectures.
+
+## GDPR — EU Personal Data
+
+GDPR (General Data Protection Regulation) governs personal data of EU residents. Applies to any organization processing EU personal data, regardless of where the org is based.
+
+### Key principles
+
+<IconGrid cols={2} items={[
+  { icon: '✅', title: 'Lawful basis', body: 'Need a specific legal basis for processing — consent, contract, legitimate interest, legal obligation, vital interest, public task. Document which.' },
+  { icon: '🎯', title: 'Purpose limitation', body: 'Use data only for the purpose it was collected for. New purposes need new legal basis.' },
+  { icon: '📦', title: 'Data minimization', body: 'Collect only what you need. Don\'t hoard data "just in case."' },
+  { icon: '⏰', title: 'Storage limitation', body: 'Keep data only as long as needed. Document retention periods. Delete what\'s past expiration.' },
+  { icon: '🔐', title: 'Integrity and confidentiality', body: 'Protect data with appropriate technical measures (encryption, access control, etc.).' },
+  { icon: '👤', title: 'Accountability', body: 'Demonstrate compliance — documentation, records of processing, DPIAs for high-risk processing.' },
+]} />
+
+### Data Subject Rights
+
+GDPR gives individuals specific rights you must support:
+
+<IconGrid cols={2} items={[
+  { icon: '📥', title: 'Right of access', body: '"Show me all the data you have about me." Must respond within 30 days.' },
+  { icon: '✏️', title: 'Right to rectification', body: '"Fix incorrect data."' },
+  { icon: '🗑️', title: 'Right to erasure ("right to be forgotten")', body: '"Delete all my data." Must propagate through every system — including backups, logs, derived data.' },
+  { icon: '⛔', title: 'Right to restriction', body: '"Stop processing my data while we sort this out."' },
+  { icon: '📤', title: 'Right to portability', body: '"Give me my data in a portable format I can move to another service."' },
+  { icon: '🚫', title: 'Right to object', body: '"Stop using my data for marketing / profiling."' },
+]} />
+
+<Callout type="warning" title="Right to erasure is operationally hard">
+GDPR-compliant deletion isn\'t just "delete from main DB." Backups, replicas, audit logs, derived datasets, search indexes, ML training data, third-party processors — all must purge or anonymize. Architect for this from the start; retrofitting is painful.
+</Callout>
+
+### Architectural implications
+
+<IconGrid cols={2} items={[
+  { icon: '🌍', title: 'Data residency', body: 'EU data should stay in EU. Multi-region setup with EU customer data in EU regions only. Region-per-tenant for big customers.' },
+  { icon: '🔍', title: 'Personal data inventory', body: 'Know where every piece of personal data lives. Critical for fulfilling rights requests.' },
+  { icon: '🛠️', title: 'Deletion infrastructure', body: 'Tooling that propagates a deletion request through every system. Often a separate service that orchestrates.' },
+  { icon: '📋', title: 'Privacy by design', body: 'Build privacy into systems from the start — not bolted on. Pseudonymization, encryption, minimal collection.' },
+]} />
+
+### Breach notification
+
+If you suffer a personal-data breach:
+
+- Notify your DPA (Data Protection Authority) within **72 hours** of becoming aware.
+- Notify affected individuals "without undue delay" if high risk to their rights.
+- Document everything — what was breached, when, what you did.
+
+## HIPAA — US Healthcare
+
+HIPAA (Health Insurance Portability and Accountability Act) governs Protected Health Information (PHI) in the US. Required if you handle PHI on behalf of healthcare providers, insurers, or related entities.
+
+<IconGrid cols={2} items={[
+  { icon: '🛡️', title: 'Security Rule', body: 'Specific technical, administrative, and physical safeguards. Encryption (at rest and in transit), access controls, audit logging, contingency planning.' },
+  { icon: '📋', title: 'Privacy Rule', body: 'Limits on use/disclosure of PHI. Minimum necessary standard.' },
+  { icon: '📜', title: 'BAA — Business Associate Agreement', body: 'Required contract between covered entities and any service handling PHI. SaaS serving healthcare must offer BAAs.' },
+  { icon: '🚨', title: 'Breach Notification Rule', body: 'Specific procedures and timelines for notifying patients and HHS.' },
+]} />
+
+If you serve healthcare customers, AWS, GCP, and Azure all have HIPAA-eligible services and offer BAAs. Use only those services.
+
+## PCI DSS — Payment Cards
+
+PCI DSS (Payment Card Industry Data Security Standard) governs handling of cardholder data. Required for any organization processing, storing, or transmitting credit card data.
+
+<Callout type="tip" title="The best PCI strategy is to handle as little card data as possible">
+Use Stripe, Braintree, Adyen, or similar payment processors. They handle the card data; you receive tokens. PCI compliance scope shrinks dramatically — often to PCI SAQ A (questionnaire only, no audit).
+</Callout>
+
+<IconGrid cols={2} items={[
+  { icon: '💳', title: 'Tokenization', body: 'Replace card numbers with tokens. Original stored in PCI-compliant vault. Application sees only tokens.' },
+  { icon: '🔐', title: 'Encryption', body: 'Card data encrypted at rest and in transit with strong cryptography (AES-256, TLS 1.2+).' },
+  { icon: '🛡️', title: 'Network segmentation', body: 'Cardholder data environment (CDE) isolated from rest of infrastructure. Reduces audit scope.' },
+  { icon: '📊', title: 'Logging and monitoring', body: 'All access to cardholder data logged. Daily log review. File integrity monitoring on critical systems.' },
+]} />
+
+## ISO 27001
+
+International standard for information security management systems (ISMS). Common alongside SOC 2 for international customers.
+
+<IconGrid cols={2} items={[
+  { icon: '📚', title: 'Risk-based approach', body: 'Identify information assets, assess risks, implement controls. Documentation-heavy.' },
+  { icon: '📋', title: '93 controls', body: 'Annex A controls covering organizational, people, physical, and technological aspects.' },
+  { icon: '🔄', title: 'Continual improvement', body: 'Plan-Do-Check-Act cycle. Annual surveillance audits, recertification every 3 years.' },
+  { icon: '🌐', title: 'Strong fit for international', body: 'Better recognized internationally than SOC 2. EU and Asia-Pacific customers often prefer it.' },
+]} />
+
+## CCPA / CPRA — California Privacy
+
+US state-level privacy regulation, modeled loosely on GDPR.
+
+- Right to know what personal information is collected.
+- Right to delete.
+- Right to opt out of sale.
+- Right to non-discrimination for exercising rights.
+
+Practically: if you\'re GDPR-compliant, CCPA compliance is mostly a documentation exercise.
+
+## Practical Compliance Strategy for Early-Stage SaaS
+
+<IconGrid cols={2} items={[
+  { icon: '🏁', title: 'Start with SOC 2 Type II', body: 'The most-asked-for. Use Drata/Vanta to manage. Plan 6-9 months from start to first report.' },
+  { icon: '🇪🇺', title: 'Add GDPR readiness', body: 'Privacy notice, cookie consent, data subject rights tooling, EU data residency option for EU customers.' },
+  { icon: '💳', title: 'Use payment processors', body: 'Stripe / Braintree handle PCI. Don\'t store card data directly unless you absolutely must.' },
+  { icon: '🏥', title: 'HIPAA only if needed', body: 'Adds significant operational overhead. Only pursue if healthcare is your target market.' },
+  { icon: '🇪🇺', title: 'ISO 27001 for international', body: 'Add when European or Asia-Pacific enterprise customers ask.' },
+  { icon: '🛠️', title: 'Compliance automation', body: 'Drata, Vanta, Secureframe, Tugboat Logic. Automate evidence collection from day one.' },
+]} />
+
+## Architectural Patterns for Compliance
+
+A few patterns that pay for themselves:
+
+<IconGrid cols={2} items={[
+  { icon: '🌍', title: 'Region-per-tenant', body: 'Each tenant\'s data lives in their geographic region. Satisfies data residency for GDPR and emerging regulations.' },
+  { icon: '🔍', title: 'Data lineage tracking', body: 'Know what data is where, derived from what, used for what. Enables impact analysis during audits and incidents.' },
+  { icon: '🛠️', title: 'Centralized deletion service', body: 'A service that orchestrates "delete user X" across all systems. Critical for GDPR right to erasure.' },
+  { icon: '📋', title: 'Immutable audit logs', body: 'Append-only audit trail in S3 with object lock or equivalent. Tamper-evident; auditors love it.' },
+  { icon: '🔐', title: 'Vendor management', body: 'Track all third-party processors. DPAs / BAAs in place. Annual security questionnaires for high-risk vendors.' },
+  { icon: '👁️', title: 'Continuous compliance monitoring', body: 'Drata/Vanta-style automated checks. Catch drift before it\'s an audit finding.' },
+]} />
+
+## Recap
+
+- Compliance and security overlap but aren\'t the same. Engineer both.
+- SOC 2 Type II is the default for B2B SaaS. Use Drata/Vanta. Plan 6-9 months.
+- GDPR for EU personal data: data subject rights, deletion, breach notification. Architect for these.
+- HIPAA for US healthcare. PCI DSS for cardholder data — use payment processors to stay out of scope.
+- ISO 27001 for international customers. CCPA / CPRA mostly piggybacks on GDPR.
+- Architectural patterns: region-per-tenant, data lineage tracking, centralized deletion, immutable audit logs, vendor management, continuous monitoring.
+- The goal isn\'t passing one audit — it\'s building a compliance posture that\'s sustainable as you grow.

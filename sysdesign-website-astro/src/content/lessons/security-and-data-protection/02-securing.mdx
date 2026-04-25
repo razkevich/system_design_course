@@ -1,0 +1,205 @@
+---
+title: Securing Cloud-Native Applications
+slug: securing
+order: 2
+section: security-and-data-protection
+summary: Application security in cloud-native environments. Defense in depth, common attacks (OWASP Top 10), supply chain, secrets management, and zero trust.
+readingMinutes: 10
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Securing a cloud-native application is fundamentally different from securing a server-room monolith. The attack surface is larger, the dependencies are deeper, the credentials are everywhere, and the perimeter is fluid. Modern application security is **defense in depth** at every layer.
+
+This lesson covers the security concerns specific to cloud-native SaaS: application-level attacks, supply chain, secrets, runtime, and the zero-trust model that ties it all together.
+
+## Defense in Depth
+
+The principle: **multiple layers of independent security**, so a single failure doesn\'t cascade.
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  Edge:  WAF, DDoS protection, rate limiting              │
+├──────────────────────────────────────────────────────────┤
+│  Network:  TLS, mTLS between services, network policies  │
+├──────────────────────────────────────────────────────────┤
+│  Identity:  OAuth/OIDC, MFA, RBAC, tenant isolation      │
+├──────────────────────────────────────────────────────────┤
+│  Application:  Input validation, SQL injection prevention│
+├──────────────────────────────────────────────────────────┤
+│  Data:  Encryption at rest, key management, RLS          │
+├──────────────────────────────────────────────────────────┤
+│  Audit:  Access logs, anomaly detection, IDR             │
+└──────────────────────────────────────────────────────────┘
+```
+
+Each layer catches what others miss. Strong identity doesn\'t help if SQL injection lets attackers bypass the app entirely. Encryption at rest doesn\'t help if logs leak plaintext PII. Apply security at every level.
+
+## OWASP Top 10
+
+The industry-standard list of most-impactful web application security risks. Worth knowing every one:
+
+<IconGrid cols={2} items={[
+  { icon: '🔓', title: 'A01: Broken Access Control', body: 'Users can access data or functions they shouldn\'t. The most common and impactful issue. Often: forgetting to check tenant or user ownership in queries.' },
+  { icon: '🔐', title: 'A02: Cryptographic Failures', body: 'Sensitive data not properly encrypted. Plaintext storage, weak algorithms, hardcoded keys, leaking via logs.' },
+  { icon: '💉', title: 'A03: Injection', body: 'SQL injection, command injection, LDAP, NoSQL. Any case where user input becomes code. Use parameterized queries everywhere.' },
+  { icon: '🏗️', title: 'A04: Insecure Design', body: 'Missing security at the architectural level. Missing rate limiting, no MFA option, no audit logging.' },
+  { icon: '⚙️', title: 'A05: Security Misconfiguration', body: 'Default credentials, verbose errors leaking internals, unprotected admin endpoints, S3 buckets open to the world.' },
+  { icon: '📦', title: 'A06: Vulnerable Components', body: 'Using libraries with known CVEs. Use SBOMs, scanners (Snyk, Dependabot), keep dependencies current.' },
+  { icon: '🆔', title: 'A07: Identification and Authentication Failures', body: 'Weak password policies, no MFA, predictable session IDs, password recovery vulnerabilities.' },
+  { icon: '🔄', title: 'A08: Software and Data Integrity Failures', body: 'Malicious dependencies, unsigned updates, untrusted CI/CD pipelines.' },
+  { icon: '👁️', title: 'A09: Security Logging and Monitoring Failures', body: 'No audit logs, no anomaly detection, no alerting. Breaches go undetected for months.' },
+  { icon: '🌐', title: 'A10: Server-Side Request Forgery (SSRF)', body: 'Server fetches a user-supplied URL → can be tricked into hitting internal resources (cloud metadata services, internal admin pages).' },
+]} />
+
+## Input Validation and Output Encoding
+
+The single most effective defense against injection.
+
+<Compare2
+  left={{
+    label: 'Validate input',
+    title: 'At the boundary',
+    body: 'Every external input — API request body, query string, headers, file uploads — validated for type, length, allowed values. Reject what doesn\'t match.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Encode output',
+    title: 'For the destination',
+    body: 'Data going into HTML → escape for HTML. Going into SQL → parameterized queries. Going into shell → escape shell. Different destinations, different escaping.',
+    accent: 'emerald',
+  }}
+/>
+
+```python
+# Wrong — SQL injection vulnerable
+query = f"SELECT * FROM users WHERE id = {user_id}"
+
+# Right — parameterized
+query = "SELECT * FROM users WHERE id = %s"
+cursor.execute(query, (user_id,))
+
+# Wrong — XSS vulnerable
+return f"<div>Hello {name}</div>"
+
+# Right — escape HTML
+return f"<div>Hello {html.escape(name)}</div>"
+```
+
+## Supply Chain Security
+
+Modern apps have hundreds or thousands of transitive dependencies. Each is a potential vulnerability.
+
+<IconGrid cols={2} items={[
+  { icon: '📋', title: 'SBOM — Software Bill of Materials', body: 'A complete inventory of dependencies. SPDX or CycloneDX format. Generated by tools like Syft.' },
+  { icon: '🔍', title: 'Vulnerability scanning', body: 'Continuously check dependencies against CVE databases. Snyk, Dependabot, Trivy. Run in CI; fail builds on high-severity issues.' },
+  { icon: '🔒', title: 'Lock files + integrity', body: 'Pin exact versions (package-lock.json, requirements.txt with hashes). Catches "someone replaced this version with malicious code."' },
+  { icon: '✍️', title: 'Sign and verify', body: 'Cosign, Sigstore for container images. Verify signatures before deployment.' },
+  { icon: '🛡️', title: 'Trusted registries', body: 'Pull only from verified registries. Mirror public registries internally to catch tampering.' },
+  { icon: '🏗️', title: 'Reproducible builds', body: 'Same source code → same binary. Catches build-time tampering.' },
+]} />
+
+## Secrets Management
+
+Secrets — API keys, DB passwords, certs, encryption keys — are the keys to the kingdom. Treat them carefully.
+
+<Callout type="pitfall" title="Where secrets leak">
+- Hardcoded in source code (most common, most embarrassing)
+- Committed to git history (even if removed later, the commit lives forever)
+- Logged on errors (verbose error pages leaking config)
+- In environment variables visible to other processes
+- In container image layers
+- In CI/CD logs visible to the org
+</Callout>
+
+### The right way
+
+<IconGrid cols={2} items={[
+  { icon: '🏦', title: 'Centralized secret store', body: 'AWS Secrets Manager, HashiCorp Vault, GCP Secret Manager. Encrypted at rest, audited access, rotation support.' },
+  { icon: '🔑', title: 'Per-service identity', body: 'Each service has its own identity (IAM role, service account). Permissions to specific secrets only.' },
+  { icon: '🔄', title: 'Automatic rotation', body: 'Rotate credentials regularly. Modern secret stores can rotate database passwords automatically.' },
+  { icon: '🚫', title: 'No long-lived credentials', body: 'AWS IAM roles for EC2/EKS, Workload Identity in GCP, Pod Identity in Kubernetes. Short-lived tokens minted on demand.' },
+  { icon: '👁️', title: 'Audit access', body: 'Every secret access logged. Anomaly detection on unusual access patterns.' },
+  { icon: '🚨', title: 'Detection in CI', body: 'git-secrets, gitleaks, TruffleHog scan commits and PRs for accidentally committed secrets.' },
+]} />
+
+## Container and Runtime Security
+
+For containerized SaaS:
+
+<IconGrid cols={2} items={[
+  { icon: '🐳', title: 'Image scanning', body: 'Scan container images for vulnerabilities (Trivy, Snyk, Grype). Block deploys on critical CVEs.' },
+  { icon: '🧊', title: 'Minimal base images', body: 'Distroless, Alpine, scratch. Smaller attack surface. No shell, no package manager — fewer ways to escalate.' },
+  { icon: '👤', title: 'Run as non-root', body: 'Containers running as UID 0 are way more dangerous if escaped. Use non-root user explicitly.' },
+  { icon: '🔒', title: 'Read-only root filesystem', body: 'Make container filesystem immutable. Attackers can\'t plant payloads or modify binaries.' },
+  { icon: '🛡️', title: 'Pod Security Standards', body: 'Kubernetes enforces baseline / restricted profiles cluster-wide. No privileged pods, no host network, no raw capabilities.' },
+  { icon: '👁️', title: 'Runtime detection', body: 'Falco, Sysdig Secure. Detect malicious behavior at runtime — unexpected processes, network connections, file access.' },
+]} />
+
+## Zero Trust
+
+The traditional security model assumed inside-the-network = trusted. Cloud-native and remote work broke that assumption. **Zero trust** says: verify everything, regardless of network position.
+
+<IconGrid cols={2} items={[
+  { icon: '🆔', title: 'Strong identity', body: 'Every actor (user or service) has cryptographic identity. mTLS, signed JWTs, service accounts.' },
+  { icon: '✅', title: 'Continuous authentication', body: 'Not just at login. Re-verify on sensitive operations. Risk-based scoring (unfamiliar device, IP, time → re-auth).' },
+  { icon: '🎯', title: 'Least privilege', body: 'Every actor has the minimum permissions needed. No "admin role for everyone." Fine-grained permissions, time-bound elevations.' },
+  { icon: '🔍', title: 'Audit everything', body: 'Every access logged. Centralized logging with anomaly detection. Comprehensive audit trail for forensics.' },
+]} />
+
+## Network Security in Cloud-Native
+
+<IconGrid cols={2} items={[
+  { icon: '🛡️', title: 'TLS everywhere', body: 'Public traffic, intra-cluster traffic. mTLS for service-to-service in service meshes.' },
+  { icon: '🌐', title: 'Network segmentation', body: 'VPCs, subnets, security groups (AWS), NetworkPolicies (K8s). Default-deny; explicitly allow traffic that should flow.' },
+  { icon: '🔥', title: 'WAF', body: 'Web Application Firewall. Filters common attacks (OWASP Top 10) at the edge. AWS WAF, Cloudflare, Imperva.' },
+  { icon: '🚪', title: 'Private connectivity', body: 'PrivateLink, VPC peering, VPN. Don\'t expose internal services to the internet.' },
+]} />
+
+## Security Headers
+
+A few HTTP headers that meaningfully reduce attack surface:
+
+```
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-...'
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: geolocation=(), microphone=(), camera=()
+```
+
+These headers prevent classes of attacks (clickjacking, MIME sniffing, mixed content). Set them at the edge or framework level.
+
+## Audit Logging
+
+Every privileged action should be logged with enough context to reconstruct it later.
+
+<IconGrid cols={2} items={[
+  { icon: '👤', title: 'Who', body: 'Authenticated identity. User ID, service account, IP address.' },
+  { icon: '🎯', title: 'What', body: 'Action taken — created order, deleted user, accessed sensitive data.' },
+  { icon: '📅', title: 'When', body: 'Precise timestamp. Time zone consistency.' },
+  { icon: '📋', title: 'Result', body: 'Success or failure. Failure reason. Resource affected.' },
+]} />
+
+Audit logs should be:
+
+- **Immutable** — write-only. Append to S3 with object lock, or stream to a SIEM.
+- **Tamper-evident** — even admins can\'t silently modify audit history.
+- **Retained for the required compliance window** (e.g., 1 year, 7 years for some regulations).
+
+## Recap
+
+- Defense in depth: multiple independent layers, so one failure doesn\'t cascade.
+- Know the OWASP Top 10. Especially A01 (access control) and A03 (injection) — most common, most impactful.
+- Validate input at the boundary; encode output for the destination. Prevents injection.
+- Supply chain: SBOMs, vulnerability scanning, lock files, signed artifacts.
+- Secrets: centralized store (Vault, Secrets Manager), automatic rotation, no long-lived credentials.
+- Containers: scan images, minimal base, non-root user, read-only FS, Pod Security Standards.
+- Zero trust: identity everywhere, least privilege, audit everything.
+- Security headers reduce attack surface for free.
+- Audit logs: immutable, tamper-evident, retained for compliance.

@@ -1,0 +1,181 @@
+---
+title: Authentication and Authorization
+slug: auth
+order: 1
+section: security-and-data-protection
+summary: How users prove who they are (authN) and what they can do (authZ). OAuth, OIDC, JWT, RBAC, ABAC, and the patterns for SaaS at scale.
+readingMinutes: 11
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Authentication and authorization are two distinct concepts often confused.
+
+<Compare2
+  left={{
+    label: 'Authentication (authN)',
+    title: 'Who are you?',
+    body: 'The process of verifying identity. Username + password, biometric, hardware key, federated identity. The yes/no question of "is this who they claim to be?"',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Authorization (authZ)',
+    title: 'What can you do?',
+    body: 'The process of determining what an authenticated user is allowed to do. Roles, permissions, policies. The "what does this person have access to?" question.',
+    accent: 'emerald',
+  }}
+/>
+
+You can be authenticated without being authorized to do something. AuthN is the gatekeeper at the door; authZ decides which rooms you can enter.
+
+## Authentication Methods
+
+<IconGrid cols={2} items={[
+  { icon: '🔑', title: 'Password-based', body: 'Username + password. Universal. Vulnerable to phishing, credential stuffing, weak passwords. Combine with MFA.' },
+  { icon: '📱', title: 'MFA / 2FA', body: 'Second factor — TOTP (Authy, Google Authenticator), SMS (vulnerable to SIM swap), push notification, hardware key.' },
+  { icon: '🔐', title: 'Passwordless / passkeys', body: 'WebAuthn / FIDO2. Phishing-resistant cryptographic auth. The future for consumer-facing auth.' },
+  { icon: '🌐', title: 'Social / federated', body: 'Sign in with Google, Apple, GitHub. OAuth/OIDC under the hood. User skips creating yet another password.' },
+  { icon: '🏢', title: 'SSO / SAML', body: 'Enterprise sign-on. Users authenticate to their company\'s IdP (Okta, Azure AD); the SaaS trusts the IdP\'s assertion.' },
+  { icon: '🔧', title: 'API keys', body: 'For programmatic access. Long-lived bearer tokens. Rotate them. Don\'t put them in URLs.' },
+]} />
+
+## OAuth 2.0 and OIDC
+
+The standard protocols underneath modern SaaS authentication.
+
+<Compare2
+  left={{
+    label: 'OAuth 2.0',
+    title: 'Delegated authorization',
+    body: 'Lets app A access app B on behalf of a user, without sharing the user\'s password with A. Originally for delegation; widely misused for authentication.',
+    accent: 'amber',
+  }}
+  right={{
+    label: 'OpenID Connect (OIDC)',
+    title: 'Authentication on top of OAuth',
+    body: 'Adds a standardized "ID token" (JWT) to OAuth\'s access flow. The right protocol for "log in with X." OIDC + OAuth is the modern combo.',
+    accent: 'emerald',
+  }}
+/>
+
+### The OAuth flows
+
+<IconGrid cols={2} items={[
+  { icon: '🌐', title: 'Authorization Code (with PKCE)', body: 'The standard for web and mobile apps. User authenticates at the IdP; redirects with a code; app exchanges code for tokens. PKCE prevents code interception.' },
+  { icon: '🔧', title: 'Client Credentials', body: 'Service-to-service auth. App authenticates with its own credentials, gets an access token. No user involved.' },
+  { icon: '📱', title: 'Device Code', body: 'For CLIs, smart TVs, IoT. User visits a URL on their phone, enters a code, app polls for completion.' },
+  { icon: '🚫', title: 'Implicit (deprecated)', body: 'Old single-page-app pattern. Don\'t use it for new apps. Authorization Code with PKCE replaces it.' },
+]} />
+
+## JSON Web Tokens (JWT)
+
+JWTs are the standard format for tokens in modern web auth.
+
+```
+Header.Payload.Signature
+
+eyJhbGciOiJSUzI1NiIs...     # header (algorithm, type)
+.eyJzdWIiOiIxMjM0...        # payload (claims: user ID, expiration, etc.)
+.SflKxwRJSMeKKF2QT...       # signature (HMAC or RSA, verifies integrity)
+```
+
+The payload contains **claims** like `sub` (subject = user ID), `exp` (expiration), `iss` (issuer), `aud` (audience). Plus custom claims (tenant ID, roles).
+
+<IconGrid cols={2} items={[
+  { icon: '✅', title: 'Pros', body: 'Stateless verification (server doesn\'t need to look up the user on every request). Self-contained — claims travel with the token.' },
+  { icon: '⚠️', title: 'Cons', body: 'Hard to revoke before expiration. Long-lived JWTs are dangerous if leaked. Compromised signing key = catastrophic.' },
+]} />
+
+### Best practices
+
+- **Short access tokens** (5-15 minutes) + **refresh tokens** (longer-lived, stored securely).
+- **HTTPOnly cookies** for browser apps — prevents JavaScript from reading the token (XSS protection).
+- **Asymmetric signing** (RS256, ES256) — server signs with private key, services verify with public key.
+- **Validate every claim** — `iss`, `aud`, `exp`, custom claims you depend on.
+
+## Authorization Models
+
+<Compare2
+  left={{
+    label: 'RBAC — Role-Based',
+    title: 'Users have roles; roles have permissions',
+    body: 'User Alice has role "admin"; admins can do X, Y, Z. Simple, well-understood, scales to medium complexity. The default for most B2B SaaS.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'ABAC — Attribute-Based',
+    title: 'Policies based on attributes',
+    body: 'User can edit document if user.tenant == document.tenant AND (user.role == admin OR user.id == document.owner). More flexible; harder to reason about.',
+    accent: 'amber',
+  }}
+/>
+
+<IconGrid cols={2} items={[
+  { icon: '🧬', title: 'ReBAC — Relationship-Based', body: 'Permissions follow relationships. "User can read folder if user is a member of group, group has access to folder." Google Zanzibar paper. Used by tools like SpiceDB, OpenFGA.' },
+  { icon: '🛡️', title: 'PBAC — Policy-Based', body: 'Centralized policy engine evaluates "can user X do Y on resource Z?" Open Policy Agent (OPA), Cedar (AWS). Decouples policy from code.' },
+]} />
+
+For most SaaS, **start with RBAC**, layer in ABAC for nuanced cases (resource ownership, tenant boundaries), reach for ReBAC/PBAC when complexity demands it.
+
+## Multi-Tenant Authorization
+
+Tenancy adds another dimension to authorization.
+
+<KeyIdea>
+Every authorization check in a multi-tenant system has two questions: (1) does this user belong to this tenant? (2) within this tenant, what can they do? Forgetting question 1 is how cross-tenant data leaks happen.
+</KeyIdea>
+
+A typical pattern:
+
+```
+1. JWT carries tenant_id and user_id.
+2. Every API call validates: user belongs to tenant? (else 403)
+3. Every DB query includes WHERE tenant_id = ?
+4. Authorization within tenant proceeds via RBAC/ABAC.
+```
+
+For added safety: **Postgres Row-Level Security (RLS)** can enforce tenant isolation at the DB level. App-level mistakes get caught.
+
+## Session Management
+
+<IconGrid cols={2} items={[
+  { icon: '🍪', title: 'Session cookies', body: 'Server stores session in DB/Redis; client carries an opaque session ID. Easy to revoke. Requires storage.' },
+  { icon: '🎫', title: 'Stateless JWTs', body: 'Token contains user info. No DB lookup. Hard to revoke. Combine with short expiration + refresh tokens.' },
+  { icon: '🔄', title: 'Hybrid', body: 'Short-lived JWTs for performance + a revocation list (recently revoked token IDs) for kill-switch capability.' },
+  { icon: '🔐', title: 'Refresh tokens', body: 'Long-lived (days or weeks). Stored securely (HTTPOnly cookie). Used to mint new access tokens. Revoke = logout.' },
+]} />
+
+## Identity-as-a-Service Options
+
+Most SaaS shouldn\'t build auth from scratch. Use a managed identity provider:
+
+<IconGrid cols={2} items={[
+  { icon: '🔓', title: 'Auth0 (Okta)', body: 'The dominant managed identity platform. OAuth/OIDC/SAML, social logins, MFA, enterprise federation. Pricey at scale.' },
+  { icon: '🛡️', title: 'AWS Cognito', body: 'AWS-native. User pools for app auth, identity pools for federated. Tightly integrated with AWS services.' },
+  { icon: '🔑', title: 'Clerk / WorkOS', body: 'Modern dev-first auth platforms. Clerk for consumer SaaS; WorkOS for enterprise auth (SSO, SAML, SCIM).' },
+  { icon: '🦄', title: 'Supertokens / FusionAuth / Keycloak', body: 'Self-hosted alternatives. Trade managed convenience for cost control and data sovereignty.' },
+]} />
+
+## Common Pitfalls
+
+<Callout type="pitfall" title="Things that go wrong">
+- **Using OAuth for authentication** — OAuth is for delegation; OIDC adds the auth layer. Without OIDC, you get the access token but no verified identity.
+- **Storing JWTs in localStorage** — vulnerable to XSS. Use HTTPOnly cookies.
+- **Not validating tokens** — trusting the JWT payload without verifying the signature is the classic security bug.
+- **Long-lived access tokens** — minimize blast radius of leaked tokens with short expiration + refresh.
+- **Tenant ID from request body** — always derive tenant from the authenticated identity, never trust client-supplied tenant IDs.
+- **Storing passwords with weak hashing** — use bcrypt, scrypt, or argon2. Never plain SHA, never plaintext.
+</Callout>
+
+## Recap
+
+- AuthN = who are you? AuthZ = what can you do? Different problems.
+- Modern auth: OIDC (on top of OAuth 2.0) for the protocol; JWTs for the token format.
+- Authorization models: RBAC (simple, default), ABAC (flexible), ReBAC/PBAC (complex needs).
+- For multi-tenancy: always validate tenant membership; use RLS for safety net.
+- Don't build auth from scratch — use Auth0, Cognito, Clerk, or similar.
+- Common pitfalls: OAuth-for-auth, localStorage for JWTs, long-lived tokens, weak password hashing.
