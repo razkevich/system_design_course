@@ -1,0 +1,136 @@
+---
+title: Reactive Architecture
+slug: reactive
+order: 8
+section: architectural-patterns
+group: Architectural Styles
+summary: Responsive, resilient, elastic, message-driven systems. The four principles of the Reactive Manifesto and how they apply to multi-tenant SaaS at scale.
+readingMinutes: 8
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Reactive architecture addresses the limitations of traditional request/response models in modern distributed systems. As systems scale to handle thousands of concurrent users, real-time data streams, and complex microservice interactions, traditional blocking I/O and synchronous processing become performance bottlenecks.
+
+<KeyIdea>
+Reactive systems are built around the idea that data flows like water — pushed through pipelines as it arrives — rather than being pulled by the application when needed.
+</KeyIdea>
+
+## The Four Principles
+
+The [Reactive Manifesto](https://www.reactivemanifesto.org/) defines four characteristics that together describe a reactive system:
+
+<IconGrid cols={2} items={[
+  { icon: '⚡', title: 'Responsive', body: 'Reacts in a timely manner whenever possible. Establishes upper bounds on response times under all conditions.' },
+  { icon: '🛡️', title: 'Resilient', body: 'Stays responsive in the face of failures. Failures are isolated and contained; recovery is automatic.' },
+  { icon: '🎈', title: 'Elastic', body: 'Stays responsive under varying load. Scales up and down without changing the design.' },
+  { icon: '📨', title: 'Message-driven', body: 'Built on asynchronous message passing. Loose coupling, isolation, location transparency, and ability to apply back-pressure.' },
+]} />
+
+## How It Relates to Other Patterns
+
+<Compare2
+  left={{
+    label: 'Event-Driven Architecture',
+    title: 'Overlap, but different focus',
+    body: 'Both rely on async message passing. EDA focuses on decoupling through events. Reactive provides the runtime semantics for processing those events at scale (back-pressure, non-blocking I/O, streams).',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Actor model',
+    title: 'A foundational pattern',
+    body: 'Actors (Erlang, Akka) communicate via messages and own their state. Naturally fault-tolerant and scalable. Foundational pattern for building reactive systems.',
+    accent: 'amber',
+  }}
+/>
+
+## Building Blocks
+
+A reactive application has a few key components that work together to produce a responsive, fault-tolerant system:
+
+<IconGrid cols={2} items={[
+  { icon: '📥', title: 'Producers (sources)', body: 'Entry points where data flows in. User actions, API calls, DB change events, IoT readings. Don\'t blast data — designed to match downstream capacity.' },
+  { icon: '🌊', title: 'Observables / streams', body: 'Sequences of data over time. Unlike collections that store everything in memory, streams process data as it arrives.' },
+  { icon: '📤', title: 'Consumers (subscribers)', body: 'Receive and process stream data. Can control consumption rate via back-pressure to avoid overload.' },
+  { icon: '🔄', title: 'Transformations', body: 'Map, filter, combine, buffer, throttle. Powerful operators for composing data flows.' },
+]} />
+
+### Back-pressure
+
+The most important property: **back-pressure** lets downstream components signal upstream when they're overloaded. This prevents cascading failures and keeps the system stable even under extreme load. Without back-pressure, a slow consumer can buffer infinitely until it OOMs — taking the system with it.
+
+## Why Cloud SaaS Needs Reactive
+
+Modern SaaS faces problems that didn't exist in monolith-era systems:
+
+<IconGrid cols={2} items={[
+  { icon: '⏱️', title: 'Real-time expectations', body: 'Users expect instant feedback — collaborative editing, real-time chat, live dashboards, instant notifications. The bar has gone up.' },
+  { icon: '📈', title: 'Elastic resource needs', body: 'Cloud apps must scale up at peak and down at quiet times. Thread-per-request doesn\'t scale economically; non-blocking event loops do.' },
+  { icon: '💥', title: 'Distributed system complexity', body: 'Failures are inevitable across services, containers, zones. Circuit breakers, bulkheads, timeouts fit naturally into reactive architectures.' },
+  { icon: '🔌', title: 'Integration hell', body: 'SaaS apps integrate with payments, third-party APIs, queues, analytics. Reactive patterns compose these without building a house of cards.' },
+]} />
+
+## The Tech Landscape
+
+### Java — the pioneer
+
+The JVM ecosystem was at the forefront of reactive adoption.
+
+- **RxJava** — the original. Comprehensive operator set for async, event-based programs.
+- **Project Reactor** — used by Spring WebFlux. Tight integration with the Spring ecosystem.
+- **Akka** — the actor model on the JVM. Massively concurrent, fault-tolerant, distributed by design.
+- **Vert.x** — polyglot reactive framework. Event bus, non-blocking I/O.
+
+A typical reactive controller in Spring WebFlux:
+
+```java
+@GetMapping("/users/{id}/orders")
+public Flux<OrderDTO> getUserOrders(@PathVariable Long id) {
+    return userService.findById(id)
+        .flatMapMany(user -> orderService.findByUser(user))
+        .map(order -> mapToDTO(order))
+        .timeout(Duration.ofSeconds(5))
+        .onErrorResume(this::fallbackOrders);
+}
+```
+
+That endpoint can handle thousands of concurrent requests on a single thread. The traditional thread-per-request model would need a thread per concurrent request.
+
+### Other ecosystems
+
+<IconGrid cols={3} items={[
+  { icon: '🟦', title: 'JavaScript / Node.js', body: 'RxJS, the entire Node ecosystem. Single-threaded event loop is reactive by design.' },
+  { icon: '💎', title: 'Erlang / Elixir', body: 'OTP and the actor model — the original reactive system. WhatsApp ran on it for a reason.' },
+  { icon: '🌀', title: 'Quarkus, Micronaut', body: 'Reactive-first JVM frameworks designed for cloud-native, container-friendly deployments.' },
+]} />
+
+## When Reactive Is the Right Call
+
+Reactive isn't free. It pays off when:
+
+- You need to handle high concurrency on limited hardware (1000s of concurrent connections per instance).
+- Real-time data streams matter (collaborative apps, live dashboards, IoT).
+- You have heavy I/O fan-out (call several services per request).
+- You need built-in resilience patterns and back-pressure.
+
+It's overkill when:
+
+- Throughput requirements are modest.
+- The team isn't familiar with the asynchronous programming model.
+- Debug-ability and simplicity outweigh raw performance.
+
+<Callout type="warning" title="The reactive learning curve is real">
+Reactive code reads differently from imperative code. Stack traces are harder to follow. Debugging streams takes practice. If your team is new to it, start with a small piece (one endpoint, one job) before reaching for it everywhere.
+</Callout>
+
+## Recap
+
+- Reactive systems are responsive, resilient, elastic, and message-driven (the Reactive Manifesto).
+- Built on streams, non-blocking I/O, and **back-pressure** — the property that prevents cascading failure.
+- Composes well with EDA, the actor model, and microservices.
+- Strong fit for high-concurrency cloud SaaS workloads where threads-per-request would melt.
+- Comes with a learning curve — adopt where it pays off, not everywhere.

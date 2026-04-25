@@ -1,0 +1,181 @@
+---
+title: Event-Driven Architecture, CQRS & Sagas
+slug: eda
+order: 7
+section: architectural-patterns
+group: Architectural Styles
+summary: From request/response to events. EDA, CQRS, event sourcing, and saga patterns for distributed transactions in multi-tenant SaaS.
+readingMinutes: 10
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+import NumberCards from '../../../components/NumberCards.astro';
+
+The shift from request/response to event-driven architectures is a paradigm change. As systems grow in complexity and scale, traditional synchronous communication becomes a bottleneck — pushing architects toward more resilient, scalable, loosely coupled designs.
+
+<KeyIdea>
+The mental shift is from "telling other services what to do" to "telling them what happened." That shift produces systems that are inherently more resilient and scalable.
+</KeyIdea>
+
+## Event-Driven Architecture
+
+Event-driven architecture (EDA) treats services as **reactive systems** responding to events rather than direct commands. When a user completes a purchase, instead of the orders service calling inventory, payment, and notification services directly, it publishes an `OrderCompleted` event. Other services subscribe to events they care about and react independently.
+
+<Compare2
+  left={{
+    label: 'Request/response',
+    title: 'Tell others what to do',
+    body: 'OrderService calls InventoryService.reserve(), then PaymentService.charge(), then NotificationService.send(). Tightly coupled, latency-sensitive, fragile chains.',
+    accent: 'rose',
+  }}
+  right={{
+    label: 'Event-driven',
+    title: 'Tell them what happened',
+    body: 'OrderService publishes OrderCompleted. Inventory, Payment, Notification services subscribe and act independently. Decoupled, resilient, scalable.',
+    accent: 'emerald',
+  }}
+/>
+
+### Benefits
+
+<IconGrid cols={3} items={[
+  { icon: '🪢', title: 'Loose coupling', body: 'Services don\'t need to know about each other. New features = new subscribers, no producer changes.' },
+  { icon: '📈', title: 'Scalability', body: 'Each service consumes at its own pace. A backed-up notification service doesn\'t slow down order processing.' },
+  { icon: '📜', title: 'Auditability', body: 'Events are a natural audit log. Every business transaction is a series of events — debugging and compliance get easier.' },
+]} />
+
+### Costs
+
+<IconGrid cols={3} items={[
+  { icon: '🔢', title: 'Ordering', body: 'When events must be processed in sequence, ordering becomes a real problem (partition keys, sequence numbers, idempotency).' },
+  { icon: '🔁', title: 'Duplicate delivery', body: 'Network blips deliver the same event twice. Consumers must be idempotent.' },
+  { icon: '📐', title: 'Schema evolution', body: 'New event versions can\'t break existing consumers. Plan versioning early.' },
+  { icon: '⏳', title: 'Eventual consistency', body: 'Replaces immediate consistency. UX has to handle "your changes will appear in a moment."' },
+]} />
+
+## CQRS: Command/Query Responsibility Segregation
+
+When microservices use EDA, traditional CRUD operations often become a bottleneck. **CQRS** separates read and write operations, often using different data models for each.
+
+<Compare2
+  left={{
+    label: 'Commands (writes)',
+    title: 'Optimized for invariants',
+    body: 'Validate business rules, enforce consistency, persist state changes. Often a small, focused write model.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Queries (reads)',
+    title: 'Optimized for the question',
+    body: 'Denormalized views shaped to the query. Order history, real-time dashboards, analytical reports — each gets its own read model.',
+    accent: 'emerald',
+  }}
+/>
+
+In an e-commerce system: a Command Service optimized for fast order placement, plus separate Read Services optimized for customer order history, analytical reporting, and real-time inventory display. Each read service maintains its own data model perfect for its query patterns.
+
+## Event Sourcing: Events as Source of Truth
+
+Event sourcing goes further: store **events** as the source of truth, rather than current state. Instead of "John's account balance is $500," you store "John deposited $1,000, then withdrew $500." The current balance is derived by replaying events.
+
+<IconGrid cols={2} items={[
+  { icon: '📋', title: 'Complete audit trail', body: 'Every change is recorded. Compliance and debugging become much easier.' },
+  { icon: '⏪', title: 'Time travel', body: 'Reconstruct any past state of the system by replaying events up to that point.' },
+  { icon: '🌊', title: 'Natural integration', body: 'Events that source state are the same events that drive cross-service communication.' },
+  { icon: '🔍', title: 'Better debugging', body: 'Replay the event stream to understand exactly how the system reached its current state.' },
+]} />
+
+### Synergy with EDA
+
+Event sourcing naturally generates events that drive cross-service communication. CQRS lets each service build its own optimized read view from the events of others. One business transaction generates events consumed by many services, each maintaining its own optimized data — eliminating cross-service joins while keeping data consistent through eventual-consistency patterns.
+
+## Sagas: Distributed Transactions Without 2PC
+
+In a monolith, you can use database transactions for consistency. In microservices, data is distributed across multiple databases owned by different services. Two-phase commit doesn't work at scale. **Sagas** are the pattern.
+
+A saga is a sequence of local transactions where each service publishes events or sends commands to trigger the next step. If any step fails, **compensating transactions** undo the work of completed steps.
+
+### E-commerce example
+
+<NumberCards items={[
+  { title: 'Reserve stock', body: 'Order Service reserves the items.' },
+  { title: 'Charge payment', body: 'Payment Service charges the customer.' },
+  { title: 'Schedule shipping', body: 'Shipping Service schedules delivery.' },
+]} />
+
+If the payment fails: the saga triggers compensation. Order Service un-reserves the stock, Shipping Service cancels the delivery.
+
+### Two implementation styles
+
+<Compare2
+  left={{
+    label: 'Choreography',
+    title: 'Each service decides',
+    body: 'Services listen for events and decide what to do next. Highly decentralized. Simple at small scale; hard to reason about as the saga grows.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Orchestration',
+    title: 'A central coordinator',
+    body: 'A dedicated saga coordinator manages the flow. Business process is visible and easy to manage. Introduces a coordination point but rarely a true SPOF if designed well.',
+    accent: 'amber',
+  }}
+/>
+
+<Callout type="info" title="Sagas don't give you ACID">
+The point of sagas isn't to provide cross-service ACID. It's to achieve **business consistency** through carefully designed compensation flows. Instead of preventing all failure scenarios, design systems that recover gracefully from them.
+</Callout>
+
+## Event Streaming as Architecture
+
+Platforms like **Apache Kafka** unlock new architectural patterns. Services publish events to streams; other services consume from them. Events become the **nervous system** of your architecture, carrying business events that any number of services can consume.
+
+This creates natural extension points: new features = new consumers of existing event streams, without modifying existing systems. It also enables real-time analytics — instead of batch-processing data warehouses, dashboards update in real time as events flow through.
+
+## Real-World Patterns
+
+A typical multi-tenant SaaS event flow:
+
+```
+[ Order Service ]
+       │ publishes OrderCreated
+       ▼
+   ┌─────────────────────────────────┐
+   │   Kafka topic: orders.events    │
+   └─────┬─────┬──────┬──────────────┘
+         │     │      │
+         ▼     ▼      ▼
+   Inventory  Email  Analytics
+   Service    Service Service
+   (reserves) (sends) (records)
+```
+
+Each consumer is independent. Add a new fraud-detection service tomorrow — attach a new consumer; no producer changes. Onboarding a new tenant might mean attaching new consumers without touching anything upstream.
+
+## When to Use This
+
+EDA isn't free. It pays off when:
+
+- You have multiple consumers of the same state changes (including consumers you haven't built yet).
+- You need to scale services independently with very different load profiles.
+- Audit trail and compliance are hard requirements.
+- You need to decouple teams shipping in different rhythms.
+
+It's overkill when:
+
+- You have one service producing and one consuming.
+- Strong consistency is the dominant requirement.
+- Your team doesn't have the operational maturity to run Kafka or equivalent reliably.
+
+## Recap
+
+- EDA shifts from "tell others what to do" to "tell others what happened" — producing loose coupling and natural extensibility.
+- Costs: ordering, duplicate delivery (idempotency!), schema evolution, eventual consistency.
+- CQRS separates read and write models for optimized query and command paths.
+- Event sourcing stores events as source of truth; current state is derived.
+- Sagas handle distributed business transactions through compensating actions; choose choreography or orchestration based on saga complexity.
+- Event streaming (Kafka, etc.) becomes the nervous system of modern multi-tenant SaaS — enabling real-time processing and natural extensibility.

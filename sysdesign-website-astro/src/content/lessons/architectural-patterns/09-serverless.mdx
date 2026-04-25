@@ -1,0 +1,141 @@
+---
+title: Serverless
+slug: serverless
+order: 9
+section: architectural-patterns
+group: Architectural Styles
+summary: Functions-as-a-Service. Pay-per-execution, autoscaling, no infrastructure to manage. Where it shines, where it bites, and the cold-start trade-off.
+readingMinutes: 8
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Serverless computing has evolved from a specialized cloud service to a fundamental architectural pattern. The approach abstracts away infrastructure management, letting developers focus purely on application logic while cloud providers handle provisioning and scaling.
+
+<KeyIdea>
+"Serverless" doesn't mean no servers. It means *you don't think about them*. Servers still exist; they're just someone else's problem.
+</KeyIdea>
+
+## What Defines Serverless
+
+The core model is **Function-as-a-Service (FaaS)**. Application logic is broken into individual functions that execute in response to events. Functions are stateless, ephemeral, and automatically scaled by the cloud provider.
+
+<IconGrid cols={2} items={[
+  { icon: '⚡', title: 'Event-triggered execution', body: 'Functions run only when events fire — HTTP requests, queue messages, file uploads, scheduled triggers, DB changes.' },
+  { icon: '📈', title: 'Automatic scaling', body: 'From zero to thousands of concurrent executions. No capacity planning, no autoscaling group config.' },
+  { icon: '💰', title: 'Pay per execution', body: 'Billed for actual compute time used, in 1 ms increments on most platforms. Idle = $0.' },
+  { icon: '🛠️', title: 'Managed infrastructure', body: 'No server provisioning, patching, or scaling. The provider handles all of it.' },
+]} />
+
+## The Major Implementations
+
+<Compare2
+  left={{
+    label: 'Cloud-native FaaS',
+    title: 'Provider-managed',
+    body: 'AWS Lambda (the original, 2014), Google Cloud Functions, Azure Functions, IBM Cloud Functions. Tight integration with each cloud\'s services.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Self-hosted serverless',
+    title: 'Kubernetes-native',
+    body: 'Knative (the leading open standard), OpenFaaS, Fission, Kubeless. Run serverless on your own K8s cluster — portable across providers.',
+    accent: 'emerald',
+  }}
+/>
+
+### Edge serverless
+
+A separate category running closer to users:
+
+- **Cloudflare Workers** — V8 isolates instead of containers, sub-millisecond cold starts, runs at 300+ edge locations.
+- **AWS Lambda@Edge** — Lambda at CloudFront edge points.
+- **Vercel Functions / Netlify Functions** — frontend-optimized, integrate with the deployment pipeline of Next.js / JAMstack sites.
+- **Deno Deploy** — modern JS/TS runtime with global edge distribution.
+
+## Why Teams Adopt It
+
+<IconGrid cols={3} items={[
+  { icon: '💸', title: 'Cost optimization', body: 'Traditional servers run 24/7 even when idle. Serverless costs only during execution. For variable or unpredictable traffic, savings are significant.' },
+  { icon: '🚀', title: 'Developer productivity', body: 'No server config, no scaling strategy, no patching. Engineers focus on business logic. Faster iteration, faster feature delivery.' },
+  { icon: '📊', title: 'Automatic scaling', body: 'No more capacity planning meetings. Platform makes scaling decisions in real time based on traffic.' },
+]} />
+
+## Where It Fits
+
+<IconGrid cols={2} items={[
+  { icon: '🌐', title: 'API backends', body: 'REST APIs from Lambda + API Gateway. Each endpoint scales independently. Often cheaper than dedicated servers for variable load.' },
+  { icon: '🔄', title: 'Data processing pipelines', body: 'Process uploaded files, transform data streams, run batch operations on demand without permanent infrastructure.' },
+  { icon: '⚡', title: 'Event-driven microservices', body: 'Functions react to queue messages, DB changes, file uploads. Reactive architecture without standing servers.' },
+  { icon: '⏰', title: 'Scheduled jobs / automation', body: 'Replaces cron on servers. Maintenance tasks, report generation, cleanup operations triggered by time.' },
+]} />
+
+## The Real Costs
+
+### Cold start latency
+
+The most-cited problem. When a function hasn't been invoked recently, the provider has to initialize a new runtime — adding milliseconds to seconds of latency.
+
+<Callout type="info" title="Cold start by language">
+Languages with fast startup (Go, Rust, Node.js) typically have shorter cold starts. JVM (Java, Scala) is historically slower but improving fast — GraalVM Native Image produces ahead-of-time-compiled binaries with sub-second startup; Quarkus and Micronaut are JVM frameworks specifically optimized for serverless.
+</Callout>
+
+Mitigations: provisioned concurrency (pay to keep some warm), language choice, smaller deployment artifacts, edge-runtime alternatives (Cloudflare Workers cold-start in ~5 ms).
+
+### Vendor lock-in
+
+Each provider implements serverless with unique APIs, deployment mechanisms, and feature sets. Migrating between providers can require significant rework.
+
+Mitigations:
+- **Serverless Framework** (serverless.com) — unified deployment interface across providers.
+- **Kubernetes-native serverless** (Knative) — provider-portable.
+- **CloudEvents** — industry standard for event format.
+- **Clean separation** between business logic and cloud-specific integrations.
+
+### Debugging and observability
+
+Distributed serverless environments need new approaches. Traditional debugging breaks down across many short-lived functions. Distributed tracing, structured logs, and platform-specific tools (AWS X-Ray, GCP Cloud Trace) are essential.
+
+### Long-running and stateful workloads
+
+Serverless functions have **execution time limits** (15 minutes on Lambda, 9 on Cloud Functions). Stateful workloads need to externalize state to managed services (DynamoDB, Redis, Cloud Firestore). This forces some architectural patterns that wouldn't otherwise be necessary.
+
+## When Serverless Is the Right Choice
+
+<Compare2
+  left={{
+    label: 'Good fit',
+    title: 'Use serverless',
+    body: 'Variable / spiky traffic. Event-driven workloads. Background jobs. Scheduled tasks. Webhooks. APIs with low-to-moderate steady traffic. New product spikes where you don\'t want to overprovision.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Bad fit',
+    title: 'Skip serverless',
+    body: 'Sustained high-throughput steady-state workloads (containers cheaper). Long-running computations beyond execution limits. Latency-critical paths where cold starts hurt. Workloads heavily dependent on local state.',
+    accent: 'rose',
+  }}
+/>
+
+## Serverless and Multi-Tenant SaaS
+
+For multi-tenant SaaS specifically, serverless has interesting properties:
+
+- **Per-tenant isolation** — tenants can be isolated to separate function executions naturally.
+- **Tenant-specific scaling** — a tenant's spike in traffic auto-scales independently.
+- **Cost attribution** — usage-based costs are easy to attribute per tenant.
+- **Easier multi-region** — deploy the same functions to multiple regions for data-residency compliance.
+
+The patterns serverless replaces in a SaaS — webhook handlers, image/PDF processing, scheduled tenant cleanup, email/notification dispatch — are often the workloads where serverless is most economical.
+
+## Recap
+
+- Serverless = Function-as-a-Service. Event-triggered, autoscaled, pay-per-execution, no infrastructure management.
+- Major platforms split into cloud-native FaaS (Lambda, GCF, Azure Functions), Kubernetes-native (Knative, OpenFaaS), and edge (Cloudflare Workers, Lambda@Edge).
+- Best fit: variable / spiky / event-driven / background workloads.
+- Watch out for: cold starts, vendor lock-in, debugging complexity, execution-time limits.
+- For multi-tenant SaaS, serverless naturally supports per-tenant scaling and cost attribution.

@@ -1,0 +1,168 @@
+---
+title: Multi-tenancy
+slug: multitenancy
+order: 10
+section: architectural-patterns
+group: Architectural Styles
+summary: One application instance, many tenants. Isolation models, tier-based service levels, noisy-neighbor mitigation, and the operations of a SaaS platform.
+readingMinutes: 11
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+import NumberCards from '../../../components/NumberCards.astro';
+
+Multi-tenancy is the architectural pattern that lets one application instance serve multiple customers (tenants) while preserving data isolation, security, and performance guarantees. It's the foundational pattern for SaaS — it's how systems scale economically and deliver personalized experiences to a diverse customer base.
+
+This is the lesson where the rest of the course earns its keep, because almost every decision in a SaaS platform — from data modeling to deploys to billing — interacts with the tenancy model.
+
+## The Foundation: Isolation
+
+**Tenant isolation** is the guarantee that one customer's data, processing, and experience stay completely separate from another's, even while sharing infrastructure underneath.
+
+### Three isolation models
+
+<IconGrid cols={3} items={[
+  { icon: '🏰', title: 'Full isolation', body: 'Each tenant gets dedicated infrastructure — separate DBs, compute, even network layers. Maximum security and predictable performance, minimum economic efficiency. Reserved for large enterprise tenants.' },
+  { icon: '🏘️', title: 'Resource-level isolation', body: 'Tenants share application instances but keep separate data stores, caches, and processing queues. The sweet spot for most B2B SaaS.' },
+  { icon: '🏢', title: 'Item-level isolation', body: 'All tenants share infrastructure; isolation is enforced purely by application logic and data partitioning (e.g., tenant_id on every row). Maximum efficiency, requires careful application design.' },
+]} />
+
+<KeyIdea>
+The most robust multi-tenant systems mix models strategically. Critical data uses deployment-time isolation for maximum security; less sensitive workloads use runtime isolation for efficiency. Don't pick one mode for everything.
+</KeyIdea>
+
+### Deployment-time vs. runtime isolation
+
+<Compare2
+  left={{
+    label: 'Deployment-time isolation',
+    title: 'Boundaries are explicit infrastructure',
+    body: 'Each tenant or tenant group gets dedicated resources. Simple at runtime, predictable performance, but operational overhead in provisioning, monitoring, and maintenance.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Runtime isolation',
+    title: 'Boundaries enforced in code',
+    body: 'Application code, middleware, and DB queries include tenant context. Maximum resource efficiency. Requires sophisticated design and comprehensive testing to prevent isolation breaches.',
+    accent: 'amber',
+  }}
+/>
+
+## Building Tenant-Aware Operations
+
+Operating a multi-tenant system requires fundamentally different approaches than single-tenant. Operational processes, monitoring strategies, and incident response all have to account for the way tenants interact through shared infrastructure.
+
+<IconGrid cols={2} items={[
+  { icon: '📊', title: 'Tenant activity metrics', body: 'Which tenants are most active? How does usage shift across hours, days, weeks? Forecast capacity and find optimization opportunities.' },
+  { icon: '🚀', title: 'Tenant agility metrics', body: 'How fast can you onboard a new tenant? Provision resources dynamically? In competitive SaaS markets, operational agility often defines customer satisfaction.' },
+  { icon: '💰', title: 'Per-tenant resource consumption', body: 'Detailed visibility into who generates what cost. Enables accurate pricing models and reveals optimization opportunities.' },
+  { icon: '📈', title: 'Cost-per-tenant analytics', body: 'Operational data → business insight. Informs pricing strategy, customer-acquisition targets, platform investments.' },
+]} />
+
+### Tenant-aware monitoring
+
+- **Per-tenant dashboards** show platform performance from individual customers' perspective. Not just average DB query time — query time *for this tenant's queries*.
+- **Cross-tenant correlation** finds problems affecting multiple customers. Are some tenants consistently slower? Are issues correlated with specific configurations?
+- **Tenant-aware alerting** sends notifications based on per-tenant thresholds, not global averages. Enterprise customers may demand sub-second response times; smaller tenants accept higher latency for lower cost.
+
+## Tiered Service Levels
+
+Not all tenants are equal. Successful SaaS platforms implement **tiering strategies** that align resource allocation with customer value, creating sustainable business models while delivering appropriate service levels.
+
+<Compare2
+  left={{
+    label: 'Consumption-driven tiering',
+    title: 'Resources scale with usage',
+    body: 'Active users get more compute, storage, bandwidth. Works well when consumption directly correlates with customer value (analytics platforms, media processing, collaboration tools).',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Value-driven tiering',
+    title: 'Priority based on customer importance',
+    body: 'Enterprise customers get guaranteed response times and dedicated support regardless of actual usage. Recognizes that lifetime value can exceed immediate technical resource consumption.',
+    accent: 'emerald',
+  }}
+/>
+
+### API and compute tiering
+
+- **Rate limiting and throttling.** Beyond simple requests-per-minute. Sophisticated systems implement multi-dimensional throttling considering request complexity, resource requirements, and tenant priority. Different limits for reads vs. writes, bulk exports vs. individual queries, admin functions vs. end-user actions.
+- **Compute tiering.** Premium tenants get guaranteed compute slots during peak load; standard tenants get best-effort allocation. Containers (Kubernetes priority classes, QoS classes) provide built-in mechanisms for tenant-aware resource allocation.
+
+### Storage and data tiers
+
+- **Performance tiers.** Frequently accessed data on high-performance SSD; archival data on cost-efficient object storage. Intelligent tiering moves data between classes based on access patterns and tenant SLAs.
+- **Backup tiers.** Enterprise tenants get hourly backups with guaranteed RPO; smaller tenants accept daily backups with longer recovery times. Different protection levels create clear value propositions for different price tiers.
+
+## The Noisy Neighbor Problem
+
+One of the most serious challenges in multi-tenant architectures: a tenant whose resource consumption negatively affects others sharing the same infrastructure.
+
+<Callout type="pitfall" title="One bad tenant can degrade everyone">
+A tenant runs a misbehaving query that holds DB locks for minutes. Every other tenant's queries pile up. Latency for all tenants spikes. Without isolation mechanisms, one customer's problem becomes everyone's problem — and your support tickets explode.
+</Callout>
+
+### Resource isolation strategies
+
+<NumberCards items={[
+  { title: 'CPU and memory limits', body: 'Hard limits per tenant. Container orchestrators provide built-in quotas. Smart implementations allow burst capacity when there\'s spare, but prevent monopolization.' },
+  { title: 'I/O throttling', body: 'Disk and network I/O. DB-heavy apps can easily saturate storage I/O, affecting all tenants. QoS policies guarantee minimum throughput while allowing burst.' },
+  { title: 'Connection pool management', body: 'Prevent tenants from exhausting shared DB connections or API gateway limits. Dynamic per-tenant allocation adjusts to current usage and priority.' },
+]} />
+
+### Application-level protection
+
+- **Query complexity limits.** Prevent individual tenants from running expensive operations that could affect platform performance. Analyze query plans in real time; reject or throttle queries exceeding complexity thresholds.
+- **Bulk operation queues.** Heavy operations go to a separate queue with controlled concurrency, so they can't starve interactive traffic.
+- **Cross-tenant rate limiting.** Aggregate per-tenant limits at the platform level too, so a coordinated attack from many tenants can't take the platform down.
+
+## Database Patterns
+
+The data tier is where multi-tenancy decisions have the most lasting consequences. Three patterns and their trade-offs:
+
+<Compare2
+  left={{
+    label: 'DB-per-tenant',
+    title: 'Strongest isolation',
+    body: 'Each tenant has a dedicated database. Best isolation, easiest GDPR compliance per tenant, simplest mental model. Operational cost scales with tenant count — backups, migrations, monitoring all per-tenant.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Schema-per-tenant',
+    title: 'Middle ground',
+    body: 'One DB instance, separate schema per tenant. Better isolation than shared schema; cheaper than DB-per-tenant. Schema migrations can become tricky at scale.',
+    accent: 'emerald',
+  }}
+/>
+
+The third pattern: **shared schema with tenant_id column**. All tenants share the same tables; every row has a `tenant_id`. Most efficient, hardest to do safely. Requires:
+
+- Row-level security (Postgres RLS, etc.) enforced at the DB layer.
+- Discipline in queries — every WHERE clause must filter by `tenant_id`.
+- Robust testing to catch isolation breaches.
+
+For most SaaS platforms, the practical choice is **schema-per-tenant for early stages, then a mix** — shared schema for high-volume tenant-scoped tables, dedicated DBs for enterprise customers with compliance demands.
+
+## Onboarding and Provisioning
+
+A successful multi-tenant SaaS makes onboarding fast and self-service. The key abstractions:
+
+<IconGrid cols={2} items={[
+  { icon: '🆕', title: 'Tenant creation', body: 'Provision DB schema, set up subdomain, create initial admin user, send welcome email. Self-service via API or UI; automated end-to-end.' },
+  { icon: '📋', title: 'Tenant configuration', body: 'Per-tenant feature flags, custom branding, integration settings, billing plan. Stored in tenant metadata accessible everywhere in the app.' },
+  { icon: '🔄', title: 'Tenant migration', body: 'Moving a tenant between tiers (or between regions for data residency) without downtime. Critical for retention and upsell.' },
+  { icon: '🗑️', title: 'Tenant offboarding', body: 'GDPR-compliant data deletion across all systems — backups, logs, derived datasets. Often the hardest piece to implement correctly.' },
+]} />
+
+## Recap
+
+- Multi-tenancy is the foundational SaaS pattern: one application, many tenants, isolation guarantees.
+- Three isolation models: full, resource-level, item-level. Most platforms mix them.
+- Operations need a new lens: tenant-aware metrics, dashboards, alerts.
+- Tiering aligns infrastructure cost with customer value; noisy-neighbor protection is a hard requirement.
+- Database tenancy patterns (DB-per-tenant, schema-per-tenant, shared schema) trade isolation against efficiency.
+- Onboarding and offboarding are first-class architectural concerns, not afterthoughts.
