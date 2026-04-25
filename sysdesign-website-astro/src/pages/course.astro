@@ -1,0 +1,72 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+
+const sections = (await getCollection('sections')).sort((a, b) => a.data.order - b.data.order);
+const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b.data.order);
+
+const lessonsBySection: Record<string, typeof lessons> = {};
+for (const l of lessons) {
+  const k = l.data.section;
+  if (!lessonsBySection[k]) lessonsBySection[k] = [];
+  lessonsBySection[k].push(l);
+}
+
+interface Group {
+  name: string;
+  items: typeof lessons;
+}
+function groupLessons(items: typeof lessons): Group[] {
+  const map: Record<string, typeof lessons> = {};
+  for (const l of items) {
+    const k = l.data.group ?? '';
+    if (!map[k]) map[k] = [];
+    map[k].push(l);
+  }
+  return Object.keys(map).map((name) => ({ name, items: map[name] }));
+}
+---
+<BaseLayout title="Course outline · System Design Course">
+  <Navbar />
+  <main class="mx-auto max-w-3xl px-4 py-12">
+    <h1 class="text-3xl sm:text-4xl font-bold text-[color:var(--color-text)] mb-2 tracking-tight">Course outline</h1>
+    <p class="text-[color:var(--color-text-muted)] mb-10">Seven sections, ~40 lessons, free forever.</p>
+
+    {sections.map((s) => {
+      const ready = s.data.status === 'ready';
+      const items = lessonsBySection[s.data.slug] ?? [];
+      const groups = groupLessons(items);
+      return (
+        <section class:list={['mb-8', !ready && 'opacity-60']}>
+          <h2 class="text-xl font-semibold text-[color:var(--color-text)] mb-1">
+            {s.data.order}. {s.data.title}
+            {!ready && <span class="ml-3 text-xs font-normal uppercase tracking-wider text-[color:var(--color-text-faint)]">[coming soon]</span>}
+          </h2>
+          <p class="text-sm text-[color:var(--color-text-muted)] mb-3">{s.data.summary}</p>
+          {ready && groups.map((g) => (
+            <div class="ml-4 mb-3">
+              {g.name && <div class="text-xs uppercase tracking-wider text-[color:var(--color-text-faint)] mt-3 mb-1">{g.name}</div>}
+              <ul class="space-y-1">
+                {g.items.map((l) => {
+                  const href = `/lesson/${l.data.section}/${l.data.slug}`;
+                  return (
+                    <li>
+                      <a href={href} class="text-sm text-[color:var(--color-text)] hover:text-[color:var(--color-accent)]">
+                        <span class="text-[color:var(--color-text-faint)] mr-2">{s.data.order}.{l.data.order}</span>
+                        {l.data.title}
+                        <span class="ml-2 text-xs text-[color:var(--color-text-faint)]">→ {l.data.readingMinutes} min</span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </section>
+      );
+    })}
+  </main>
+  <Footer />
+</BaseLayout>

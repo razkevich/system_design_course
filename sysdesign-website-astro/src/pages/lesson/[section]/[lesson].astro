@@ -1,0 +1,64 @@
+---
+import { getCollection } from 'astro:content';
+import LessonLayout from '../../../layouts/LessonLayout.astro';
+import Callout from '../../../components/Callout.astro';
+
+export async function getStaticPaths() {
+  const lessons = await getCollection('lessons');
+  const sections = await getCollection('sections');
+  const sectionMap = new Map(sections.map((s) => [s.data.slug, s]));
+
+  return lessons.map((entry) => ({
+    params: { section: entry.data.section, lesson: entry.data.slug },
+    props: {
+      entry,
+      section: sectionMap.get(entry.data.section)!,
+      allLessonsInSection: lessons
+        .filter((l) => l.data.section === entry.data.section)
+        .sort((a, b) => a.data.order - b.data.order),
+    },
+  }));
+}
+
+const { entry, section, allLessonsInSection } = Astro.props;
+const { Content, headings } = await entry.render();
+
+const toc = headings
+  .filter((h) => h.depth === 2 || h.depth === 3)
+  .map((h) => ({ id: h.slug, text: h.text, depth: h.depth as 2 | 3 }));
+
+const idx = allLessonsInSection.findIndex((l) => l.data.slug === entry.data.slug);
+const prevLesson = allLessonsInSection[idx - 1];
+const nextLesson = allLessonsInSection[idx + 1];
+
+const sidebar = {
+  sectionTitle: section.data.title,
+  sectionHref: `/section/${section.data.slug}`,
+  lessons: allLessonsInSection.map((l) => ({
+    slug: l.data.slug,
+    title: l.data.title,
+    order: l.data.order,
+    group: l.data.group,
+    href: `/lesson/${section.data.slug}/${l.data.slug}`,
+  })),
+  currentSlug: entry.data.slug,
+};
+
+const prev = prevLesson ? { href: `/lesson/${section.data.slug}/${prevLesson.data.slug}`, title: prevLesson.data.title } : undefined;
+const next = nextLesson ? { href: `/lesson/${section.data.slug}/${nextLesson.data.slug}`, title: nextLesson.data.title } : undefined;
+---
+<LessonLayout
+  pageTitle={`${entry.data.title} · System Design Course`}
+  sectionTitle={section.data.title}
+  sectionHref={`/section/${section.data.slug}`}
+  lessonTitle={entry.data.title}
+  lessonOrder={entry.data.order}
+  readingMinutes={entry.data.readingMinutes}
+  lastUpdated={entry.data.lastUpdated}
+  sidebar={sidebar}
+  toc={toc}
+  prev={prev}
+  next={next}
+>
+  <Content components={{ Callout }} />
+</LessonLayout>

@@ -1,0 +1,71 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import LessonCard from '../../components/LessonCard.astro';
+
+export async function getStaticPaths() {
+  const sections = await getCollection('sections', ({ data }) => data.status === 'ready');
+  return sections.map((s) => ({ params: { slug: s.data.slug }, props: { section: s } }));
+}
+
+const { section } = Astro.props;
+const lessons = (await getCollection('lessons', ({ data }) => data.section === section.data.slug))
+  .sort((a, b) => a.data.order - b.data.order);
+
+const totalMinutes = lessons.reduce((s, l) => s + l.data.readingMinutes, 0);
+
+const groups = lessons.reduce<Record<string, typeof lessons>>((acc, l) => {
+  (acc[l.data.group ?? ''] ??= []).push(l);
+  return acc;
+}, {});
+
+const groupOrder = Object.keys(groups);
+---
+<BaseLayout title={`${section.data.title} · System Design Course`}>
+  <Navbar />
+  <main class="mx-auto max-w-3xl px-4 py-12">
+    <nav class="text-xs text-[color:var(--color-text-muted)] mb-4">
+      <a href="/course" class="hover:text-[color:var(--color-text)]">Course</a>
+      <span class="mx-1.5">/</span>
+      <span>Section {section.data.order}</span>
+    </nav>
+
+    <header class="rounded-2xl bg-gradient-to-br from-[color:var(--color-accent-soft)] via-transparent to-transparent border border-[color:var(--color-border)] p-8 mb-10">
+      <div class="text-xs font-semibold uppercase tracking-widest text-[color:var(--color-accent)] mb-2">Section {section.data.order}</div>
+      <h1 class="text-3xl sm:text-4xl font-bold text-[color:var(--color-text)] tracking-tight mb-3">{section.data.title}</h1>
+      <p class="text-[color:var(--color-text-muted)] text-lg max-w-2xl">{section.data.summary}</p>
+      <div class="mt-4 text-sm text-[color:var(--color-text-faint)]">
+        {lessons.length} lessons · ~{Math.max(1, Math.round(totalMinutes / 60 * 10) / 10)} h reading
+      </div>
+    </header>
+
+    {groupOrder.map((group) => (
+      <section class="mb-8">
+        {group && <h2 class="text-sm font-semibold uppercase tracking-wider text-[color:var(--color-text-faint)] mb-2">{group}</h2>}
+        <div>
+          {groups[group].map((l) => (
+            <LessonCard
+              href={`/lesson/${section.data.slug}/${l.data.slug}`}
+              order={l.data.order}
+              parentOrder={section.data.order}
+              title={l.data.title}
+              summary={l.data.summary}
+              readingMinutes={l.data.readingMinutes}
+            />
+          ))}
+        </div>
+      </section>
+    ))}
+
+    {lessons.length > 0 && (
+      <div class="mt-8 text-center">
+        <a href={`/lesson/${section.data.slug}/${lessons[0].data.slug}`} class="inline-block px-6 py-3 rounded-lg font-semibold text-white bg-[color:var(--color-accent)] hover:bg-[color:var(--color-accent-hover)] transition-colors">
+          Start with {section.data.order}.{lessons[0].data.order} →
+        </a>
+      </div>
+    )}
+  </main>
+  <Footer />
+</BaseLayout>

@@ -1,0 +1,63 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import CourseSidebar from '../components/CourseSidebar.tsx';
+import OnPageTOC from '../components/OnPageTOC.tsx';
+import LessonHeader from '../components/LessonHeader.astro';
+import PrevNextNav from '../components/PrevNextNav.astro';
+import type { TocEntry } from '../lib/tocFromHtml';
+
+export interface Props {
+  pageTitle: string;
+  sectionTitle: string;
+  sectionHref: string;
+  lessonTitle: string;
+  lessonOrder: number;
+  readingMinutes: number;
+  lastUpdated: string;
+  sidebar: {
+    sectionTitle: string;
+    sectionHref: string;
+    lessons: { slug: string; title: string; order: number; group?: string; href: string }[];
+    currentSlug: string;
+  };
+  toc: TocEntry[];
+  prev?: { href: string; title: string };
+  next?: { href: string; title: string };
+}
+
+const { pageTitle, sectionTitle, sectionHref, lessonTitle, lessonOrder, readingMinutes, lastUpdated, sidebar, toc, prev, next } = Astro.props;
+---
+<BaseLayout title={pageTitle}>
+  <Navbar />
+  <div class="mx-auto max-w-7xl px-4 lg:grid lg:grid-cols-[240px_minmax(0,1fr)_220px] lg:gap-10 py-8">
+    <div class="lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto pb-6">
+      <CourseSidebar
+        client:load
+        sectionTitle={sidebar.sectionTitle}
+        sectionHref={sidebar.sectionHref}
+        lessons={sidebar.lessons}
+        currentSlug={sidebar.currentSlug}
+      />
+    </div>
+
+    <article class="prose-lesson mx-auto">
+      <LessonHeader
+        title={lessonTitle}
+        readingMinutes={readingMinutes}
+        lastUpdated={lastUpdated}
+        sectionTitle={sectionTitle}
+        sectionHref={sectionHref}
+        order={lessonOrder}
+      />
+      <slot />
+      <PrevNextNav prev={prev} next={next} />
+    </article>
+
+    <div class="hidden lg:block lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+      <OnPageTOC client:load entries={toc} />
+    </div>
+  </div>
+  <Footer />
+</BaseLayout>
