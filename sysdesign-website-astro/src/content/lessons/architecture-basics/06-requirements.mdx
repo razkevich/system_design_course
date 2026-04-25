@@ -1,0 +1,178 @@
+---
+title: Requirements Engineering
+slug: requirements
+order: 6
+section: architecture-basics
+group: Core Principles
+summary: Functional, quality, and constraint requirements — and the techniques (Event Storming, QAW, SRE) that surface them before they hurt you.
+readingMinutes: 10
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+
+Figuring out *what* to build is often harder than building it. Requirements engineering turns abstract business ideas into concrete specifications that engineering can actually deliver against. Skip this step and the system you ship will be technically excellent and functionally wrong.
+
+Three types of requirements interact to shape every architectural decision:
+
+- **Functional requirements** — what the system does.
+- **Quality requirements** (a.k.a. non-functional requirements) — how well it does it.
+- **Constraints** — what limits the design space.
+
+## Functional Requirements: What the System Does
+
+Functional requirements describe the specific actions, features, and capabilities that deliver business value. They look simple — *"the system should let users search for products"* — but the devil's in the details: what users? what products? what filters? what counts as a result? what happens when search is slow?
+
+Effective functional requirements gathering goes beyond a feature list. It requires understanding the underlying business processes, the user workflows, and the system interactions that connect them.
+
+### The FAB structure: Feature, Advantage, Benefit
+
+For each functional requirement, ask three questions:
+
+- **Feature** — what can the system do?
+- **Advantage** — what does the user get from it?
+- **Benefit** — why does the user want it?
+
+Example: in a mobile payment system, **biometric authentication** is the feature. The **advantage** is removing PIN entry. The **benefits** are faster transactions and stronger security. All three matter — features alone get over-built; benefits alone get under-specified.
+
+### Event Storming: surfacing what people know but can't articulate
+
+Event Storming is a collaborative workshop technique for discovering business processes and the functional requirements that support them. It uses different colored sticky notes for:
+
+- **Domain events** — things that happen ("Order Placed", "Payment Completed").
+- **Commands** — actions that trigger events.
+- **Actors** — people or systems initiating commands.
+- **External systems** — outside services involved.
+- **Policies** — rules that fire when events happen.
+- **Read models** — the views people need to make decisions.
+
+The magic of Event Storming is that it surfaces *implicit* knowledge. Business experts often understand processes intuitively but struggle to articulate them. Engineers see technical possibilities but miss business nuance. Putting them in a room with sticky notes produces shared language and reveals dependencies neither side could see alone.
+
+Use it to:
+
+- Build a shared language between business and engineering.
+- Surface hidden functional requirements.
+- Show how processes connect and depend on each other.
+- Reconcile conflicting mental models early.
+
+### Lean Canvas for strategic context
+
+While Event Storming excels at process-level requirements, Lean Canvas provides the strategic context that shapes priorities — what problems are we solving, for which customers, with what unique value proposition, through which channels and revenue streams. Use it to keep requirements anchored in business goals rather than feature wishlists.
+
+### Architecturally significant requirements
+
+Not all functional requirements are equal. A few will force fundamental architectural decisions that affect the whole system. Watch out for these classes:
+
+- **Integration** — must talk to external systems.
+- **Real-time** — must process events in real or near-real time.
+- **Security** — handles sensitive data or has special compliance needs.
+- **Multi-platform** — must work on multiple platforms or devices.
+- **Scale** — has to scale to dramatically higher volumes than today.
+
+<Callout type="warning" title="One innocent requirement can change everything">
+"Users can view their activity history *even if they lose their phone*" sounds simple. But it forces server-side state, identity recovery, audit logging, GDPR considerations, and probably a sync layer. One sentence, six architectural commitments. Pay attention to "even if" and "what if" requirements — they're often the load-bearing ones.
+</Callout>
+
+### Practical techniques
+
+- **User journey mapping.** Helps the team understand functional requirements in the context of user scenarios — surfacing missing functional requirements and clarifying connections between features.
+- **Open-ended interviews.** Once the broad scope is understood, structured interviews fill in detailed functional requirements. The key is asking open-ended questions about goals and motivation, not closed questions that confirm assumptions.
+- **Mockups and prototypes.** Make abstract functional requirements concrete. A simple prototype routinely surfaces dozens of implicit requirements that no document would have captured.
+
+## Quality Requirements: How Well It Works
+
+Quality requirements (the non-functional kind) define how *well* the system has to perform its functions. Unlike functional requirements — which can usually be added incrementally — quality requirements often demand architectural decisions made up front.
+
+They're frequently the difference between a system that works in a demo and one that works in production.
+
+### The invisibility problem
+
+Users don't think about quality requirements until they fail. They don't think about response time until pages load slowly. They don't think about security until there's a breach. They don't think about availability until the system is down.
+
+This invisibility makes quality requirements easy to skip during gathering — and painful to discover later, when they manifest as outages, support tickets, or compliance findings.
+
+### Quality attribute scenarios
+
+The fix is to make quality requirements *explicit* and *testable*. "Scalability" and "performance" are just words until you define a concrete, measurable scenario.
+
+A complete quality attribute scenario has six parts:
+
+1. **Source** — who or what initiates the scenario.
+2. **Stimulus** — the event requiring system reaction.
+3. **Artifact** — the system component being tested.
+4. **Environment** — the operational context.
+5. **Response** — the expected system behaviour.
+6. **Response measure** — concrete, measurable success criteria.
+
+<Callout type="info" title="Example: a search performance scenario">
+*When 1,000 concurrent users (source) submit search queries (stimulus) during peak load (environment), the search service (artifact) returns results within 500 ms for 95% of requests (response and response measure).*
+</Callout>
+
+If you can't write a test for your scenario, it isn't specific enough.
+
+### The Quality Attribute Workshop (QAW)
+
+A QAW is a structured method for surfacing and prioritizing quality attributes early. Unlike traditional feature-focused requirements gathering, it specifically targets quality attributes:
+
+1. **Business presentation.** Sets context and goals so technical teams understand which qualities matter to the business.
+2. **Architecture presentation.** Gives stakeholders context on the current or proposed design.
+3. **Scenario brainstorm.** Generates quality attribute scenarios from all participants.
+4. **Consolidation and prioritization.** Removes duplication, identifies the most important attributes.
+
+A few hours in a QAW typically saves months of expensive re-architecting.
+
+### Site Reliability Engineering (SRE) approach
+
+SRE provides a practical framework for measuring and managing quality attributes in production:
+
+- **SLI — Service Level Indicators** — concrete, measurable metrics from the user's perspective (request latency, error rate, availability).
+- **SLO — Service Level Objectives** — specific targets for SLIs over defined time windows ("99.9% of search requests complete in under 500 ms over a rolling 30-day window").
+- **Error budgets** — quantify allowable unreliability within SLO constraints. If your error budget is 0.1% of requests, that becomes the budget for risky deploys, experiments, and infrastructure changes.
+
+We'll go much deeper on SRE in Section 6. For now: SRE is the bridge that turns "we want it to be reliable" into something measurable.
+
+### Discovery techniques for quality requirements
+
+- **Stakeholder interviews.** Different stakeholders care about different qualities. End users focus on performance, ops teams worry about reliability, leaders care about cost. Talk to each.
+- **Architectural risk analysis.** Examine proposed or existing architecture for risks against quality measures. Where might architectural decisions affect quality outcomes?
+
+### Quality attributes pull against each other
+
+Quality requirements rarely align perfectly. Common tensions:
+
+- **High availability** demands redundancy and complexity.
+- **Strong security** adds latency.
+- **Scalability** can sacrifice strong consistency.
+
+The most successful systems optimize the *right* qualities for their context, rather than trying to maximize all of them simultaneously.
+
+## Constraints
+
+Constraints are the limits that bound your design space — and ignoring them produces architectures that won't survive contact with reality.
+
+- **Technical constraints** — existing systems, platform limits, technology choices the org has already standardized on.
+- **Regulatory constraints** — GDPR, HIPAA, SOC 2, PCI DSS — each shapes what data can live where, who can see it, and how it's protected.
+- **Resource constraints** — budget, team size, available expertise, time to market.
+- **Operational constraints** — deployment windows, SLAs already in place, integration cadence with other teams.
+
+Constraints aren't obstacles to good design — they're inputs to it. The architectural skill is finding the *best* design that respects all constraints, not the *theoretical* design that ignores them.
+
+## Principles for Successful Requirements Engineering
+
+1. **Shared understanding** — between business stakeholders and technical specialists, not just a written spec.
+2. **Right techniques for each type.** Event Storming for processes. Mockups for UI requirements. QAW for quality attributes. Don't use one technique for everything.
+3. **Collaborative workshops** beat sequential handoffs. Everyone in the room produces better requirements than a chain of write-and-review.
+4. **Structured scenarios** for quality attributes. Vague is unmeasurable.
+5. **Systematic constraint identification.** Don't let unstated constraints emerge halfway through implementation.
+
+The goal isn't perfect requirements. It's shared understanding that survives the inevitable evolution of the system.
+
+## Recap
+
+- Requirements come in three flavors — functional, quality, and constraints — and each needs different elicitation techniques.
+- Functional requirements describe behavior; FAB structure (feature/advantage/benefit) helps keep them focused.
+- Event Storming surfaces hidden functional requirements through collaborative discovery.
+- Quality requirements are usually invisible until they fail. Make them explicit through measurable scenarios (source, stimulus, artifact, environment, response, response measure).
+- QAW and SRE practices give you a framework for prioritizing and operationalizing quality attributes.
+- Quality attributes pull against each other; pick the right ones for your context, don't try to maximize all of them.
+- Constraints shape the design space; uncover them deliberately, don't let them surface mid-build.

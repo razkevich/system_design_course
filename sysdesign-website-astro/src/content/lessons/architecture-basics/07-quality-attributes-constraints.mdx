@@ -1,0 +1,264 @@
+---
+title: Quality Attributes and Constraints
+slug: quality-attributes-constraints
+order: 7
+section: architecture-basics
+group: Core Principles
+summary: Performance, availability, scalability, security, reliability — naming the things you actually care about, plus the constraints that bound the design.
+readingMinutes: 11
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+
+Quality attributes are the non-functional characteristics that define how *well* a system performs its intended functions. Where functional requirements describe what the system *does*, quality attributes describe how well it does it. Combined with the constraints around the system, they shape every architectural decision worth talking about.
+
+This lesson is the working vocabulary: the named quality attributes you'll see referenced everywhere else in the course, and the constraints that bound how far you can push them.
+
+## Performance
+
+**Definition.** How efficiently the system uses resources to meet timing requirements.
+
+Performance has three core dimensions:
+
+- **Latency** — time to process a single request.
+- **Throughput** — requests handled per unit of time.
+- **Resource utilization** — efficiency of CPU, memory, network, and I/O.
+
+Common levers:
+
+- Caching frequently used data.
+- Asynchronous processing for long-running operations.
+- Connection pooling for databases and external services.
+- Query optimization (indexes, pagination, projection).
+- CDN for static assets and edge content.
+
+## Availability
+
+**Definition.** The percentage of time the system is operational and able to serve requests.
+
+Availability is usually expressed as a number of "nines":
+
+| Level | Annual downtime | Typical fit |
+| --- | --- | --- |
+| **99%** | 3.65 days | Internal tools, non-critical systems |
+| **99.9%** | 8.76 hours | Standard for most business applications |
+| **99.99%** | 52.6 minutes | E-commerce, financial services |
+| **99.999%** | 5.26 minutes | Carrier-grade telecom, payments |
+
+High availability requires redundancy, fault detection, graceful degradation, and reliable monitoring. Each additional "nine" is dramatically more expensive than the last.
+
+## Scalability
+
+**Definition.** The ability to handle increased load — more users, more data, more requests — without architectural surgery.
+
+Two complementary approaches:
+
+- **Horizontal scaling.** Add more machines. Best fit for stateless services. Distributes load, improves fault tolerance, gives you elastic capacity.
+- **Vertical scaling.** Make existing machines bigger. Best fit for stateful services with moderate growth. Simpler to implement, doesn't break existing architecture, but eventually hits hard limits.
+
+Scaling problems to plan for:
+
+- **Data consistency** — keeping information correct across multiple nodes during concurrent reads and writes.
+- **Session management** — preserving user experience in stateless architectures behind load balancers.
+- **Coordination complexity** — synchronizing multiple components and services to behave coherently.
+
+Strategies that come up repeatedly:
+
+- Database sharding.
+- Microservices architectures.
+- Event-driven architecture.
+- Careful state management — externalize where you can.
+
+## Security
+
+Five principles cover most of the security thinking you'll do at the architecture level:
+
+- **Least privilege.** Grant the minimum permissions necessary to perform the task.
+- **Security by design.** Build security in from the start, not bolted on later.
+- **Defense in depth.** Multiple independent layers of protection.
+- **Fail secure.** When something goes wrong, default to the safe state.
+- **Zero trust.** Verify everything, trust nothing — even inside your own network.
+
+The architectural toolkit you'll reach for:
+
+1. **Authentication and authorization.** Identity verification (OAuth/OIDC, JWT, mTLS), role-based or attribute-based access control.
+2. **Input validation.** Validate and sanitize all incoming data — defense against injection and a long tail of related attacks.
+3. **Encryption.** Protect sensitive data at rest and in transit using current algorithms (AES-GCM for symmetric, TLS 1.3 for transport, properly rotated keys).
+4. **Secure protocols.** No unauthenticated channels between trusted services.
+5. **Audit logging.** Comprehensive logging of user actions and system events for monitoring and incident response.
+
+## Reliability
+
+**Definition.** The probability that the system will operate correctly over a specified time period.
+
+Key indicators:
+
+- **MTBF** — Mean Time Between Failures.
+- **MTTR** — Mean Time To Repair (or Recover).
+- **Availability** — percentage of time operational (related, but not identical).
+
+Characteristics of reliable systems:
+
+- Graceful error handling.
+- Automatic failure recovery.
+- Data integrity preservation.
+- Comprehensive testing.
+
+Practical patterns:
+
+- **Redundancy** — duplicate critical components.
+- **Checkpoints** — preserve state for recovery.
+- **Error detection** — monitoring and early problem identification.
+- **Comprehensive testing** — across normal and failure paths.
+
+## Modifiability
+
+**Definition.** How easily and safely the system can be changed.
+
+Modifiability is the architectural side of "can we still ship?". Three things matter:
+
+1. **Clear interfaces.** Well-defined contracts between components.
+2. **Loose coupling.** Minimal interdependencies between components.
+3. **Separation of concerns.** Each component has one clear responsibility.
+
+Techniques:
+
+- Information hiding — encapsulate internal implementation behind stable interfaces.
+- Stable interfaces — keep contracts steady even as internals change.
+- Limit communication paths — minimize direct dependencies between modules.
+- Use intermediaries — patterns like facade, gateway, mediator.
+
+Modifiability is what determines whether the system is *evolvable* (last lesson) or stuck. The lessons reinforce each other.
+
+## Testability
+
+**Definition.** How easily the software can demonstrate its faults through testing.
+
+Characteristics of testable systems:
+
+- Good observability of internal state.
+- Controllable inputs and outputs.
+- Minimal complex interdependencies.
+
+The patterns that pay off:
+
+- **Dependency injection** — swap real components for mocks during testing.
+- **Separation of concerns** — clean responsibility boundaries make individual components easy to test.
+- **No global state** — predictable behaviour without hidden dependencies.
+- **Clear interfaces** — well-defined contracts make scenarios easy to write.
+
+## Usability
+
+Usability has architectural implications even though it's often considered "just UI."
+
+- **Interface design.** Intuitive controls, logical navigation, visual hierarchy.
+- **System responsiveness.** Quick response times, smooth transitions, immediate feedback.
+- **Error handling.** Clear error messages, suggestions for resolution, graceful degradation.
+
+Architecturally, usability shapes decisions about responsiveness budgets, error handling strategies, data presentation formats, and integration with external systems.
+
+## Interoperability
+
+The ability of systems to work together — exchanging data and functionality across platforms, technologies, and organizational boundaries.
+
+Building blocks:
+
+- **API integration** with standardized formats and protocols.
+- **Data exchange** across different storage formats and schemas.
+- **Platform compatibility** across diverse technology stacks.
+- **Version management** for backward compatibility and graceful interface evolution.
+
+In a multi-tenant SaaS context, interoperability is also about *integrations* — webhooks out, third-party APIs in, marketplace ecosystems. Treat integration surfaces as a first-class architectural concern, not as an afterthought.
+
+## Portability
+
+**Definition.** How easily the system can be moved from one environment to another.
+
+Common scenarios:
+
+- Different hardware platforms.
+- Different operating systems.
+- Alternative databases.
+- Cloud-to-cloud or hybrid migrations.
+
+Approaches that improve portability:
+
+- **Standard APIs** instead of proprietary lock-in.
+- **Containerization** for consistent deployment.
+- **Abstraction layers** that isolate platform-specific code.
+- **Multi-cloud capability** when business needs justify it.
+
+## Quality Attributes Pull Against Each Other
+
+Quality attributes rarely align. Common tensions:
+
+| If you push... | You usually pay in... |
+| --- | --- |
+| Security | Performance (encryption, validation overhead) |
+| Availability | Complexity (redundancy, failover machinery) |
+| Scalability | Strict consistency (distributed systems trade it away) |
+| Performance | Maintainability (specialized optimizations) |
+
+The job isn't to maximize all of them. It's to find the right balance for *this* system, *this* business, *these* users. That requires explicit conversations about acceptable trade-offs, quantified success criteria, and regular reassessment as requirements change.
+
+## Constraints
+
+Constraints are the limits inside which architecture has to operate. They're not obstacles — they're the context that makes a particular design *correct* for *this* system.
+
+### Infrastructure constraints
+
+- **Hardware constraints.** CPU power, memory, storage performance directly affect your performance optimization approach. Aggressive caching, resource-efficient algorithms, careful data layout.
+- **Network constraints.** Limited bandwidth has deep architectural consequences — payload optimization, compression, batching, edge caching.
+- **Platform constraints.** Whatever the chosen stack rules out (e.g., language ecosystems, cloud-provider-specific services).
+
+### Regulatory constraints
+
+These often dictate hard architectural decisions:
+
+- **GDPR** — data deletion capabilities throughout the system. Not just marking records as deleted — actually purging personal data from backups, logs, and derived datasets.
+- **HIPAA** — specific authentication and access-control requirements for health data. Architectural foundations affecting access patterns and audit logging.
+- **SOX** — financial regulations require change control and segregation of duties, affecting deployment processes and system boundaries.
+- **PCI DSS** — credit card data requires specific isolation, encryption, and monitoring patterns.
+- **SOC 2** — controls around security, availability, processing integrity, confidentiality, and privacy.
+
+### Organizational constraints
+
+- **Budget** — affects infrastructure and technology choices.
+- **Time-to-market pressure** — forces conscious technical trade-offs.
+- **Team skills** — limit viable technology choices.
+- **Team structure** — defines architecture through Conway's Law.
+
+A practical example of Conway's Law in team structure:
+
+| Team type | Architecture it tends to produce |
+| --- | --- |
+| **Functional teams** (frontend, backend, DBA specialists) | Layered architectures with clear technology boundaries |
+| **Product teams** (organized by business capability, full-stack) | Service-oriented architectures with full ownership of capabilities |
+
+Functional teams tend to produce deep technical expertise; product teams tend to ship features faster but can duplicate work between teams.
+
+### Working with constraints
+
+The most successful architects work *with* constraints rather than fighting them. Constraints stimulate innovation by forcing creative solutions that often turn out to be more effective than the unconstrained alternative would have been.
+
+<Callout type="tip" title="Constraints as context, not obstacles">
+Constraints aren't obstacles to good architecture — they're the context in which great architecture is created. The best solutions are often born exactly from the necessity of working within strict limits.
+</Callout>
+
+## A Systems View
+
+Quality attributes and constraints together form the foundation of all architectural decisions. The skill is understanding that they work *as a system* — push one and others move.
+
+Instead of looking for ideal solutions, effective architects focus on making clear, conscious decisions that align with business priorities while creating the conditions for future evolution.
+
+Both quality attributes and constraints change over time. The most successful architects anticipate these changes and design systems that can adapt their priorities and creatively work within shifting limits as the business evolves.
+
+## Recap
+
+- Quality attributes describe how well the system works: performance, availability, scalability, security, reliability, modifiability, testability, usability, interoperability, portability.
+- Each one has named techniques and common levers. Knowing the vocabulary helps you have precise conversations.
+- Quality attributes pull against each other. Optimize for the right ones for *this* system, not all of them.
+- Constraints — infrastructure, regulatory, organizational — are the context inside which architecture has to live.
+- Constraints aren't obstacles; they're inputs to good design. Great architecture often comes from working within hard limits.
+- Both qualities and constraints change over time. Build systems that can re-prioritize as the business evolves.
