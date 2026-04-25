@@ -1,0 +1,204 @@
+---
+title: Observability and SRE
+slug: observability-and-sre
+order: 7
+section: resilience-and-observability
+group: Operations & Monitoring
+summary: Metrics, logs, traces, and the SRE practices that turn raw signals into reliable systems. SLIs, SLOs, error budgets, and on-call you can actually live with.
+readingMinutes: 11
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+In distributed systems, **you can't fix what you can't see**. Observability is the discipline of building systems whose internal state can be inferred from external signals. SRE — Site Reliability Engineering, the practice that came out of Google — is the operational philosophy that turns observability into reliability.
+
+This lesson is the working vocabulary: the three pillars, SLIs/SLOs/error budgets, on-call practices, and what good looks like.
+
+## The Three Pillars of Observability
+
+<IconGrid cols={3} items={[
+  { icon: '📊', title: 'Metrics', body: 'Aggregated numerical data. Request rate, error rate, latency percentiles, queue depth. Cheap to store, fast to query, but lossy — you can\'t go back and ask new questions.' },
+  { icon: '📜', title: 'Logs', body: 'Discrete events with context. "User X attempted action Y at time Z." Rich detail, expensive at scale. Best for after-the-fact investigation.' },
+  { icon: '🔗', title: 'Traces', body: 'A single request\'s journey across services. Distributed tracing shows where time is spent. Critical for debugging in microservices.' },
+]} />
+
+<KeyIdea>
+None of the three pillars is enough alone. Metrics tell you "something is slow"; logs tell you "what was happening when slow"; traces tell you "where the slowness is." Modern observability platforms unify all three.
+</KeyIdea>
+
+## Metrics
+
+The Google SRE book defines four **golden signals** every service should expose:
+
+<IconGrid cols={2} items={[
+  { icon: '🚦', title: 'Latency', body: 'How long requests take. Track percentiles (p50, p95, p99), not averages — averages hide tail latency.' },
+  { icon: '📈', title: 'Traffic', body: 'How many requests are coming in. Per second, per minute. Different units for different services.' },
+  { icon: '⚠️', title: 'Errors', body: 'Rate of failed requests. Subdivide by error class — 5xx (server bug) vs. 4xx (client issue) vs. circuit-breaker rejection.' },
+  { icon: '⚡', title: 'Saturation', body: 'How "full" your service is. CPU, memory, queue depth, thread pool utilization. Saturation predicts errors before they happen.' },
+]} />
+
+Modern stack:
+
+- **Prometheus** — open-source metrics collection. Pull-based, time-series database, PromQL query language.
+- **Grafana** — visualization. Dashboards, alerts. Standard companion to Prometheus.
+- **Datadog / New Relic / Honeycomb** — commercial alternatives with broader feature sets.
+- **OpenTelemetry** — vendor-neutral instrumentation. The future-proof choice.
+
+## Logs
+
+Structured logging is non-negotiable. Plain-text logs are unsearchable at scale.
+
+<Compare2
+  left={{
+    label: 'Plain text',
+    title: 'Unsearchable, unparsable',
+    body: '`2024-01-15 14:23:01 INFO User logged in: alice@example.com from 192.168.1.1`. Hard to filter, aggregate, or extract fields.',
+    accent: 'rose',
+  }}
+  right={{
+    label: 'Structured (JSON)',
+    title: 'Queryable, aggregatable',
+    body: '`{"timestamp": "...", "level": "INFO", "msg": "user.login", "user_email": "alice@...", "ip": "192.168.1.1"}`. Filter by any field, aggregate by any dimension.',
+    accent: 'emerald',
+  }}
+/>
+
+### What to log
+
+<IconGrid cols={2} items={[
+  { icon: '📥', title: 'Request boundaries', body: 'Every request entering and leaving a service. With request ID, user ID, tenant ID for correlation.' },
+  { icon: '⚠️', title: 'Errors', body: 'Stack traces, error context, what was being attempted.' },
+  { icon: '🔄', title: 'Significant business events', body: 'Order placed, payment processed. Useful for debugging business-logic issues.' },
+  { icon: '🚦', title: 'External calls', body: 'Outgoing API calls — who, what, latency. Critical for debugging "is it us or them?"' },
+]} />
+
+What to **not** log: PII (without explicit consent and proper redaction), passwords, full credit card numbers, secret tokens. Logs leak.
+
+### Stack: ELK / EFK / Loki
+
+- **Elasticsearch + Logstash + Kibana (ELK)** — the classic.
+- **Elasticsearch + Fluentd + Kibana (EFK)** — Fluentd is more modern.
+- **Grafana Loki** — log aggregation with Prometheus-style label-based indexing. Cheaper to operate than ES at scale.
+
+## Distributed Tracing
+
+A trace follows a single request through every service it touches.
+
+```
+[ User request ]
+       │
+       ▼
+[ API Gateway ]                    Span: 5ms
+       │
+       ▼
+[ Auth Service ]                   Span: 20ms
+       │
+       ▼
+[ Order Service ]                  Span: 80ms
+       │
+       ├──► [ Inventory Service ]  Span: 30ms
+       │
+       └──► [ Payment Service ]    Span: 200ms
+                  │
+                  └──► [ Stripe ]  Span: 180ms
+```
+
+Each box is a **span**. The whole tree is a **trace**. Critical for understanding where time is actually spent.
+
+<IconGrid cols={2} items={[
+  { icon: '🔭', title: 'OpenTelemetry', body: 'Vendor-neutral standard. Instrument once, export to any backend. Replaces Jaeger/Zipkin client libraries.' },
+  { icon: '🐝', title: 'Honeycomb', body: 'Premium tracing platform. Wide events. Excellent for debugging.' },
+  { icon: '🦅', title: 'Jaeger / Zipkin', body: 'Open-source tracing backends. Free; require operational effort.' },
+  { icon: '☁️', title: 'AWS X-Ray, GCP Trace, Azure Monitor', body: 'Cloud-native tracing. Easy onboarding; tied to cloud.' },
+]} />
+
+## Correlation IDs
+
+Every request gets a **request ID** that propagates through every service it touches. Logs include it; traces use it; metrics tag with it. Then "find everything related to this request" is a single search.
+
+```
+X-Request-ID: a8f4b2e1-9c3d-4f5e-8a6b-1c2d3e4f5a6b
+```
+
+Generate at the edge (API gateway), inject into request headers, propagate through every service. Every log line, every span, every metric should carry it.
+
+## SLI, SLO, Error Budget
+
+The SRE framework that turns reliability into a math problem.
+
+<IconGrid cols={3} items={[
+  { icon: '📏', title: 'SLI — Service Level Indicator', body: 'A specific, measurable metric. "Percentage of API requests completing in <500ms." A single number.' },
+  { icon: '🎯', title: 'SLO — Service Level Objective', body: 'A target for the SLI over a window. "99.9% of requests complete in <500ms over a rolling 30-day window."' },
+  { icon: '💰', title: 'Error budget', body: 'The amount of unreliability you can spend. 99.9% SLO = 0.1% error budget = ~43 minutes per month.' },
+]} />
+
+The error budget is the magic. It turns "should we ship faster or be more reliable?" into a quantitative question.
+
+<Callout type="info" title="Error budget in practice">
+- **Budget remaining** — ship faster, take risks, run experiments.
+- **Budget burning down** — slow down, focus on reliability, pause risky changes.
+- **Budget exhausted** — feature freeze. Reliability work only until the budget recovers.
+</Callout>
+
+## Setting SLOs
+
+The hardest part. Some heuristics:
+
+<IconGrid cols={2} items={[
+  { icon: '🎯', title: 'User-facing reality', body: 'The SLO should match what users actually experience. "99.9% of homepage loads complete in 2s" — measured at the user, not at the load balancer.' },
+  { icon: '💸', title: 'Cost vs. value', body: 'Each "9" costs disproportionately more. 99.9% might be 100x the cost of 99%. Pick what business actually needs.' },
+  { icon: '📊', title: 'Start with what you have', body: 'Look at the last 90 days. If you\'ve been at 99.5%, target 99.5%. Don\'t commit to 99.99% if you\'ve never measured it.' },
+  { icon: '🔁', title: 'Review and adjust', body: 'SLOs aren\'t set once. Review quarterly. Tighten where business demands; loosen where the cost outweighs value.' },
+]} />
+
+## On-Call
+
+The cultural and operational practice that makes reliability sustainable.
+
+<IconGrid cols={2} items={[
+  { icon: '👥', title: 'Rotation', body: 'Engineers rotate through on-call duty. Typically 1 week at a time. Primary + secondary backup.' },
+  { icon: '📋', title: 'Runbooks', body: 'Step-by-step procedures for common alerts. "If X is firing, check Y, then Z." Living documents — update when reality changes.' },
+  { icon: '⏱️', title: 'Alert quality', body: 'Alert only on user-impacting issues. False alerts erode trust and cause burnout. Aim for <1 false alert per shift.' },
+  { icon: '📝', title: 'Postmortems', body: 'After every incident, document what happened, what was learned, what changes follow. Blameless culture — focus on systems, not individuals.' },
+]} />
+
+<Callout type="warning" title="On-call burnout is a real risk">
+A team that\'s constantly woken up at 3am won\'t stay. Treat noise as a bug. If alerts fire too often, the alert thresholds are wrong, or the system itself needs work. Symptoms: people start ignoring alerts. By the time it\'s called out, the team is already breaking.
+</Callout>
+
+## Practice the Failures
+
+Production reliability comes from treating failure as expected.
+
+<IconGrid cols={2} items={[
+  { icon: '🦍', title: 'Chaos engineering', body: 'Inject failures intentionally to verify resilience. Netflix\'s Chaos Monkey kills random instances. Larger experiments: latency injection, network partitions.' },
+  { icon: '🎮', title: 'Game days', body: 'Scheduled exercises. "What happens if the database fails over?" Run it during business hours; observe how the system and team respond.' },
+  { icon: '📚', title: 'Postmortem-driven improvements', body: 'Each postmortem identifies action items — automation, runbook updates, architectural changes. Track them; close the loop.' },
+  { icon: '🎯', title: 'Synthetic monitoring', body: 'Continuous fake user transactions. Catch problems before real users do.' },
+]} />
+
+## What Good Observability Looks Like
+
+For a healthy SaaS service:
+
+<IconGrid cols={2} items={[
+  { icon: '📊', title: 'Single dashboard', body: 'One dashboard you check first thing — golden signals + SLO compliance. If green, all\'s well. If red, you know where to look.' },
+  { icon: '🔗', title: 'Tracing in 1 click', body: 'From any error log, you can jump to the trace, see all related logs, see all related metrics. Tooling that connects the three pillars.' },
+  { icon: '🔔', title: 'Symptom-based alerts', body: 'Alerts on "users are seeing errors," not "CPU is high." CPU might be high benignly. User-facing symptoms always need attention.' },
+  { icon: '📚', title: 'Runbook per alert', body: 'Every alert has a runbook. Steps to investigate, steps to mitigate. New on-call engineers can handle their first shift.' },
+]} />
+
+## Recap
+
+- The three pillars: metrics (aggregated), logs (events), traces (request flow). Use all three.
+- Golden signals: latency, traffic, errors, saturation. Track these for every service.
+- Structured logging is mandatory. Correlation IDs propagate everywhere.
+- Distributed tracing reveals where time is spent across services.
+- SLI / SLO / Error Budget: the framework that turns reliability into math.
+- On-call practices: rotation, runbooks, blameless postmortems, alert quality.
+- Practice failures via chaos engineering, game days, synthetic monitoring.
+- What good looks like: golden-signal dashboards, tracing in one click, symptom-based alerts, runbook per alert.

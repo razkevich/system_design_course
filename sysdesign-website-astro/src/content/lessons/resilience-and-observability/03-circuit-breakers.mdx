@@ -1,0 +1,161 @@
+---
+title: Circuit Breakers
+slug: circuit-breakers
+order: 3
+section: resilience-and-observability
+group: Resilience Patterns
+summary: The pattern that stops cascading failures. How circuit breakers work, where to put them, and how to combine with retries and timeouts for production-grade resilience.
+readingMinutes: 7
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+A circuit breaker is the resilience pattern that **stops your service from making things worse**. When a downstream service is failing, circuit breakers fail fast instead of piling up requests that will time out — protecting both the downstream from overload and your own service from resource exhaustion.
+
+The pattern is named after electrical circuit breakers, and the analogy is exact: a fuse that trips when overloaded.
+
+<KeyIdea>
+The biggest threat to a healthy service is a slow downstream service. If downstream takes 30 seconds to fail, your threads, connections, and memory pile up while waiting. Circuit breaker = stop sending traffic to a downstream that\'s clearly broken.
+</KeyIdea>
+
+## The Three States
+
+<IconGrid cols={3} items={[
+  { icon: '🟢', title: 'Closed (normal)', body: 'Requests flow through. Track success/failure rate.' },
+  { icon: '🔴', title: 'Open (broken)', body: 'Failure threshold exceeded. Reject requests immediately. Don\'t hit the downstream.' },
+  { icon: '🟡', title: 'Half-Open (probing)', body: 'After cooldown, allow a few test requests through. If they succeed, close. If they fail, back to open.' },
+]} />
+
+```
+                ┌────────────────┐
+                │     Closed     │
+                │  (normal flow) │
+                └───────┬────────┘
+                        │ failure threshold exceeded
+                        ▼
+                ┌────────────────┐
+                │      Open      │
+   ┌────────────│ (reject fast)  │
+   │            └────────┬───────┘
+   │                     │ cooldown elapsed
+   │                     ▼
+   │            ┌────────────────┐
+   │            │   Half-Open    │
+   │            │ (probe slowly) │
+   │            └───┬─────────┬──┘
+   │       success │         │ failure
+   │     ┌─────────┘         └────────┐
+   │     │                            │
+   ▼     ▼                            ▼
+   to "Closed"            (back to "Open")
+```
+
+## Configuration
+
+A typical circuit breaker has these knobs:
+
+<IconGrid cols={2} items={[
+  { icon: '🎚️', title: 'Failure threshold', body: 'How many failures (or what percentage) trip the breaker? Common: 50% failure rate over 100 requests, or 5 consecutive failures.' },
+  { icon: '⏰', title: 'Cooldown / timeout', body: 'How long does the breaker stay open before probing? Common: 30-60 seconds.' },
+  { icon: '🧪', title: 'Probe count', body: 'How many requests allowed through in half-open state before deciding? Common: 1-10.' },
+  { icon: '🪟', title: 'Window size', body: 'Time or count window for the failure threshold. Common: rolling 10-second or 100-request window.' },
+]} />
+
+## What Counts as a Failure?
+
+Not all errors should trip the breaker. Tune carefully:
+
+<IconGrid cols={2} items={[
+  { icon: '✅', title: 'Should trip', body: 'Connection timeouts, 5xx errors, request timeouts, network errors. Things indicating the downstream is broken.' },
+  { icon: '❌', title: 'Should NOT trip', body: '4xx errors (client error, downstream is fine). 401/403 (auth issue, not downstream health). Validation errors.' },
+]} />
+
+A common mistake: tripping the breaker on 4xx. The downstream is healthy; you have a bad request. Don't conflate "I sent something wrong" with "downstream is broken."
+
+## Combining with Retries and Timeouts
+
+Circuit breakers, retries, and timeouts compose. Each addresses a different failure mode.
+
+<IconGrid cols={2} items={[
+  { icon: '⏱️', title: 'Timeouts', body: 'Bound how long you wait. No timeout = thread pool exhaustion under slow downstream. Set per-call timeouts. Always.' },
+  { icon: '🔁', title: 'Retries', body: 'Handle transient failures (network blip). Use exponential backoff + jitter. Limit retry count.' },
+  { icon: '⚡', title: 'Circuit breaker', body: 'Skip retry attempts when the breaker is open. Don\'t hammer a service known to be down.' },
+]} />
+
+The order:
+
+```
+1. Set timeout. (always)
+2. Wrap call in retry logic with backoff. (for transient issues)
+3. Wrap retry logic in a circuit breaker. (to stop retrying when broken)
+```
+
+<Callout type="pitfall" title="The retry storm">
+Without a circuit breaker, every client retries on failure. When the downstream is overloaded and slow, every request times out, every client retries, and the retries amplify the problem. The "thundering herd of retries" is a classic outage cause. Circuit breakers stop the retries.
+</Callout>
+
+## Where to Put Circuit Breakers
+
+<IconGrid cols={2} items={[
+  { icon: '🌐', title: 'External API calls', body: 'Stripe, Twilio, SendGrid. Anything outside your control. Always. They will have outages; protect yourself.' },
+  { icon: '🔌', title: 'Service-to-service calls', body: 'In a microservices system, between services. Especially around critical paths.' },
+  { icon: '🗃️', title: 'Database calls', body: 'Less common, but useful when DB can fail in ways your app can\'t recover from quickly. Read replicas particularly.' },
+  { icon: '📨', title: 'Message broker writes', body: 'When the broker is down, fail fast. Buffer in a backup queue or dead-letter mechanism.' },
+]} />
+
+## Implementation Options
+
+<Compare2
+  left={{
+    label: 'Library-based',
+    title: 'In-process',
+    body: 'Hystrix (deprecated, but the original), Resilience4j (Java), Polly (.NET), pybreaker (Python). Embedded in app code. Per-method granularity.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Service mesh',
+    title: 'Infrastructure-level',
+    body: 'Istio, Linkerd. Configured declaratively, enforced by sidecars. No app code changes. Less granular but consistent across all services and languages.',
+    accent: 'emerald',
+  }}
+/>
+
+Modern systems often combine: service mesh handles default per-service breakers; app code adds per-call breakers for specific external dependencies.
+
+## Half-Open Probing
+
+The recovery dance matters:
+
+<Compare2
+  left={{
+    label: 'Naive: send all traffic',
+    title: 'Recipe for re-failure',
+    body: 'Open → cooldown → close fully. If downstream is still wobbly, full traffic kills it again. Saw-tooth pattern: 30s up, 30s down.',
+    accent: 'rose',
+  }}
+  right={{
+    label: 'Probe slowly',
+    title: 'Half-open with limited concurrency',
+    body: 'Half-open → 1-10 probe requests with limited concurrency. If they succeed, gradually ramp up. Smooth recovery.',
+    accent: 'emerald',
+  }}
+/>
+
+## Combining with Bulkheads
+
+The next lesson covers **bulkheads** — limiting how much of your resources any one downstream can consume. Circuit breakers + bulkheads together are the foundation of cascading-failure protection.
+
+## Recap
+
+- Circuit breakers fail fast when a downstream is broken — protecting both your service and the downstream.
+- Three states: Closed (normal), Open (rejecting), Half-Open (probing for recovery).
+- Configure: failure threshold, cooldown duration, probe count, window size.
+- Trip on connection / timeout / 5xx errors. Don't trip on 4xx.
+- Combine with timeouts (always set them) and retries with backoff + jitter.
+- Place around external APIs, service-to-service calls, sometimes DB and broker.
+- Implementation: library-based (Resilience4j, Polly) or service mesh (Istio, Linkerd) — modern systems often use both.
+- The pattern that prevents retry storms — one of the most important resilience patterns in production SaaS.

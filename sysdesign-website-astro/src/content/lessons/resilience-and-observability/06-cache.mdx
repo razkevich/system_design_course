@@ -1,0 +1,238 @@
+---
+title: Caching
+slug: cache
+order: 6
+section: resilience-and-observability
+group: Resilience Patterns
+summary: How caches actually work in production. Where to put them, eviction policies, invalidation strategies, and the patterns that turn caching from a foot-gun into a force multiplier.
+readingMinutes: 9
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+> "There are only two hard things in computer science: cache invalidation and naming things." — Phil Karlton
+
+Caching is one of the most universally applied performance techniques. It's also one of the easiest to get wrong. This lesson covers where caches live in real systems, the policies that govern them, and the patterns that turn caching from a source of bugs into a source of speed.
+
+## Why Caches Work
+
+The fundamental observation: **memory access is faster than disk; disk is faster than network; local is faster than remote**. Each cache hit replaces a slower operation with a faster one.
+
+```
+CPU register access:    ~1 ns
+L1 cache:               ~1 ns
+L2 cache:               ~5 ns
+L3 cache:               ~10 ns
+Main memory (RAM):      ~100 ns
+SSD:                    ~50,000 ns (50 µs)
+Network round-trip:     ~500,000 ns (500 µs) intra-DC
+                        ~100,000,000 ns (100 ms) cross-region
+```
+
+A cache hit replacing a network call is 5 orders of magnitude faster.
+
+## Cache Locations
+
+Caches live at every layer of a modern application.
+
+<IconGrid cols={2} items={[
+  { icon: '🌐', title: 'Browser cache', body: 'HTTP cache headers (Cache-Control, ETag). Static assets cached by user\'s browser.' },
+  { icon: '☁️', title: 'CDN', body: 'Content cached at edge locations near users. Cloudflare, CloudFront, Fastly. Most effective cache for global apps.' },
+  { icon: '⚖️', title: 'Reverse proxy', body: 'Nginx, Varnish. Cache HTTP responses in front of backend. Per-data-center.' },
+  { icon: '⚡', title: 'In-memory cache (distributed)', body: 'Redis, Memcached. Shared across application instances. Sub-millisecond access.' },
+  { icon: '💾', title: 'In-process cache', body: 'Caffeine, Guava Cache. In application memory. Nanosecond access; only this instance sees it.' },
+  { icon: '🗃️', title: 'Database query cache', body: 'Built into databases. Postgres uses shared_buffers; MySQL has query cache (deprecated in newer versions).' },
+]} />
+
+The cache hierarchy is layered — a request might hit CDN, miss, hit reverse proxy, miss, hit Redis, miss, hit DB. Each layer multiplies the protective effect.
+
+## Caching Patterns
+
+### Cache-aside (lazy loading)
+
+The most common pattern. Application checks cache first; on miss, loads from DB and populates cache.
+
+```python
+def get_user(user_id):
+    cached = cache.get(f"user:{user_id}")
+    if cached:
+        return cached
+    
+    user = db.query("SELECT * FROM users WHERE id = ?", user_id)
+    cache.set(f"user:{user_id}", user, ttl=300)
+    return user
+```
+
+<Compare2
+  left={{
+    label: 'Pros',
+    title: 'Simple, resilient',
+    body: 'Cache failure doesn\'t break the app — falls through to DB. Only items actually requested are cached. Cache and DB can have different schemas.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Cons',
+    title: 'Stale on writes',
+    body: 'On write, must invalidate cache (or update). Race conditions between cache miss + DB read + cache write can cause stale reads.',
+    accent: 'amber',
+  }}
+/>
+
+### Write-through
+
+Application writes to cache and DB simultaneously.
+
+```python
+def update_user(user_id, data):
+    db.update(user_id, data)
+    cache.set(f"user:{user_id}", data, ttl=300)
+```
+
+Cache always consistent with DB. Cost: every write hits the cache, even for data nobody reads.
+
+### Write-behind (write-back)
+
+Writes go to cache; cache asynchronously persists to DB.
+
+<Compare2
+  left={{
+    label: 'Pros',
+    title: 'Fastest writes',
+    body: 'Write to memory; persistence happens in background. Great for high-throughput writes.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Cons',
+    title: 'Risk of data loss',
+    body: 'If cache fails before flush, data is lost. Requires durable cache (Redis with AOF, or replicated). Rarely used in OLTP.',
+    accent: 'rose',
+  }}
+/>
+
+### Read-through
+
+Cache is the primary interface; cache library loads from DB on miss. Application doesn't talk to DB directly. Less common; more often a feature of specific cache products.
+
+## TTL and Eviction
+
+When the cache is full, what gets removed?
+
+<IconGrid cols={3} items={[
+  { icon: '⏰', title: 'TTL (time-based)', body: 'Each entry expires after a set time. Simple. Works well for data that has natural staleness.' },
+  { icon: '🚮', title: 'LRU (Least Recently Used)', body: 'Evict the entry that hasn\'t been accessed longest. Most common eviction policy. Memcached and Redis defaults.' },
+  { icon: '📊', title: 'LFU (Least Frequently Used)', body: 'Evict the entry accessed least often. Better for workloads with stable popular items.' },
+]} />
+
+Most production caches combine TTL (catches stale data) with LRU (catches memory pressure).
+
+## The Big Hard Problem: Cache Invalidation
+
+How do you know when a cache entry is stale? Three approaches:
+
+<Compare2
+  left={{
+    label: 'TTL only',
+    title: 'Accept staleness',
+    body: 'Set a TTL based on tolerable staleness. Easy. Stale data window between writes and TTL expiry.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Explicit invalidation',
+    title: 'Active management',
+    body: 'On data change, invalidate (or update) the cache. Lower staleness but requires every writer to know what to invalidate.',
+    accent: 'amber',
+  }}
+/>
+
+A third approach — **event-driven invalidation** — uses a stream of change events (CDC, outbox) to invalidate cache entries automatically.
+
+```
+[ DB write ] → [ CDC / outbox ] → [ Kafka topic ] → [ Cache invalidator ]
+```
+
+This decouples write paths from cache knowledge. Writers don't need to know what to invalidate; the cache subscribes to relevant change events.
+
+## Cache Stampede Problem
+
+When a popular cache key expires, all concurrent requests for it miss simultaneously. They all hit the database. Database gets crushed.
+
+<IconGrid cols={2} items={[
+  { icon: '🔒', title: 'Lock-on-miss', body: 'On miss, acquire a lock; only one process refreshes the cache. Others wait. Simple, but adds latency.' },
+  { icon: '🚀', title: 'Stale-while-revalidate', body: 'Serve stale value while refresh happens in background. Most users never see the miss.' },
+  { icon: '⏰', title: 'Probabilistic early expiration', body: 'Each cache check has small chance of triggering refresh before TTL. Spreads refresh load over time.' },
+  { icon: '🌊', title: 'Request coalescing', body: 'In-memory cache library with single-flight semantics — concurrent misses for the same key share one DB call.' },
+]} />
+
+## Negative Caching
+
+Cache "not found" results, not just "found" results. Otherwise, every request for a non-existent key (e.g., from probing) hits the DB.
+
+```python
+def get_user(user_id):
+    cached = cache.get(f"user:{user_id}")
+    if cached is None:
+        # Cache miss — load from DB
+        user = db.query(...)
+        if user:
+            cache.set(f"user:{user_id}", user, ttl=300)
+        else:
+            cache.set(f"user:{user_id}", "NOT_FOUND", ttl=60)  # short TTL for negatives
+        return user
+    
+    if cached == "NOT_FOUND":
+        return None
+    return cached
+```
+
+Especially important for high-traffic public APIs vulnerable to enumeration attacks.
+
+## What to Cache (and What Not To)
+
+<Compare2
+  left={{
+    label: 'Good cache candidates',
+    title: 'High value',
+    body: 'Read-heavy, expensive to compute, tolerant of mild staleness. User profiles, configuration, computed aggregates, rendered HTML, search results.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Bad cache candidates',
+    title: 'Risky',
+    body: 'Frequently changing data with strict consistency needs. Account balances, inventory counts, anything where stale data has real cost.',
+    accent: 'rose',
+  }}
+/>
+
+<Callout type="pitfall" title="Don't cache everything">
+A common antipattern: cache everything because "caching is fast." But caches add complexity, can hide bugs, and fail in subtle ways. Cache things that have measurable performance impact and tolerate staleness. Leave the rest alone.
+</Callout>
+
+## Multi-Tenant Caching
+
+For multi-tenant SaaS, tenant context must be in the cache key. Otherwise, you'll serve one tenant's data to another.
+
+```python
+# Wrong — cross-tenant leak
+cache.get(f"user:{user_id}")
+
+# Right — tenant-scoped key
+cache.get(f"tenant:{tenant_id}:user:{user_id}")
+```
+
+For very-popular cross-tenant data (configurations, lookup tables), shared cache is fine. For tenant-specific data, always namespace by tenant ID.
+
+## Recap
+
+- Caches save 5-6 orders of magnitude per hit. The performance lever is real.
+- Cache locations: browser, CDN, reverse proxy, distributed cache (Redis), in-process, DB.
+- Patterns: cache-aside (most common), write-through, write-behind, read-through.
+- Eviction: TTL + LRU is the standard.
+- Cache invalidation is the hard problem. TTL, explicit invalidation, or event-driven via CDC.
+- Watch for cache stampedes — use locks, stale-while-revalidate, or request coalescing.
+- Cache negatives, not just positives — especially for public APIs.
+- Don't cache everything. Cache where the trade-off (staleness for speed) is worth it.
+- For multi-tenancy, always namespace cache keys by tenant ID.

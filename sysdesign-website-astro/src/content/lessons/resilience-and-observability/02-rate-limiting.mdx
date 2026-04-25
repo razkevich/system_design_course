@@ -1,0 +1,230 @@
+---
+title: Rate Limiting
+slug: rate-limiting
+order: 2
+section: resilience-and-observability
+group: Resilience Patterns
+summary: How to protect SaaS platforms from abuse and noisy neighbors. Algorithms, where to enforce, and the multi-dimensional approach for tenant-aware limits.
+readingMinutes: 8
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Rate limiting controls the rate of requests a client (or tenant, or IP, or anyone) can make. It's one of the most universally needed patterns in SaaS — for protecting against abuse, noisy neighbors, billing tier enforcement, and accidental traffic spikes.
+
+This lesson covers the algorithms, where to enforce, and the multi-dimensional approach for production multi-tenant SaaS.
+
+## Why Rate Limit
+
+<IconGrid cols={2} items={[
+  { icon: '🛡️', title: 'Abuse protection', body: 'Stop bots, scrapers, brute-force attacks. Without rate limiting, a single abusive client can hammer your service.' },
+  { icon: '🏘️', title: 'Noisy neighbor mitigation', body: 'One tenant in a multi-tenant SaaS shouldn\'t degrade others. Rate limit per tenant.' },
+  { icon: '💰', title: 'Billing enforcement', body: 'Free tier 100 req/day; pro tier 10,000 req/day; enterprise unlimited. Rate limits enforce monetization.' },
+  { icon: '🚧', title: 'Backend protection', body: 'Database can handle 5,000 QPS sustained. Cap upstream traffic so spikes don\'t cause cascading failure.' },
+]} />
+
+## The Algorithms
+
+### Token Bucket
+
+The most common, most flexible algorithm.
+
+```
+Bucket size: B (max tokens)
+Refill rate: R (tokens per second)
+
+On request:
+  if bucket has tokens:
+    take 1 token, allow request
+  else:
+    reject request
+```
+
+<Compare2
+  left={{
+    label: 'How it works',
+    title: 'Tokens accumulate, requests consume them',
+    body: 'Bucket of capacity B. Tokens refill at R/sec. Each request consumes 1 (or more). Empty bucket = rate limited.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Strengths',
+    title: 'Burst-friendly + sustained limit',
+    body: 'Allows short bursts up to B requests, sustained throughput of R requests/sec. Matches real traffic patterns where occasional bursts are normal.',
+    accent: 'emerald',
+  }}
+/>
+
+### Leaky Bucket
+
+```
+Bucket size: B (queue capacity)
+Drain rate: R (requests per second)
+
+On request:
+  if bucket has space:
+    add request to bucket
+  else:
+    reject request
+
+Worker drains R requests per second from the bucket.
+```
+
+Smoother output rate — drains at constant R regardless of input pattern. Good for shaping traffic to a downstream system that needs predictable load.
+
+### Fixed Window Counter
+
+```
+Count requests per fixed time window (e.g., per minute).
+At window boundary: reset counter.
+
+On request:
+  if counter < limit:
+    increment counter, allow
+  else:
+    reject
+```
+
+Simple. Has a **boundary problem**: a client can fire 2× the limit in a 1-second period spanning two windows. Usually replaced by sliding-window approaches.
+
+### Sliding Window Log
+
+Track timestamps of recent requests. Count those in the last N seconds.
+
+```
+On request at time T:
+  remove entries older than (T - window) from log
+  if log size < limit:
+    append T, allow
+  else:
+    reject
+```
+
+Most accurate; expensive memory-wise (one entry per request).
+
+### Sliding Window Counter
+
+Hybrid: keeps fixed-window counts but interpolates across the boundary.
+
+```
+current_count = (count_in_previous_window × overlap_fraction)
+              + count_in_current_window
+
+if current_count < limit: allow
+```
+
+The pragmatic choice. Approximate but uses constant memory; avoids boundary issues.
+
+## Comparison
+
+| Algorithm | Burst | Smooth output | Memory | Common use |
+| --- | :---: | :---: | --- | --- |
+| Token bucket | ✅ | ❌ | O(1) | API rate limits, AWS APIs |
+| Leaky bucket | ❌ | ✅ | O(B) | Traffic shaping to downstream |
+| Fixed window | ✅ | ❌ | O(1) | Simple, accept the boundary issue |
+| Sliding log | ❌ | ❌ | O(N) | Precise limits where memory is cheap |
+| Sliding counter | ✅ | ❌ | O(1) | Production default for most APIs |
+
+## Where to Enforce
+
+<IconGrid cols={2} items={[
+  { icon: '🌐', title: 'CDN / Edge', body: 'Cloudflare, AWS WAF. Block at the edge before traffic hits your infrastructure. Best for DDoS and abuse.' },
+  { icon: '🚪', title: 'API gateway', body: 'Kong, Ambassador, AWS API Gateway. Per-tenant, per-endpoint, per-tier limits. Most common production location.' },
+  { icon: '🕸️', title: 'Service mesh', body: 'Istio, Envoy. Internal service-to-service rate limits. Protects internal services from each other.' },
+  { icon: '⚙️', title: 'Application code', body: 'Distributed rate limiting via Redis. When you need per-user-action limits the gateway can\'t see (e.g., per-user-per-resource).' },
+]} />
+
+<Callout type="tip" title="Defense in depth">
+Rate limit at multiple layers. Edge handles obvious abuse. Gateway handles per-tenant quotas. Application enforces fine-grained business rules. Each layer catches what others miss.
+</Callout>
+
+## Distributed Rate Limiting
+
+For multi-instance services, rate limiters must share state.
+
+<Compare2
+  left={{
+    label: 'Centralized (Redis)',
+    title: 'Single source of truth',
+    body: 'All instances check/update Redis. Simple, accurate. Redis becomes critical infrastructure. Adds latency (often 1-2ms per request).',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Distributed counter',
+    title: 'Local + sync',
+    body: 'Each instance tracks locally, syncs periodically. No single point. Eventual consistency in counts — small over-allowance possible during sync.',
+    accent: 'amber',
+  }}
+/>
+
+For most SaaS, Redis-based central rate limiting is the right answer. The 1-2ms cost is acceptable; the simplicity is real.
+
+A canonical Redis pattern (sliding window counter):
+
+```python
+# Lua script for atomicity
+script = """
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])
+local limit = tonumber(ARGV[3])
+
+redis.call('ZREMRANGEBYSCORE', key, 0, now - window)
+local count = redis.call('ZCARD', key)
+if count < limit then
+  redis.call('ZADD', key, now, now)
+  redis.call('EXPIRE', key, window)
+  return 1
+end
+return 0
+"""
+```
+
+## Multi-Dimensional Rate Limiting in SaaS
+
+For a real multi-tenant SaaS, single-dimension limits aren't enough. You need **multi-dimensional rate limiting**:
+
+<IconGrid cols={2} items={[
+  { icon: '🏢', title: 'Per tenant', body: 'Total requests per tenant, regardless of user. Caps tenant-level cost.' },
+  { icon: '👤', title: 'Per user', body: 'Per-user limits within a tenant. Stops one user (or compromised account) from monopolizing.' },
+  { icon: '🎯', title: 'Per endpoint', body: 'Cheap endpoints (read) high limit; expensive endpoints (bulk export) low limit. Reflects backend cost.' },
+  { icon: '💳', title: 'Per tier', body: 'Free tier 100 req/min; pro 1,000; enterprise unlimited. Different limits per pricing plan.' },
+  { icon: '🔑', title: 'Per API key', body: 'For programmatic access — separate quota per key, regardless of which user owns it.' },
+  { icon: '🌐', title: 'Per IP', body: 'Last-line defense for unauthenticated abuse. Usually low limit.' },
+]} />
+
+Multiple dimensions enforce simultaneously. A request must pass **all** of them.
+
+## Response Patterns
+
+When rate-limited, return:
+
+<IconGrid cols={2} items={[
+  { icon: '4️⃣2️⃣9️⃣', title: 'HTTP 429 Too Many Requests', body: 'Standard status. Use this — not 503 or some custom code.' },
+  { icon: '🕐', title: 'Retry-After header', body: 'Tell the client how long to wait. Either seconds (Retry-After: 60) or HTTP-date.' },
+  { icon: '📊', title: 'Rate limit headers', body: 'X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset. Lets clients self-throttle proactively.' },
+  { icon: '🤝', title: 'Friendly error body', body: 'Specific reason (which limit was hit), upgrade path, support link. Don\'t make customers guess.' },
+]} />
+
+## Client Behavior
+
+Even with great rate limits, clients can DDoS you with thundering retries. Best-practice client behavior:
+
+- **Exponential backoff** — wait 2^n seconds between retries.
+- **Jitter** — randomize backoff timing to avoid synchronized retries.
+- **Honor Retry-After** — if the server tells you when to retry, listen.
+- **Circuit breaker** (next lesson) — stop hammering when the server is failing.
+
+## Recap
+
+- Rate limiting protects against abuse, noisy neighbors, and backend overload.
+- Algorithms: token bucket (burst-friendly), leaky bucket (smoothing), sliding-window counter (production default).
+- Enforce at multiple layers: edge, gateway, mesh, application.
+- Distributed rate limiting via Redis is the standard pattern.
+- For multi-tenant SaaS: multi-dimensional limits (tenant + user + endpoint + tier + API key + IP).
+- Use HTTP 429, Retry-After, rate limit headers, helpful error bodies.
+- Combined with client-side backoff + jitter, rate limiting is one of the most effective patterns in SaaS.

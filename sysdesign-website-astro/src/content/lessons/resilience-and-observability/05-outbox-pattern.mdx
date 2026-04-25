@@ -1,0 +1,218 @@
+---
+title: Outbox Pattern
+slug: outbox-pattern
+order: 5
+section: resilience-and-observability
+group: Resilience Patterns
+summary: The atomic-write-and-publish problem and its canonical solution. How to reliably emit events when state changes — without losing events or causing inconsistencies.
+readingMinutes: 7
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+The **outbox pattern** solves one of the most common problems in distributed systems: how do you atomically write to a database **and** publish a message to a broker?
+
+The naive answer ("just do both") creates a class of subtle bugs that show up in production at the worst times. The outbox pattern is the clean, well-understood solution — and it's worth implementing correctly the first time.
+
+<KeyIdea>
+You cannot atomically write to two different systems (DB and broker) without distributed transactions, which are slow and complex. The outbox pattern sidesteps this by writing to one system (the DB) and using a separate process to publish to the broker.
+</KeyIdea>
+
+## The Dual-Write Problem
+
+A typical "write state and emit event" looks like:
+
+```python
+def place_order(order_data):
+    db.insert(orders, order_data)        # Step 1
+    broker.publish("OrderPlaced", order)  # Step 2
+```
+
+Looks fine. But consider failure modes:
+
+<IconGrid cols={2} items={[
+  { icon: '💀', title: 'DB succeeds, broker fails', body: 'Order saved, but no event published. Downstream services never see it. Fulfillment doesn\'t happen.' },
+  { icon: '👻', title: 'DB fails, broker succeeds', body: 'Event published, but order not saved. Downstream services act on a non-existent order.' },
+  { icon: '🐛', title: 'DB succeeds, app crashes before broker', body: 'Process dies between the two operations. Same as case 1: order exists, no event.' },
+  { icon: '🔁', title: 'Retry logic creates duplicates', body: 'Without idempotency, retrying the broker call creates duplicate events.' },
+]} />
+
+These are not theoretical. Production systems hit each of these regularly.
+
+## The Outbox Pattern
+
+Instead of writing to two systems, write to one — the database — and treat the database as the source of truth for both state changes and events.
+
+```sql
+BEGIN;
+  -- The state change
+  INSERT INTO orders (id, customer_id, total, status)
+  VALUES (42, 'c-100', 99.99, 'placed');
+  
+  -- The event, in the same transaction
+  INSERT INTO outbox (event_type, aggregate_id, payload)
+  VALUES ('OrderPlaced', 42, '{"id": 42, "customer_id": "c-100", ...}');
+COMMIT;
+```
+
+Both writes are atomic — either both succeed or neither does. The order and the event are now guaranteed to be consistent.
+
+A separate process — the **relay** or **publisher** — reads from the outbox and publishes to the broker:
+
+```python
+def relay():
+    while True:
+        events = db.query("SELECT * FROM outbox WHERE published_at IS NULL ORDER BY id LIMIT 100")
+        for event in events:
+            broker.publish(event.type, event.payload)
+            db.update("UPDATE outbox SET published_at = NOW() WHERE id = ?", event.id)
+```
+
+Now there's no atomicity problem. The DB transaction is atomic. The relay processes events from the DB. If the relay crashes mid-publish, on restart it picks up where it left off — at-least-once delivery.
+
+## Implementation Options
+
+### Polling-based relay
+
+Simple. Periodically polls the outbox table for unpublished rows.
+
+<Compare2
+  left={{
+    label: 'Pros',
+    title: 'Simple, debuggable',
+    body: 'Easy to understand, easy to operate. Works with any database. Plain SQL queries.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Cons',
+    title: 'Polling latency',
+    body: 'Latency = poll interval. Setting it too short stresses the DB; too long delays events.',
+    accent: 'amber',
+  }}
+/>
+
+### CDC-based (Change Data Capture)
+
+Use database CDC (Postgres logical replication, MySQL binlog, MongoDB change streams) via Debezium to stream changes to the outbox table directly into Kafka.
+
+```
+[ Postgres outbox table ] → [ Debezium ] → [ Kafka ]
+```
+
+<Compare2
+  left={{
+    label: 'Pros',
+    title: 'Low latency, no polling',
+    body: 'Sub-second latency. No DB load from polling. Debezium handles all the complexity.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Cons',
+    title: 'CDC operational complexity',
+    body: 'Debezium + Kafka Connect must be running. CDC requires DB-specific configuration (logical replication slot, etc.).',
+    accent: 'amber',
+  }}
+/>
+
+For high-throughput systems, CDC-based is the right answer. For modest scale, polling is fine.
+
+## At-Least-Once Delivery
+
+The outbox pattern gives you **at-least-once** delivery. Failures during publishing can cause duplicates. Consumers must be **idempotent**.
+
+```python
+def handle_order_placed(event):
+    if has_processed(event.id):
+        return  # already handled, skip
+    
+    create_fulfillment_record(event)
+    mark_processed(event.id)
+```
+
+Combined with idempotent consumers (covered in [Exactly-Once Semantics](/lesson/data-storage/exactly-once)), the outbox pattern delivers practical exactly-once semantics.
+
+## Outbox Cleanup
+
+The outbox table grows without bound. Manage it:
+
+<IconGrid cols={2} items={[
+  { icon: '🗑️', title: 'Delete after publish', body: 'Simplest. Keep size minimal. Lose audit trail.' },
+  { icon: '📦', title: 'Archive after publish', body: 'Move published events to an archive table or S3. Keep audit trail; outbox stays small.' },
+  { icon: '⏰', title: 'TTL-based deletion', body: 'Keep events for N days, then delete. Compromise between simplicity and audit value.' },
+]} />
+
+## Schema Considerations
+
+A typical outbox schema:
+
+```sql
+CREATE TABLE outbox (
+  id BIGSERIAL PRIMARY KEY,
+  event_type VARCHAR(255) NOT NULL,
+  aggregate_id VARCHAR(255) NOT NULL,
+  aggregate_type VARCHAR(255),
+  payload JSONB NOT NULL,
+  metadata JSONB,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  published_at TIMESTAMP NULL
+);
+
+CREATE INDEX idx_outbox_unpublished ON outbox (id) WHERE published_at IS NULL;
+```
+
+The partial index makes the relay's "find unpublished" query efficient even as the table grows.
+
+## Inbox Pattern (the Mirror)
+
+The inbox pattern is the consumer-side counterpart for idempotency.
+
+```sql
+CREATE TABLE inbox (
+  message_id VARCHAR(255) PRIMARY KEY,
+  consumed_at TIMESTAMP NOT NULL
+);
+```
+
+```python
+def handle_event(event):
+    try:
+        with transaction:
+            db.insert("INSERT INTO inbox (message_id, consumed_at) VALUES (?, NOW())", event.message_id)
+            apply_business_logic(event)
+    except UniqueConstraintViolation:
+        # already processed, ignore
+        pass
+```
+
+The unique constraint catches duplicates. Combined with the outbox pattern, you get reliable end-to-end delivery.
+
+## When the Outbox Pattern Helps
+
+<IconGrid cols={2} items={[
+  { icon: '🛒', title: 'E-commerce flows', body: 'Order placed → must trigger inventory, payment, shipping. State and events must stay consistent.' },
+  { icon: '💸', title: 'Financial transactions', body: 'Account balance changed → must publish event to ledger, audit, fraud detection. Lost events = lost money.' },
+  { icon: '🔁', title: 'Saga orchestration', body: 'Each step in a saga is a state change + event. Outbox makes the saga state machine reliable.' },
+  { icon: '📊', title: 'CDC alternative for read models', body: 'Update read model based on outbox events instead of direct CDC of every table. More controlled.' },
+]} />
+
+## When You Don't Need It
+
+<IconGrid cols={2} items={[
+  { icon: '🤷', title: 'Best-effort notifications', body: 'A "nice to have" notification where occasional loss is OK. Just publish; don\'t add outbox complexity.' },
+  { icon: '📈', title: 'Pure metrics emission', body: 'Telemetry that\'s sampled anyway. Lost events don\'t matter.' },
+  { icon: '🌊', title: 'Direct event sourcing', body: 'If your DB IS the event store (no separate state table), the events ARE the source of truth. No outbox needed.' },
+]} />
+
+## Recap
+
+- The outbox pattern solves the dual-write problem: how to atomically change state AND emit an event.
+- Write the state change AND a row to an "outbox" table in one DB transaction.
+- A separate relay process publishes from the outbox to the broker.
+- Two relay options: polling (simple) or CDC (low-latency, more ops).
+- At-least-once delivery; consumers must be idempotent.
+- Pair with the inbox pattern on the consumer side for end-to-end reliability.
+- Use it whenever state changes must reliably trigger downstream effects.

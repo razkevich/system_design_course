@@ -1,0 +1,159 @@
+---
+title: Redundancy
+slug: redundancy
+order: 1
+section: resilience-and-observability
+group: Resilience Patterns
+summary: The foundational fault-tolerance pattern. Active-active, active-passive, N+1 redundancy, and the levels at which redundancy matters in modern SaaS.
+readingMinutes: 7
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+Redundancy is the foundation of fault tolerance. Everything else in this section — rate limiting, circuit breakers, bulkheads — assumes you already have multiple copies of the things that can fail. Without redundancy, the rest is window dressing.
+
+<KeyIdea>
+"Redundancy" doesn't just mean "have a backup." It means having multiple instances, replicas, paths, or providers — so failure of any one isn't catastrophic.
+</KeyIdea>
+
+## Levels of Redundancy
+
+<IconGrid cols={2} items={[
+  { icon: '🖥️', title: 'Hardware', body: 'Multiple servers, RAID disks, redundant power supplies. The original "redundancy" — keeps the bare metal running.' },
+  { icon: '🌐', title: 'Network', body: 'Multiple ISPs, multiple paths through the cloud. Loss of one link or peering doesn\'t take you down.' },
+  { icon: '🏭', title: 'Availability Zone', body: 'Run across 2-3 AZs in a region. Loss of one AZ doesn\'t take down the service.' },
+  { icon: '🌍', title: 'Region', body: 'Multi-region deployment. Loss of an entire AWS/GCP/Azure region is rare but real.' },
+  { icon: '🏢', title: 'Provider', body: 'Multi-cloud. Loss of an entire cloud provider. Expensive, complex; reserved for the most critical systems.' },
+  { icon: '⚙️', title: 'Service instances', body: 'Multiple replicas of each service. Pod replicas in K8s, ASG instances. The everyday level.' },
+]} />
+
+## Active-Active vs. Active-Passive
+
+<Compare2
+  left={{
+    label: 'Active-Active',
+    title: 'All instances serve traffic',
+    body: 'Load balancer spreads traffic across all replicas. Failure = one instance drops out, others keep serving. Most efficient (no idle capacity).',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Active-Passive',
+    title: 'Standby takes over on failure',
+    body: 'Primary serves traffic; passive standby idle until failover. Simpler consistency story for stateful systems. Wasted capacity unless it\'s a hot standby.',
+    accent: 'amber',
+  }}
+/>
+
+Most stateless services run **active-active**. Stateful systems (primary databases, leader-elected services) often run **active-passive** with automated failover.
+
+## N+1, N+2, 2N
+
+How much extra capacity?
+
+<IconGrid cols={3} items={[
+  { icon: '➕', title: 'N+1', body: 'Enough capacity for normal load (N) plus one extra. Survives one failure without degradation. The standard for most services.' },
+  { icon: '➕', title: 'N+2', body: 'Two extra. Survives two simultaneous failures, or one failure during a planned upgrade. Used for critical services.' },
+  { icon: '✖️', title: '2N', body: 'Double capacity. Active-active across two equal sites. Used when you need full capacity even after losing half the infrastructure.' },
+]} />
+
+## Redundancy in the Data Tier
+
+This is where redundancy gets interesting:
+
+<IconGrid cols={2} items={[
+  { icon: '🔁', title: 'Replication', body: 'Multiple copies of the same data. Sync (slow writes, no loss) or async (fast writes, possible loss).' },
+  { icon: '👑', title: 'Replica failover', body: 'When the primary fails, a follower is promoted. Manual or automatic via Raft/Paxos.' },
+  { icon: '💾', title: 'Backups', body: 'Backups are not the same as replicas. Replicas can fail correlated; bug or operator error replicates instantly. Always have point-in-time backups.' },
+  { icon: '🌐', title: 'Multi-region replication', body: 'Cross-region replicas for DR. Eventually consistent across regions; balance against cost and complexity.' },
+]} />
+
+We covered replication patterns in [Sharding and Replication](/lesson/distributed-systems/sharding-replication). The high-level: **replicas + backups, not just replicas**.
+
+## Stateless vs. Stateful
+
+The complexity of redundancy depends on state.
+
+<Compare2
+  left={{
+    label: 'Stateless services',
+    title: 'Easy to make redundant',
+    body: 'Just run multiple replicas behind a load balancer. Replicas are interchangeable. Add or remove without coordination. Most application services.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Stateful services',
+    title: 'Hard to make redundant',
+    body: 'Each replica has unique state. Failover requires coordination — leader election, state transfer, consistency guarantees. Databases, brokers, leader-elected coordinators.',
+    accent: 'amber',
+  }}
+/>
+
+This is why "make it stateless and externalize state" is a recurring architectural recommendation. State in databases or caches; services themselves stateless.
+
+## Failure Detection
+
+Redundancy without detection is meaningless. You need to **know** when something has failed:
+
+<IconGrid cols={2} items={[
+  { icon: '❤️‍🩹', title: 'Health checks', body: 'Load balancer probes each instance. Failed probes → instance removed from rotation. Fast detection (seconds).' },
+  { icon: '🔄', title: 'Heartbeats', body: 'Inter-service liveness signals. Used by leader-elected services and clusters. Tunable detection windows.' },
+  { icon: '👁️', title: 'External monitoring', body: 'Synthetic monitoring from outside (Pingdom, Datadog Synthetic). Catches failures load balancer can\'t see.' },
+  { icon: '📊', title: 'Metrics-based alerting', body: 'Sustained error rate, latency spike, queue backup. Symptoms that something is wrong even when health checks say "OK."' },
+]() } />
+
+## Common Anti-patterns
+
+<IconGrid cols={2} items={[
+  { icon: '🔁', title: 'Single points of failure (SPOFs)', body: 'A single load balancer, a single DNS provider, a single auth service. Find and eliminate them — they negate everything else.' },
+  { icon: '🪞', title: 'Mirror SPOFs', body: 'Both replicas in the same AZ. Both regions in the same provider. Both providers in the same continent. Redundancy that\'s correlated isn\'t redundancy.' },
+  { icon: '👻', title: 'Untested failover', body: 'A failover that\'s never been exercised will fail when needed. Run game days. Practice the chaos.' },
+  { icon: '🔁', title: 'Dependency without redundancy', body: 'Your service is HA, but it depends on a single external API. Your availability is bounded by their availability — usually below your SLA.' },
+]} />
+
+## Practical Redundancy for SaaS
+
+<KeyIdea>
+For most SaaS platforms, the right baseline is: **multi-AZ within a region, single region, with regional DR via cross-region replicas + backups**. Multi-region active-active is expensive; reach for it only when business or regulatory reasons demand it.
+</KeyIdea>
+
+A typical setup:
+
+```
+Region: us-east-1
+
+  ┌── AZ 1a ───┐  ┌── AZ 1b ───┐  ┌── AZ 1c ───┐
+  │ App pods × N│  │ App pods × N│  │ App pods × N│
+  │ DB primary  │  │ DB replica  │  │ DB replica  │
+  │ Cache       │  │ Cache       │  │ Cache       │
+  └─────────────┘  └─────────────┘  └─────────────┘
+        ↑                ↑                ↑
+        └────────────────┴────────────────┘
+                 ALB across all 3 AZs
+
+Region: us-west-2 (DR)
+  Async replication of DB; on-demand stand-up of app tier
+  Backups in S3 with cross-region replication
+```
+
+This survives:
+- Any single instance failing.
+- Any AZ failing entirely.
+- Software bugs (rollback to known-good image).
+- Operator error (point-in-time restore).
+- Region failure (DR plan, maybe minutes/hours of degradation).
+
+What it doesn't survive cheaply: cloud-provider-wide outages. For most SaaS, that's an acceptable risk.
+
+## Recap
+
+- Redundancy is the foundation of fault tolerance — everything else assumes it.
+- Multiple levels: hardware, network, AZ, region, provider, service instances.
+- Active-active for stateless; active-passive for stateful with leader election.
+- Stateless is dramatically easier to make redundant. Externalize state.
+- Failure detection (health checks, heartbeats, monitoring) is necessary for redundancy to actually help.
+- Common anti-patterns: SPOFs, correlated failures, untested failover, single-vendor dependencies.
+- For SaaS: multi-AZ + cross-region DR + backups is usually the right baseline.

@@ -1,0 +1,182 @@
+---
+title: Bulkheads
+slug: bulkheads
+order: 4
+section: resilience-and-observability
+group: Resilience Patterns
+summary: The pattern that limits blast radius. Resource isolation via thread pools, connection pools, and tenant partitioning — keeping one failure from spreading.
+readingMinutes: 7
+lastUpdated: "2026-04-25"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+
+The **bulkhead pattern** is named after the watertight compartments in ships. When one compartment floods, the bulkheads keep the water from spreading — the ship doesn't sink because of one breach.
+
+In software, bulkheads partition resources so failures in one part can't drain resources from the rest. It's the pattern that prevents one slow downstream from taking down your whole service.
+
+<KeyIdea>
+A circuit breaker stops you from hammering a broken service. A bulkhead stops a broken service from consuming all your resources before the breaker even trips.
+</KeyIdea>
+
+## The Problem Bulkheads Solve
+
+Consider a service that calls three downstreams:
+
+```
+                Service A
+                /   |   \
+               /    |    \
+              ▼     ▼     ▼
+         Stripe  Sendgrid  PaymentX
+        (healthy) (slow)   (healthy)
+```
+
+Without bulkheads, Sendgrid (slow) doesn't just slow down email — it consumes thread pool resources, queues up connections, and eventually starves Stripe and PaymentX calls too. **One failing dependency cascades to all of them.**
+
+With bulkheads, each dependency has its own resource pool. Sendgrid's slowness can max out the email pool, but Stripe and PaymentX have separate pools and continue working.
+
+## Implementation Levels
+
+### Thread pool isolation
+
+The classic bulkhead. Each downstream gets its own thread pool.
+
+```
+Stripe calls    → Thread pool A (10 threads, 50 queue)
+Sendgrid calls  → Thread pool B (5 threads, 20 queue)
+PaymentX calls  → Thread pool C (10 threads, 50 queue)
+```
+
+When Sendgrid is slow, pool B fills up. New email requests are rejected (or queued briefly). Stripe and PaymentX pools stay healthy.
+
+Implemented in Hystrix, Resilience4j, etc. Memory cost is real (each pool holds threads); use only for the dependencies that warrant it.
+
+### Semaphore isolation
+
+Lighter weight: semaphores instead of thread pools.
+
+```
+acquire semaphore (max 10 concurrent calls to Sendgrid)
+  → make call
+release semaphore
+```
+
+Cheaper than thread pools but doesn't isolate as strongly (slow Sendgrid calls still happen on calling threads). Often the right answer for high-throughput, low-latency dependencies.
+
+### Connection pool isolation
+
+Database connections are precious. Allocate separate pools per service or workload.
+
+```
+DB Pool A: HTTP request handlers (50 connections)
+DB Pool B: Background jobs (10 connections)
+DB Pool C: Reporting queries (5 connections, max 30s timeout)
+```
+
+A long-running reporting query can't consume all connections — it has its own pool. HTTP handlers stay responsive even when reports are slow.
+
+### Process / container isolation
+
+For really strong isolation: separate processes or containers.
+
+```
+Pod A: API requests (autoscaling, latency-critical)
+Pod B: Async jobs (separate queue, separate scaling)
+Pod C: Reporting (resource-limited, low-priority)
+```
+
+If reporting OOMs, only Pod C is affected. Different K8s resource limits per pod type enforce this.
+
+## Bulkheads for Multi-Tenancy
+
+In multi-tenant SaaS, **per-tenant bulkheads** prevent noisy-neighbor problems at infrastructure level.
+
+<IconGrid cols={2} items={[
+  { icon: '👥', title: 'Per-tenant connection pools', body: 'Each tenant gets a slice of DB connections. One tenant\'s slow queries can\'t starve other tenants.' },
+  { icon: '🚦', title: 'Per-tenant request quotas', body: 'Application-level. Limit concurrent in-flight requests per tenant. Combined with rate limiting.' },
+  { icon: '💼', title: 'Tier-based pools', body: 'Free tier shares one pool; pro tier shares another; enterprise gets dedicated. Resources allocated by tier.' },
+  { icon: '🏢', title: 'Dedicated infrastructure', body: 'Big enterprise tenants get dedicated app instances and DB connections. Strongest isolation. Highest cost.' },
+]} />
+
+## Combining Bulkheads with Other Patterns
+
+Bulkheads compose with the other resilience patterns:
+
+<Compare2
+  left={{
+    label: 'Bulkhead + Circuit Breaker',
+    title: 'The classic combo',
+    body: 'Bulkhead caps resources. Circuit breaker stops further attempts when the resource is exhausted or downstream is failing. Together: protected, fast-failing.',
+    accent: 'emerald',
+  }}
+  right={{
+    label: 'Bulkhead + Timeout',
+    title: 'The boundary',
+    body: 'Bulkhead limits concurrent calls. Timeout limits each call duration. Without timeout, bulkhead can fill with stuck calls. Both required.',
+    accent: 'indigo',
+  }}
+/>
+
+## Sizing Bulkheads
+
+Bulkhead sizes are application-specific. Common heuristics:
+
+<IconGrid cols={2} items={[
+  { icon: '📊', title: 'Measure first', body: 'Look at typical concurrency to that downstream. Size pool 2-3x typical, plus headroom.' },
+  { icon: '🚦', title: 'Latency × throughput', body: 'Threads needed = throughput × p99 latency. 100 RPS at 100ms p99 = 10 threads minimum.' },
+  { icon: '🛑', title: 'Pool too small', body: 'Rejected requests under normal load. Customer impact. Increase.' },
+  { icon: '💸', title: 'Pool too big', body: 'Memory wasted. Slow downstream still cascades because pool absorbs the bottleneck.' },
+]} />
+
+## Examples in Production
+
+<IconGrid cols={2} items={[
+  { icon: '🎬', title: 'Netflix Hystrix', body: 'The original bulkhead implementation at scale. Per-dependency thread pools, dashboard for live monitoring. (Now in maintenance mode; replaced by Resilience4j.)' },
+  { icon: '🛡️', title: 'AWS service architecture', body: 'AWS uses cell-based architectures internally — services partitioned into "cells" so failure in one cell doesn\'t affect others. Bulkhead at the service level.' },
+  { icon: '🐦', title: 'Twitter\'s Finagle', body: 'Built-in support for connection-pool isolation, timeouts, retries. The model that influenced gRPC and Linkerd.' },
+  { icon: '🕸️', title: 'Service mesh', body: 'Istio and Linkerd implement bulkhead-like patterns at the proxy level. Concurrency limits per upstream destination.' },
+]} />
+
+## When NOT to Use Bulkheads
+
+<IconGrid cols={2} items={[
+  { icon: '🐣', title: 'Simple systems', body: 'A single-service app with one DB has no inter-dependency to bulkhead. Default thread/connection pools are enough.' },
+  { icon: '💸', title: 'Memory-constrained', body: 'Lots of small pools cost memory. If the downstream count is high (50+), reconsider granularity.' },
+  { icon: '⏱️', title: 'Ultra-low-latency', body: 'Bulkhead overhead matters when p99 < 1ms. Use semaphores or rely on async I/O instead.' },
+]} />
+
+## A Practical Pattern
+
+For a typical SaaS service:
+
+```
+┌─────────────────────────────────────────┐
+│ Web request handler (3-tier app)        │
+│                                         │
+│   Bulkhead: 100 concurrent requests     │
+│   Per-request timeout: 5s               │
+│                                         │
+│   ▼ DB pool A (50 conn, 1s timeout)    │
+│   ▼ Cache pool (no limit, 100ms)        │
+│                                         │
+│   ▼ External API calls:                 │
+│     - Stripe: pool of 10, breaker on 5xx│
+│     - Sendgrid: pool of 5, fire-forget  │
+│     - 3rd-party X: pool of 5, breaker   │
+└─────────────────────────────────────────┘
+```
+
+Each external dependency is bulkheaded; the worker count is bounded; circuit breakers protect against cascading failure.
+
+## Recap
+
+- Bulkheads partition resources so one failure can't drain resources for the rest.
+- Implementation levels: thread pools, semaphores, connection pools, processes/containers.
+- Multi-tenant SaaS uses bulkheads per-tenant or per-tier to prevent noisy-neighbor cascades.
+- Compose with timeouts (bound each call) and circuit breakers (stop retrying).
+- Size based on throughput × p99 latency; measure and tune.
+- Don't bulkhead everything — overhead matters. Use for genuinely independent dependencies.
