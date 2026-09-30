@@ -28,8 +28,6 @@ This lesson is a tour of the views that pay off in practice: Philippe Kruchten's
 
 Kruchten's 4+1 model is the classic answer to "how do I document this without my diagram becoming a spaghetti plate?" Four structural views, plus a unifying **Scenarios** view that ties them together.
 
-![4+1 architectural views](/images/section-1/c4.png)
-
 <IconGrid cols={2} items={[
   { icon: '🧩', title: 'Logical view', body: 'What the system does. Functional decomposition, domain objects, key abstractions. Drawn with class diagrams, state machines.' },
   { icon: '⚙️', title: 'Process view', body: 'The system at runtime. Processes, threads, queues, communication patterns. Concurrency, distribution, performance.' },
@@ -73,6 +71,28 @@ How software maps onto infrastructure: where things actually run, how they're ne
 
 Use-case walkthroughs that exercise all four structural views together. The consistency check — that logical, process, development, and physical describe the same system, not four different ones.
 
+## Documenting Behavior
+
+Static structure is only half the picture. These diagrams show how the system moves.
+
+### Sequence diagrams
+
+Who calls whom, and in what order. Use them for an API flow or an incident timeline.
+
+![UML sequence diagram of a login flow](/images/section-1/sequence.png)
+
+### Activity diagrams
+
+Workflows, decisions, and parallel paths. Useful for a business process or a multi-actor journey.
+
+![UML activity diagram with decisions and parallel flows](/images/section-1/activity.png)
+
+### State machines
+
+Valid states and the events that move between them. Use one anywhere an illegal transition would be a bug.
+
+![UML state machine for an order lifecycle](/images/section-1/state_machine.png)
+
 ## Quality Views
 
 The four structural views describe the *what* and the *where*. **Quality views** describe the *how well* — non-functional behavior cutting across structural views.
@@ -113,6 +133,8 @@ Combined views work best when the relationship is genuinely tight. Stack too man
 ## The C4 Model
 
 Simon Brown's C4 isn't an "architectural view" in the 4+1 sense — it's a **visualization** method. But it's how modern teams typically document architecture, so it earns a section.
+
+![C4 model: context, containers, components, and code](/images/section-1/c4.png)
 
 C4 gives you four levels of zoom — progressively more detailed.
 

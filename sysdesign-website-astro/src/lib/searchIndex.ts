@@ -1,4 +1,5 @@
 import type { CollectionEntry } from 'astro:content';
+import { withBase } from './withBase';
 
 export interface SearchRecord {
   title: string;
@@ -14,6 +15,6 @@ export function buildSearchIndex(lessons: CollectionEntry<'lessons'>[]): SearchR
     slug: l.data.slug,
     section: l.data.section,
     summary: l.data.summary,
-    href: `/lesson/${l.data.section}/${l.data.slug}`,
+    href: withBase(`/lesson/${l.data.section}/${l.data.slug}`),
   }));
 }

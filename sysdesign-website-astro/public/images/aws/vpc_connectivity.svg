@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 1200 500"
+   width="1200"
+   height="500"
+   version="1.1"
+   id="svg96"
+   sodipodi:docname="vpc_connectivity.svg"
+   inkscape:version="1.4.2 (ebf0e940, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview96"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.04"
+     inkscape:cx="458.17308"
+     inkscape:cy="228.36539"
+     inkscape:window-width="1440"
+     inkscape:window-height="776"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg96" />
+  <defs
+     id="defs4">
+    <style
+       id="style1">
+      .title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; text-anchor: middle; fill: #2c3e50; }
+      .subtitle { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #34495e; }
+      .label { font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; text-anchor: middle; fill: #34495e; }
+      .small-label { font-family: Arial, sans-serif; font-size: 9px; text-anchor: middle; fill: #7f8c8d; }
+      .table-header { font-family: Arial, sans-serif; font-size: 10px; font-weight: bold; text-anchor: middle; fill: #2c3e50; }
+      .table-cell { font-family: Arial, sans-serif; font-size: 9px; text-anchor: middle; fill: #34495e; }
+      .vpc { fill: #aed6f1; stroke: #2980b9; stroke-width: 2; }
+      .transit-gw { fill: #f8d7da; stroke: #dc3545; stroke-width: 2; }
+      .privatelink { fill: #d4edda; stroke: #28a745; stroke-width: 2; }
+      .lattice { fill: #fff3cd; stroke: #ffc107; stroke-width: 2; }
+      .service { fill: #e2e3e5; stroke: #6c757d; stroke-width: 2; }
+      .peering { stroke: #8e44ad; stroke-width: 3; stroke-dasharray: 8,4; fill: none; }
+      .transit { stroke: #dc3545; stroke-width: 3; fill: none; }
+      .privatelink-line { stroke: #28a745; stroke-width: 3; fill: none; }
+      .lattice-line { stroke: #ffc107; stroke-width: 3; fill: none; }
+    </style>
+    <marker
+       id="arrow-purple"
+       markerWidth="8"
+       markerHeight="6"
+       refX="7"
+       refY="3"
+       orient="auto"
+       viewBox="0 0 8 6"
+       preserveAspectRatio="xMidYMid">
+      <polygon
+         points="0,0 8,3 0,6 "
+         fill="#8e44ad"
+         id="polygon1" />
+    </marker>
+    <marker
+       id="arrow-red"
+       markerWidth="8"
+       markerHeight="6"
+       refX="7"
+       refY="3"
+       orient="auto">
+      <polygon
+         points="0,0 8,3 0,6 "
+         fill="#dc3545"
+         id="polygon2" />
+    </marker>
+    <marker
+       id="arrow-green"
+       markerWidth="8"
+       markerHeight="6"
+       refX="7"
+       refY="3"
+       orient="auto">
+      <polygon
+         points="0,0 8,3 0,6 "
+         fill="#28a745"
+         id="polygon3" />
+    </marker>
+    <marker
+       id="arrow-yellow"
+       markerWidth="8"
+       markerHeight="6"
+       refX="7"
+       refY="3"
+       orient="auto">
+      <polygon
+         points="0,0 8,3 0,6 "
+         fill="#ffc107"
+         id="polygon4" />
+    </marker>
+  </defs>
+  <!-- Background -->
+  <rect
+     x="0"
+     y="0"
+     width="1200"
+     height="468.74353"
+     fill="#f8f9fa"
+     id="rect4"
+     style="stroke-width:0.76546" />
+  <!-- Title -->
+  <text
+     x="499.03845"
+     y="25"
+     class="title"
+     id="text4"
+     style="font-size:24px">AWS VPC Connectivity Methods</text>
+  <!-- VPC Peering Section -->
+  <text
+     x="200"
+     y="60"
+     class="subtitle"
+     id="text5">1. VPC Peering</text>
+  <rect
+     x="60"
+     y="80"
+     width="120"
+     height="70"
+     class="vpc"
+     rx="5"
+     id="rect5" />
+  <text
+     x="120"
+     y="105"
+     class="label"
+     id="text6">VPC A</text>
+  <text
+     x="120"
+     y="120"
+     class="small-label"
+     id="text7">us-east-1</text>
+  <text
+     x="120"
+     y="135"
+     class="small-label"
+     id="text8">10.0.0.0/16</text>
+  <rect
+     x="280"
+     y="80"
+     width="120"
+     height="70"
+     class="vpc"
+     rx="5"
+     id="rect8" />
+  <text
+     x="340"
+     y="105"
+     class="label"
+     id="text9">VPC B</text>
+  <text
+     x="340"
+     y="120"
+     class="small-label"
+     id="text10">us-west-2</text>
+  <text
+     x="340"
+     y="135"
+     class="small-label"
+     id="text11">10.1.0.0/16</text>
+  <!-- Peering connection line - exact edge to edge -->
+  <line
+     x1="200.12982"
+     y1="115"
+     x2="277.31857"
+     y2="115"
+     class="peering"
+     marker-end="url(#arrow-purple)"
+     marker-start="url(#arrow-purple)"
+     id="line11"
+     style="marker-start:url(#arrow-purple)" />
+  <text
+     x="230"
+     y="105"
+     class="small-label"
+     id="text12">Peering</text>
+  <!-- Transit Gateway Section -->
+  <text
+     x="720"
+     y="60"
+     class="subtitle"
+     id="text13">2. Transit Gateway</text>
+  <circle
+     cx="720"
+     cy="125"
+     r="25"
+     class="transit-gw"
+     id="circle13" />
+  <text
+     x="720"
+     y="130"
+     class="label"
+     id="text14">TGW</text>
+  <!-- VPCs around Transit Gateway - spread further apart -->
+  <rect
+     x="600"
+     y="70"
+     width="70"
+     height="40"
+     class="vpc"
+     rx="4"
+     id="rect14" />
+  <text
+     x="635"
+     y="93"
+     class="small-label"
+     id="text15">VPC A</text>
+  <rect
+     x="770"
+     y="70"
+     width="70"
+     height="40"
+     class="vpc"
+     rx="4"
+     id="rect15" />
+  <text
+     x="805"
+     y="93"
+     class="small-label"
+     id="text16">VPC B</text>
+  <rect
+     x="600"
+     y="170"
+     width="70"
+     height="40"
+     class="vpc"
+     rx="4"
+     id="rect16" />
+  <text
+     x="635"
+     y="193"
+     class="small-label"
+     id="text17">VPC C</text>
+  <rect
+     x="770"
+     y="170"
+     width="70"
+     height="40"
+     class="vpc"
+     rx="4"
+     id="rect17" />
+  <text
+     x="805"
+     y="193"
+     class="small-label"
+     id="text18">On-Prem</text>
+  <!-- Transit Gateway connections - curved to avoid overlap -->
+  <path
+     d="m 669.95301,89.810702 q 16.35842,9.182611 28.62723,18.365218"
+     class="transit"
+     marker-end="url(#arrow-red)"
+     id="path18" />
+  <path
+     d="m 770.0729,89.808795 q -16.75582,8.849927 -29.3227,17.699855"
+     class="transit"
+     marker-end="url(#arrow-red)"
+     id="path19" />
+  <path
+     d="m 698.81868,137.87703 q -20.63817,10.70507 -28.89343,32.11521"
+     class="transit"
+     marker-end="url(#arrow-red)"
+     id="path20" />
+  <path
+     d="m 741.12894,140.54658 q 20.71136,9.86793 28.9959,29.60379"
+     class="transit"
+     marker-end="url(#arrow-red)"
+     id="path21" />
+  <!-- PrivateLink Section -->
+  <text
+     x="223.07692"
+     y="247.88461"
+     class="subtitle"
+     id="text21">3. AWS PrivateLink</text>
+  <rect
+     x="103.3056"
+     y="268.11331"
+     width="119.54263"
+     height="106.08109"
+     class="vpc"
+     rx="4.9809427"
+     id="rect21" />
+  <text
+     x="163.07692"
+     y="292.88461"
+     class="label"
+     id="text22">Consumer VPC</text>
+  <text
+     x="163.07692"
+     y="307.88461"
+     class="small-label"
+     id="text23">10.0.0.0/16</text>
+  <ellipse
+     cx="165"
+     cy="348.26923"
+     rx="35"
+     ry="15"
+     class="privatelink"
+     id="ellipse23" />
+  <text
+     x="165"
+     y="353.26923"
+     class="small-label"
+     id="text24">VPC Endpoint</text>
+  <rect
+     x="283.07693"
+     y="267.88461"
+     width="120"
+     height="70"
+     class="service"
+     rx="5"
+     id="rect24" />
+  <text
+     x="343.07693"
+     y="292.88461"
+     class="label"
+     id="text25">AWS Service</text>
+  <text
+     x="343.07693"
+     y="307.88461"
+     class="small-label"
+     id="text26">S3 / DynamoDB</text>
+  <text
+     x="343.07693"
+     y="322.88461"
+     class="small-label"
+     id="text27">Lambda / ECS</text>
+  <!-- PrivateLink connection - exact edges -->
+  <line
+     x1="200.80585"
+     y1="342.53482"
+     x2="283.5585"
+     y2="302.24615"
+     class="privatelink-line"
+     marker-end="url(#arrow-green)"
+     id="line27" />
+  <text
+     x="243.92307"
+     y="337.30771"
+     class="small-label"
+     id="text28">Private</text>
+  <!-- VPC Lattice Section -->
+  <text
+     x="720"
+     y="258.46155"
+     class="subtitle"
+     id="text29">4. VPC Lattice</text>
+  <rect
+     x="580"
+     y="278.46155"
+     width="80"
+     height="50"
+     class="vpc"
+     rx="4"
+     id="rect29" />
+  <text
+     x="620"
+     y="298.46155"
+     class="small-label"
+     id="text30">VPC A</text>
+  <text
+     x="620"
+     y="313.46155"
+     class="small-label"
+     id="text31">Service A</text>
+  <rect
+     x="680"
+     y="278.46155"
+     width="80"
+     height="50"
+     class="vpc"
+     rx="4"
+     id="rect31" />
+  <text
+     x="720"
+     y="298.46155"
+     class="small-label"
+     id="text32">VPC B</text>
+  <text
+     x="720"
+     y="313.46155"
+     class="small-label"
+     id="text33">Service B</text>
+  <rect
+     x="780"
+     y="278.46155"
+     width="80"
+     height="50"
+     class="vpc"
+     rx="4"
+     id="rect33" />
+  <text
+     x="820"
+     y="298.46155"
+     class="small-label"
+     id="text34">VPC C</text>
+  <text
+     x="820"
+     y="313.46155"
+     class="small-label"
+     id="text35">Service C</text>
+  <ellipse
+     cx="720"
+     cy="400.19232"
+     rx="70"
+     ry="20"
+     class="lattice"
+     id="ellipse35" />
+  <text
+     x="720.96155"
+     y="402.30771"
+     class="label"
+     id="text36">VPC Lattice</text>
+  <!-- Lattice connections - curved to avoid overlap -->
+  <path
+     d="m 620.63619,329.10803 q 33.15358,20.09974 55.25597,50.24936"
+     class="lattice-line"
+     marker-end="url(#arrow-yellow)"
+     id="path36" />
+  <path
+     d="m 720,329.58333 q 0,23.39737 0,46.79473"
+     class="lattice-line"
+     marker-end="url(#arrow-yellow)"
+     id="path37" />
+  <path
+     d="m 819.32016,329.05248 q -30.32625,20.91646 -50.54377,52.29117"
+     class="lattice-line"
+     marker-end="url(#arrow-yellow)"
+     id="path38" />
+  <!-- Comparison Table -->
+  <!-- Table Headers -->
+  <!-- Table Rows -->
+  <!-- VPC Peering -->
+  <!-- Transit Gateway -->
+  <!-- PrivateLink -->
+  <!-- VPC Lattice -->
+</svg>

@@ -2,7 +2,9 @@
 
 Free, English-language system design course focused on multi-tenant SaaS at high load.
 
-**Live:** https://sysdesign-course-t83nq.ondigitalocean.app
+**Canonical English site.** Public URL: https://razkevich.github.io/system_design_course/
+
+GitHub Actions builds this directory and deploys GitHub Pages. See the repo README for the one-time Pages setting and for how this catalog differs from the Russian Docusaurus site.
 
 ## Local development
 
@@ -23,7 +25,7 @@ npm test         # vitest
 - `src/layouts/` — `BaseLayout`, `LessonLayout`.
 - `src/lib/` — pure utilities with Vitest tests.
 - `src/pages/` — routes (`/`, `/course`, `/section/[slug]`, `/lesson/[section]/[lesson]`).
-- `public/images/section-1/` — reused diagrams.
+- `public/images/` — lesson diagrams (section 1, sharding, CAP, cache, AWS, DDD, Kubernetes).
 - `pdfs/` — Russian source PDFs and OCR output (gitignored).
 
 ## Adding a new lesson
@@ -39,9 +41,17 @@ npm test         # vitest
 
 ## Deployment
 
-DigitalOcean App Platform (static site, free tier). Spec at `.do/app.yaml`. Pushes to `main` auto-deploy.
+GitHub Pages, project site for `razkevich/system_design_course`.
+
+Workflow: `../.github/workflows/deploy-astro-pages.yml`. It runs `npm ci`, tests, and `npm run build` with:
 
 ```bash
-doctl apps spec validate .do/app.yaml
-doctl apps create --spec .do/app.yaml --wait
+BASE_PATH=/system_design_course
+SITE=https://razkevich.github.io
 ```
+
+Pages source must be **GitHub Actions** (Settings → Pages). The site is then:
+
+https://razkevich.github.io/system_design_course/
+
+Leave `BASE_PATH` unset for a root-hosted build. `.do/app.yaml` is the older DigitalOcean spec and is not the English publish path.

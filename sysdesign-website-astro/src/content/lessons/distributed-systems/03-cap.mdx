@@ -26,6 +26,8 @@ The CAP theorem (Brewer's theorem) states that any distributed system can guaran
   { icon: '🌐', title: 'Partition tolerance (P)', body: 'System keeps working correctly when network partitions split nodes.' },
 ]} />
 
+![CAP theorem: consistency, availability, and partition tolerance](/images/cap/cap.png)
+
 <KeyIdea>
 The CAP theorem is often misread as "you must give up one of three." The real point is more subtle: **the trade-off only happens during network partitions**. The rest of the time, you can have all three.
 </KeyIdea>
@@ -86,6 +88,8 @@ Most production systems pick a model **per operation**, not for the whole system
 CAP describes the trade-off **during partitions**. PACELC describes what happens **the rest of the time** — which is most of the time.
 
 > **PACELC.** **If P**artition then **A**vailability vs **C**onsistency. **E**lse, **L**atency vs **C**onsistency.
+
+![PACELC: the partition case, and the latency-versus-consistency case when the network is healthy](/images/cap/cap2.png)
 
 <Compare2
   left={{

@@ -18,6 +18,8 @@ Networking is the foundation of distributed Kubernetes systems. Understanding ho
 
 This lesson covers pod-to-pod communication, services, ingress, CNI plugins, and network policies — the layers that make K8s networking work.
 
+![Kubernetes networking from the outside in: ingress, services, and pods](/images/k8s/kubernetes_front_image.png)
+
 ## The Networking Model
 
 Kubernetes networking has four core principles:
@@ -41,6 +43,8 @@ A typical K8s cluster has multiple overlapping networks:
   { icon: '📦', title: 'Pod network', body: 'Pods get IPs from a separate CIDR (e.g., 10.244.0.0/16). Implemented by CNI plugin. Spans across nodes.' },
   { icon: '🆔', title: 'Service network', body: 'Virtual layer with ClusterIPs from another CIDR (e.g., 10.96.0.0/12). Not physical interfaces — managed by kube-proxy via iptables/IPVS.' },
 ]} />
+
+![Pod-to-pod traffic across nodes, without NAT](/images/k8s/pod_communication.svg)
 
 ## CNI: The Plugin That Makes Pod Networking Work
 
