@@ -5,8 +5,8 @@ order: 11
 section: distributed-systems
 group: Kubernetes & Orchestration
 summary: How packets actually flow in a Kubernetes cluster — pod networking, services, ingress, CNI plugins, and the distributed-systems patterns underneath.
-readingMinutes: 10
-lastUpdated: "2026-04-25"
+readingMinutes: 12
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -45,6 +45,13 @@ A typical K8s cluster has multiple overlapping networks:
 ]} />
 
 ![Pod-to-pod traffic across nodes, without NAT](/images/k8s/pod_communication.svg)
+
+Direct pod-IP traffic (a headless Service, a StatefulSet peer, or a literal IP) never goes through a ClusterIP. The CNI bridge on the node is the switch:
+
+1. **Same node.** Pod A sends to Pod B's IP. The packet hits the CNI bridge on that node and is delivered to Pod B. It does not leave the machine.
+2. **Other node.** Pod A sends to Pod C's IP. The bridge hands the packet to the node network. The CNI either encapsulates it (VXLAN and similar overlays) or relies on cloud routes. The remote node's bridge delivers it to Pod C.
+
+kube-proxy is not on this path. It only matters once the destination is a Service IP.
 
 ## CNI: The Plugin That Makes Pod Networking Work
 
@@ -87,7 +94,15 @@ Pod → ClusterIP (10.96.42.7)
  (the actual current backend pods)
 ```
 
-`kube-proxy` watches Services and Endpoints, maintaining iptables (or IPVS) rules on every node. When a pod sends a packet to a ClusterIP, the kernel's netfilter rewrites the destination to a real pod IP — random or round-robin among the available backends.
+`kube-proxy` watches Services and Endpoints, maintaining iptables (or IPVS) rules on every node. It programs the kernel. It does not sit in the packet path itself.
+
+A packet to a ClusterIP then becomes ordinary pod traffic:
+
+1. Pod A sends to `backend-service`'s ClusterIP.
+2. The local iptables or IPVS rules rewrite the destination to a ready pod IP (random or round-robin).
+3. From there the packet follows the pod path above: CNI bridge, and the node network only if that pod is on another node.
+
+A headless Service (`clusterIP: None`) skips the rewrite. DNS returns the pod IPs, and the client connects to one of them directly. That is how StatefulSet peers find each other.
 
 ### Service types in detail
 
@@ -235,12 +250,25 @@ For larger SaaS platforms running multiple K8s clusters:
   { icon: '☁️', title: 'Cloud-native multi-region', body: 'AWS VPC peering / Transit Gateway between regional EKS clusters. Tighter coupling, less operational overhead.' },
 ]} />
 
+## Advanced
+
+Four mechanisms that show up once a cluster is large. They are not another CNI, and they are not the Service types above.
+
+<IconGrid cols={2} items={[
+  { icon: '🧩', title: 'EndpointSlices', body: 'The Endpoints object lists every pod behind a Service in one API object. At thousands of pods that write hammers the API server. EndpointSlices split the list into chunks of 100, so a pod add or remove patches a slice instead of rewriting the whole set.' },
+  { icon: '🌍', title: 'ExternalDNS', body: 'Watches Ingress and Service objects and upserts records at the DNS host (Route 53, Cloud DNS, Azure DNS, Cloudflare). An Ingress host of api.example.com becomes a record aimed at the ingress load balancer, without a ticket to whoever owns the zone.' },
+  { icon: '🔒', title: 'cert-manager', body: 'Orders and renews TLS certificates for Ingress from Let\'s Encrypt or another CA. Renewal happens before expiry. Manual certificates are how clusters page someone at 3 a.m. because a secret lapsed.' },
+  { icon: '🔢', title: 'Dual-stack', body: 'A pod can hold an IPv4 address and an IPv6 address. You need a CNI that implements it, a CIDR for each family, and application code that does not assume an IPv4 string. Existing IPv4 clients keep working during the migration.' },
+]} />
+
 ## Recap
 
 - Kubernetes networking has four principles: unique pod IPs, direct pod-to-pod, node-to-pod, consistent IP visibility.
 - Four overlapping networks: cluster, node, pod, service. Each managed differently.
 - CNI plugins implement pod networking — pick consciously (Cilium, Calico, Flannel, cloud-native).
-- Services proxy stable virtual IPs to current backend pods via kube-proxy and iptables/IPVS.
+- Same-node pod traffic stays on the CNI bridge. Cross-node traffic crosses the node network, then the remote bridge. A Service packet is rewritten to a pod IP and then takes that same path.
+- Services proxy stable virtual IPs to current backend pods via kube-proxy and iptables/IPVS. Headless Services skip the virtual IP.
+- EndpointSlices, ExternalDNS, cert-manager, and dual-stack are the scale-out pieces: smaller endpoint objects, automatic DNS, automatic certificates, and two address families.
 - Ingress provides L7 routing; Gateway API is the modern replacement.
 - NetworkPolicies restrict pod-to-pod traffic; need a CNI that supports them.
 - Service mesh layers L7 networking concerns (mTLS, traffic management, observability) as infrastructure.

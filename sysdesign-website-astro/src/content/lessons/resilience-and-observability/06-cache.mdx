@@ -5,8 +5,8 @@ order: 6
 section: resilience-and-observability
 group: Resilience Patterns
 summary: How caches actually work in production. Where to put them, eviction policies, invalidation strategies, and the patterns that turn caching from a foot-gun into a force multiplier.
-readingMinutes: 9
-lastUpdated: "2026-04-25"
+readingMinutes: 13
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -33,7 +33,29 @@ Network round-trip:     ~500,000 ns (500 µs) intra-DC
                         ~100,000,000 ns (100 ms) cross-region
 ```
 
-A cache hit replacing a network call is 5 orders of magnitude faster.
+A cache hit replacing a network call is 5 orders of magnitude faster. That does not mean a cache is always faster. A miss still pays for the lookup, then for the real fetch.
+
+```
+AverageTime = DataAccessTime × CacheMissRate + CacheAccessTime
+CacheMissRate = misses / total cache accesses
+```
+
+`AverageTime` is what the caller waits. `DataAccessTime` is the uncached fetch. `CacheAccessTime` is the lookup itself, hit or miss. A perfect hit rate collapses the formula to `CacheAccessTime`. That almost never happens.
+
+Worked example: the database takes 100 ms, the cache lookup takes 20 ms.
+
+```
+AverageTime = 100 × CacheMissRate + 20
+```
+
+The cache beats going to the database only when that average is under 100 ms:
+
+```
+100 × CacheMissRate + 20 < 100
+CacheMissRate < 0.8
+```
+
+At a miss rate of 0.8 or worse, this cache is slower than no cache. Measure the miss rate before you add one.
 
 ## Cache Locations
 
@@ -51,6 +73,31 @@ Caches live at every layer of a modern application.
 The cache hierarchy is layered — a request might hit CDN, miss, hit reverse proxy, miss, hit Redis, miss, hit DB. Each layer multiplies the protective effect.
 
 ![Caching layers from the browser through the CDN, the application, and the database](/images/cache/caching_layers.png)
+
+### HTTP revalidation
+
+The browser card names `Cache-Control` and `ETag`. The headers decide whether a stored response can be reused, and whether the server must send the body again.
+
+| Header | What it does |
+| --- | --- |
+| `Cache-Control: max-age=3600` | Reuse the stored response for an hour. No network. |
+| `Cache-Control: no-cache` | A stored copy is allowed, but every use must revalidate with the server first. |
+| `Cache-Control: no-store` | Do not store the response at all. |
+| `ETag` + `If-None-Match` | Client sends the previous hash. Unchanged content comes back as `304 Not Modified` with an empty body. A change comes back as `200` plus a new `ETag`. |
+| `Last-Modified` + `If-Modified-Since` | Same 304 contract, keyed by timestamp instead of a hash. |
+
+`304` is the point: the client already has the bytes, so the server skips the body. That is a different saving from a CDN hit, which never reaches the origin.
+
+### Push CDN and pull CDN
+
+A pull CDN fetches from the origin on the first miss, stores the object, and serves the rest from the edge. The first viewer in a region pays the origin round trip. A push CDN already has the object because you uploaded it (often from CI) before anyone asked.
+
+| | Pull | Push |
+| --- | --- | --- |
+| How content arrives | CDN fetches the origin on a miss | You upload it ahead of time |
+| First request | Slow if that edge is cold | Already warm |
+| Operational cost | Almost none | You own the publish step |
+| Fits | Sites, APIs, assets that change in place | Large media, release artifacts |
 
 ## Caching Patterns
 
@@ -121,6 +168,14 @@ Writes go to cache; cache asynchronously persists to DB.
 
 Cache is the primary interface; cache library loads from DB on miss. Application doesn't talk to DB directly. Less common; more often a feature of specific cache products.
 
+### Refresh-ahead
+
+The cache refreshes a hot key before its TTL ends, when it expects another read soon. Callers keep hitting a warm entry. The cost is speculative origin load for keys that never get that next read, plus something that has to predict demand. CDNs and anything with a known peak (a homepage, a market open) are the usual fit. This is not stale-while-revalidate: nothing is served stale, and the refresh is scheduled rather than triggered by an expired read.
+
+### Write-around
+
+Writes go to the database and skip the cache. The cache fills only when something reads the key. Mass writes do not evict useful entries with data nobody will read again, which is the failure mode of write-through on a logging or ingest path. The next read of a freshly written key is a miss, and until that read the cache can still hold an older value.
+
 ## TTL and Eviction
 
 When the cache is full, what gets removed?
@@ -131,7 +186,26 @@ When the cache is full, what gets removed?
   { icon: '📊', title: 'LFU (Least Frequently Used)', body: 'Evict the entry accessed least often. Better for workloads with stable popular items.' },
 ]} />
 
-Most production caches combine TTL (catches stale data) with LRU (catches memory pressure).
+Most production caches combine TTL (catches stale data) with LRU (catches memory pressure). Identical TTLs are a separate failure: keys filled together expire together. Jitter, storing something like TTL ± 10%, spreads those expirations. That is applied when the key is written. It is not the same mechanism as refreshing one hot key early.
+
+TTL, LRU, and LFU are the three you will configure. The wider family is a lookup, not three more policies to memorize:
+
+| Algorithm | Frequency | Recency | TTL | Complexity | What it is for |
+| --- | --- | --- | --- | --- | --- |
+| FIFO | no | no | no | Simple | Oldest insertion leaves. Ignores how often the key is used. |
+| LRU | no | yes | no | Medium | Default in Memcached and Redis. |
+| LFU | yes | no | no | Medium | Keeps stable popular keys. Old keys with a high count can stick forever unless counters age out. |
+| MRU | no | yes | no | Simple | Evicts the key just used. Fits one-pass scans, where the latest item will not be needed again. |
+| Random | no | no | no | Simple | Cheap when bookkeeping itself is the cost. |
+| Second Chance | no | yes | no | Medium | FIFO, but a referenced page gets one more trip around the queue. |
+| Clock | no | yes | no | Medium | Second Chance on a circular buffer, so it does not shuffle a list. |
+| 2Q | yes | yes | no | Complex | New keys sit in a FIFO probation queue. A second hit promotes them to an LRU queue, so one-hit noise dies fast. |
+| SLRU | yes | yes | no | Complex | Probation segment and a protected segment. A reuse moves the key into the protected set. |
+| TLRU | no | yes | yes | Medium | LRU that prefers to drop keys whose TTL is already gone. |
+| LRU-K | yes | yes | no | Complex | Evicts by the K-th most recent access, so a single touch does not look like popularity. |
+| ARC | yes | yes | no | High | Adapts the balance between recency and frequency from the miss stream. |
+| LIRS | yes | yes | no | High | Keeps keys with a small reuse distance. Strong on mixed scans and hot sets. |
+| OPT (Belady) | yes | yes | no | Theory | Evicts the key used furthest in the future. Needs the future, so it is a benchmark, not a cache you can run. |
 
 ## The Big Hard Problem: Cache Invalidation
 
@@ -159,6 +233,21 @@ A third approach — **event-driven invalidation** — uses a stream of change e
 ```
 
 This decouples write paths from cache knowledge. Writers don't need to know what to invalidate; the cache subscribes to relevant change events.
+
+### Versioning
+
+Put a version in the key or the URL, and change it when the content changes. Old entries are never deleted on the hot path; they age out, and clients ask for a key the cache has never seen.
+
+- Content hash in the filename: `app.a8c3f7.js`
+- Build id in the path: `/static/20250805/app.js`
+- Query string: `?v=2025-08-05`
+- Key prefix: `v3:user:42`
+
+Hashes matter for static assets. A prefix matters in Redis, where you cannot rewrite every URL. The only requirement is that two versions never share a key.
+
+### Tagging
+
+A tag groups keys that must die together. `user:123` might label the profile, the order list, and the settings blob. An update deletes by tag instead of by enumerating keys. That is the piece explicit invalidation does not give you: one write fans out to many cache entries, and you do not have to remember each key.
 
 ## Cache Stampede Problem
 
@@ -233,9 +322,11 @@ For very-popular cross-tenant data (configurations, lookup tables), shared cache
 
 - Caches save 5-6 orders of magnitude per hit. The performance lever is real.
 - Cache locations: browser, CDN, reverse proxy, distributed cache (Redis), in-process, DB.
-- Patterns: cache-aside (most common), write-through, write-behind, read-through.
-- Eviction: TTL + LRU is the standard.
-- Cache invalidation is the hard problem. TTL, explicit invalidation, or event-driven via CDC.
+- A cache pays off only below a miss-rate threshold. With a 100 ms origin and a 20 ms lookup, that threshold is a miss rate under 0.8.
+- HTTP revalidation (`ETag` / `Last-Modified`) returns `304` and skips the body. Pull CDNs fill on miss; push CDNs are uploaded ahead of time.
+- Patterns: cache-aside (most common), write-through, write-behind, read-through, plus refresh-ahead and write-around when the read/write mix demands them.
+- Eviction: TTL + LRU is the everyday pair. Jitter stops identical TTLs expiring together. The other algorithms are for scans, noise, and benchmarks.
+- Cache invalidation is the hard problem. TTL, explicit invalidation, or event-driven via CDC. Versioned keys and tags cover bulk change without listing every key.
 - Watch for cache stampedes — use locks, stale-while-revalidate, or request coalescing.
 - Cache negatives, not just positives — especially for public APIs.
 - Don't cache everything. Cache where the trade-off (staleness for speed) is worth it.

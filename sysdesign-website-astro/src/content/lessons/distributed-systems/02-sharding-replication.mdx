@@ -5,8 +5,8 @@ order: 2
 section: distributed-systems
 group: Core Concepts
 summary: The two foundational techniques for scaling distributed data — and how they combine. Single-leader, multi-leader, leaderless. Sharding strategies and the trade-offs.
-readingMinutes: 9
-lastUpdated: "2026-04-25"
+readingMinutes: 11
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -26,7 +26,7 @@ Everything happens on one node. Strong consistency, simple reasoning, but no hor
 
 ![Single database instance serving every read and write](/images/sharding/sharding_replication_1.png)
 
-The only option for handling more load is **vertical scaling** — bigger CPU, more memory, more storage. Has physical and economic limits.
+Vertical scaling — a bigger CPU, more memory, more disk — is the only move left, and it ends. Past a point the next machine size does not exist, or it costs more than a second node would. The thing you keep, and cannot get back from any of the diagrams below, is that one node has a single order of writes and nothing to fail over to.
 
 ## Replication
 
@@ -35,6 +35,8 @@ The only option for handling more load is **vertical scaling** — bigger CPU, m
 The simplest replication setup: one **leader** (a.k.a. primary, master, write replica) accepts all writes. **Followers** (read replicas, hot standbys) receive a stream of changes from the leader and serve reads.
 
 ![Single-leader replication: writes to the primary, reads from replicas](/images/sharding/sharding_replication_2.png)
+
+Every follower holds a full copy, so the only routing rule is "writes go to the leader." The leader ships changes as a write-ahead log or as logical commands. That buys read capacity. It does not buy write capacity: every mutation still lands on one node, and a write-heavy workload stays blocked on that node no matter how many followers you add.
 
 <IconGrid cols={2} items={[
   { icon: '✍️', title: 'Writes go to leader', body: 'Single point of write coordination. Easy to reason about ordering — natural linearizability.' },
@@ -66,6 +68,8 @@ Multiple nodes accept writes simultaneously. Each leader replicates to others; e
 
 ![Multi-leader replication across regions](/images/sharding/sharding_replication_3.png)
 
+Each leader is a follower of the other leaders, and usually keeps followers of its own. How changes move between leaders is its own trade-off: all-to-all (simple, chatty, fine for a handful of leaders), circular (less bandwidth, higher latency, a break in the ring stalls propagation), or star (one coordinator, which is simpler and is also a bottleneck). Prefer this over leaderless replication when each region should have a real leader, when writes already split cleanly across leaders, or when you want conflicts resolved by a known policy instead of at read time.
+
 **When you need it:**
 
 - **Geographic distribution.** Each region has a local leader for low-latency writes.
@@ -89,6 +93,8 @@ Every node accepts both reads and writes. No special coordinator. Used by Cassan
 
 ![Leaderless replication: any node accepts reads and writes](/images/sharding/sharding_replication_4.png)
 
+This is multi-leader taken to the end: every node is a leader, so there is no role to fail over and no node whose log is "the" order. Clients (or a coordinator the client picks at random) have to run the quorum. Conflicts are not settled when the write arrives. They are discovered on read, when the responses disagree, which makes the read path heavier than in a leader system.
+
 **Quorum consistency.** With N replicas, if you read from R replicas and write to W replicas where R + W > N, you're guaranteed to read the latest value.
 
 ```
@@ -110,6 +116,8 @@ W + R = 4 > N = 3  ✓ guaranteed consistent reads
 Sharding (also called horizontal partitioning) splits data across nodes. Each node holds only a slice. Writes scale horizontally because different shards can accept writes in parallel.
 
 ![Data split across shards by key](/images/sharding/sharding_replication_5.png)
+
+Sharding does not imply replication. A shard can be one node, or it can be its own single-leader, multi-leader, or leaderless group. The question the placement strategy does not answer is how a request finds its shard. A directory (MongoDB's mongos, Citus) looks it up and becomes a dependency. A smart client computes the shard from the key and skips that hop, which only works when the function is deterministic and every client knows it. Or any node accepts the call and forwards it (Cassandra's coordinator), which needs no special router and costs an extra hop whenever the client guessed wrong.
 
 ### Sharding strategies
 
@@ -164,6 +172,8 @@ Adding or removing shards is operationally expensive. Strategies:
 Most production systems use both:
 
 ![Each shard is its own replicated set](/images/sharding/sharding_replication_6.png)
+
+You now operate two failure domains: a shard can be wrong or unreachable, and a replica inside it can too. Storage multiplies by the replication factor times the shard count, and so does the runbook. MongoDB's usual shape is a replica set per shard. Kafka's is the same idea with different names: a partition is the shard, and each partition has a leader plus followers. The combination is worth it when one machine cannot hold the data or the write rate. It is not worth it for a dataset that still fits, because you pay the complexity before you need the scale.
 
 - **Each shard is replicated** for fault tolerance and read scaling.
 - **Different shards live on different nodes** for write scaling.
