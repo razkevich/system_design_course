@@ -5,8 +5,8 @@ order: 5
 section: distributed-systems
 group: Coordination & Infrastructure
 summary: How distributed systems agree without a coordinator. Paxos, Raft, ZAB, and PBFT — the algorithms that power leader election, replicated logs, and atomic broadcast.
-readingMinutes: 9
-lastUpdated: "2026-04-25"
+readingMinutes: 11
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -64,6 +64,35 @@ The original. Famously hard to understand from the paper, easy to implement inco
 - **Multi-Paxos** — optimized for sequences. Elects a stable leader; subsequent decisions skip the prepare phase.
 
 Used in: Google Chubby, Spanner, MongoDB internal coordination.
+
+### The two phases
+
+Basic Paxos decides one value. A node can be proposer, acceptor, and learner at the same time. The client sends the request to any node; that node proposes.
+
+**Phase 1, prepare.**
+
+1. The proposer picks a unique number N.
+2. It sends prepare(N) to a majority of acceptors.
+3. Each acceptor promises to ignore every proposal numbered below N. If it has already accepted something, it returns the highest-numbered proposal it accepted, value included.
+
+**Phase 2, accept.**
+
+1. Once a majority has promised, the proposer picks a value. If any promise carried an earlier proposal, it must reuse the value from the highest of those numbers. Otherwise it uses its own value.
+2. It sends accept(N, value) to a majority of acceptors.
+3. An acceptor accepts only when it has not promised a higher number.
+4. When a majority accepts, that value is chosen. Learners are told afterward.
+
+If two proposers keep choosing higher numbers, each prepare cancels the other and no value is ever chosen. That livelock is why a single stable proposer matters.
+
+**Multi-Paxos.** You can order a log by running a fresh Basic Paxos instance for slot 1, then slot 2, then slot 3. Each slot pays both phases, which is too many round trips for a replicated log. Multi-Paxos elects a stable leader first. That leader runs Phase 1 to establish its number, then fills later slots with only the accept phase. Phase 1 returns when a new leader has to take over, not on every entry.
+
+| | Basic / Multi-Paxos | Raft |
+| --- | --- | --- |
+| Who accepts a client write | Any node may start a round | Only the leader. Followers redirect |
+| Steady state | Overlapping proposers can duel and stall | One leader, so rounds do not collide |
+| Bottleneck | Extra round trips whenever proposers contend | The leader itself, under heavy write load |
+
+The safety goal is the same. Paxos is the fit when any replica must be able to start a decision, or when you are extending a system that already speaks it. Raft is the fit when the people operating the log have to understand every failure.
 
 ### Raft (Ongaro & Ousterhout, 2014)
 

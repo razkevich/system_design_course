@@ -4,8 +4,8 @@ slug: protocols-osi-model
 order: 2
 section: networks-and-communication
 summary: The OSI model, the practical TCP/IP model, the TCP vs UDP trade-off, and the HTTP versions you'll encounter in production.
-readingMinutes: 8
-lastUpdated: "2026-04-25"
+readingMinutes: 11
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -81,6 +81,14 @@ The choice of transport-layer protocol significantly affects system design and p
 - Live broadcasts.
 - IoT sensor data (latest reading is what matters).
 
+### What TCP spends its latency on
+
+1. **Connection establishment.** No application bytes move until the handshake finishes.
+2. **Acknowledgments.** The sender keeps each segment until it is acknowledged. A missing acknowledgment retransmits that segment only.
+3. **Two different brakes.** Flow control follows the receiver's advertised window, so a fast sender cannot overrun a slow receiver. Congestion control is separate: a busy path makes the sender slow down.
+
+UDP has neither brake. It writes at the application's rate and does not notice a saturated network. Retry and reordering stay in the application.
+
 ## HTTP: The Application-Layer Workhorse
 
 HTTP has gone through several major revisions, each addressing specific performance and compatibility problems. Understanding the differences matters because they affect how your services behave under load.
@@ -90,6 +98,22 @@ HTTP has gone through several major revisions, each addressing specific performa
   { icon: '🐎', title: 'HTTP/2 (2015)', body: 'Multiplexing — many requests over one connection. Binary framing. Header compression. Server push. Much better at scale; ubiquitous now.' },
   { icon: '🚀', title: 'HTTP/3 (2022)', body: 'Built on QUIC (over UDP). No head-of-line blocking on packet loss. Faster connection setup. Best on lossy networks (mobile, varying conditions).' },
 ]} />
+
+### What each version changed
+
+| Version | Connection | Protocol detail |
+| --- | --- | --- |
+| HTTP/1.0 | A new TCP connection per request | No reuse. Fine for one document, expensive once a page needs many resources. |
+| HTTP/1.1 | Persistent connection, optional pipelining | Host header: many sites on one IP. Chunked transfer encoding: a body whose length is not known up front. Pipelining may send several requests before any response; most browsers never shipped it, and responses stay strictly ordered. |
+| HTTP/2 | Many streams on one TCP connection | Streams may finish out of order. A lost TCP segment still blocks every stream, because they share one ordered byte stream. |
+| HTTP/3 | QUIC over UDP | Connection migration keeps the session across a move from WiFi to cellular. Loss recovery is per stream. |
+
+Head-of-line blocking, on one connection:
+
+1. The client sends one slow request, such as a large download, and two fast ones.
+2. HTTP/1.1 is ordered. Responses 2 and 3 wait until response 1 finishes.
+3. HTTP/2 turns the three requests into independent streams. The fast responses return while the slow stream is still open.
+4. HTTP/3 puts each stream on QUIC, so a lost packet stalls only that stream.
 
 For internal service-to-service traffic on stable networks, HTTP/2 is the modern default. For client-facing traffic over the public Internet — especially mobile — HTTP/3 has the edge.
 
@@ -103,6 +127,16 @@ TLS (Transport Layer Security) encrypts data in transit. Modern TLS is TLS 1.2 o
   { icon: '🔄', title: 'mTLS', body: 'Mutual TLS — both client and server present certs. Strong identity for service-to-service inside a mesh.' },
   { icon: '🔑', title: 'Cipher suites', body: 'The algorithm bundle for the connection. TLS 1.3 simplified the choices significantly. Use modern cipher suites (AES-GCM, ChaCha20-Poly1305).' },
 ]} />
+
+### Handshake order
+
+1. Client Hello lists the cipher suites the client can use.
+2. Server Hello picks one suite and sends the certificate.
+3. The client checks the certificate and the chain back to a CA it already trusts.
+4. Both sides run the key exchange and derive shared keys.
+5. Later records on that connection use those keys.
+
+mTLS runs the certificate check in both directions. The cost is issuing, rotating, and revoking a certificate for every client, plus extra validation on the handshake. One-way TLS, often terminated at a load balancer, fits public clients you do not administer.
 
 ## DNS: The Hidden Performance Layer
 

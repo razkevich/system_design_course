@@ -5,8 +5,8 @@ order: 4
 section: distributed-systems
 group: Core Concepts
 summary: How different database families scale — relational, document, wide-column, key-value. The architectures, the strengths, and how to pick.
-readingMinutes: 9
-lastUpdated: "2026-04-25"
+readingMinutes: 11
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -60,6 +60,18 @@ When write throughput maxes out a single primary:
   { icon: '🏢', title: 'Application-level sharding', body: 'Facebook-style: thousands of MySQL instances; app-level routing by user ID. Maximum control, maximum operational complexity.' },
   { icon: '🔁', title: 'Multi-leader replication', body: 'MySQL Group Replication, YugabyteDB. Multiple write nodes accept writes; conflict resolution required. Native or via add-ons (Postgres BDR, pglogical).' },
 ]} />
+
+### Where multi-leader and synchronous replicas actually break
+
+Multi-leader replication (MySQL Group Replication, Postgres BDR, pglogical) lets more than one node take writes. The conflicts are specific:
+
+- Autoincrement keys allocate the same id on two leaders.
+- Triggers and integrity constraints run on each leader and can disagree about whether a write is legal.
+- Two leaders accepting an update to the same row have no single commit order unless you add a conflict rule.
+
+Synchronous replication to every replica keeps a read of a just-written row correct, and it stalls the primary when any replica slows down. The usual compromise is asynchronous replicas, with that read sent to the primary when the transaction needs Repeatable Read.
+
+Separating storage from compute, as Aurora does, is quoted around three times baseline Postgres throughput with queries under 100 ms. A Citus cluster that keeps SQL and spreads inserts by shard key is reported around 30,000 inserts per second.
 
 ## Document Stores (MongoDB)
 
@@ -141,6 +153,20 @@ AWS-managed key-value with optional document features. Built on a Dynamo paper-s
 ]} />
 
 The cost: limited query patterns (must design access patterns up front), join-less, item size limits.
+
+### Reported rates, and the workload that earns them
+
+| System | A published operating point | What you give up to get it |
+| --- | --- | --- |
+| Cassandra (large cluster) | Over 200,000 writes per second, median around 1–2 ms | The table is designed per query |
+| Redis, one node, data in RAM | Over 1,000,000 operations per second, often microseconds | RAM, not disk, is the capacity limit |
+| Elasticsearch, about three nodes | About 60,000 indexed events per second and 1,000 searches | Indexing is heavier than a plain insert, and search can lag the latest write |
+| ClickHouse, one server | Over 2 billion rows per second on a simple aggregation | Append-only. Point updates are the wrong job |
+| TimescaleDB | About 100,000 aggregated metrics per second | Chunks by time: recent chunks stay uncompressed, older chunks compress |
+
+ClickHouse gets those scan rates by storing each column apart and executing in vectors. A sum of revenue reads the revenue column and skips names and addresses. A log scan of hundreds of millions of rows often returns in under 200 ms. Updating one order in place does not fit that layout.
+
+Druid rolls data up as it arrives. Real-time nodes take the stream, historical nodes serve the compacted segments, and a broker fans the query out and may cache it. A dashboard that matches the rollup reads the pre-aggregated data. A question the rollup rules did not declare is not there; the raw events have to live somewhere else.
 
 ## NewSQL: SQL Without the Single-Master Limit
 

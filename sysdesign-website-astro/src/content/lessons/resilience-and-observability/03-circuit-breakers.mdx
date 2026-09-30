@@ -5,8 +5,8 @@ order: 3
 section: resilience-and-observability
 group: Resilience Patterns
 summary: The pattern that stops cascading failures. How circuit breakers work, where to put them, and how to combine with retries and timeouts for production-grade resilience.
-readingMinutes: 7
-lastUpdated: "2026-04-25"
+readingMinutes: 9
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -17,6 +17,16 @@ import IconGrid from '../../../components/IconGrid.astro';
 A circuit breaker is the resilience pattern that **stops your service from making things worse**. When a downstream service is failing, circuit breakers fail fast instead of piling up requests that will time out — protecting both the downstream from overload and your own service from resource exhaustion.
 
 The pattern is named after electrical circuit breakers, and the analogy is exact: a fuse that trips when overloaded.
+
+## What actually cascades
+
+Try/catch helps when the callee fails quickly. The outage that spreads is a callee that only gets slow.
+
+1. Resource starvation. A payment API that usually answers in about 200 ms starts taking 30-60 seconds. The order service holds a thread or a connection per call until the pool is empty. Lookups that never touch payments then fail too.
+2. Cross-functional coupling. A product page waits on reviews and on inventory. Reviews are down, the page never renders, and a customer cannot buy an item inventory would have sold.
+3. Recovery prevention. One slow query loads the user database. Web, mobile, admin, and a batch job all keep their normal rate. The database cannot finish work it already accepted. Open breakers on all four callers are what create a quiet interval long enough to recover.
+
+New instances do not help the first case: each one blocks on the same dependency. A load balancer cannot route around a dependency that sits outside the pool. The process still looks up, so the page goes red later than the pool went empty.
 
 <KeyIdea>
 The biggest threat to a healthy service is a slow downstream service. If downstream takes 30 seconds to fail, your threads, connections, and memory pile up while waiting. Circuit breaker = stop sending traffic to a downstream that\'s clearly broken.
@@ -125,6 +135,8 @@ Without a circuit breaker, every client retries on failure. When the downstream 
 />
 
 Modern systems often combine: service mesh handles default per-service breakers; app code adds per-call breakers for specific external dependencies.
+
+A gateway breaker (Kong, AWS API Gateway, Nginx Plus) watches the upstream as a whole and can stop routing to it, returning a fallback at the edge. The grain is one service, so a single expensive route cannot trip while cheap routes stay open. Serverless platforms fold a similar stop into the invoke path: after repeated failures Lambda can cease invoking the function and send the event to a dead-letter queue. Data clients grow their own version of the same idea. MongoDB pools fail over to another member, Kafka producers back off, RabbitMQ recovers channels, and Redis Sentinel moves clients off a dead primary. Each of those covers its own protocol. A breaker around the business call is still what decides to queue the order, serve cached reviews, or skip the dependency.
 
 ## Half-Open Probing
 

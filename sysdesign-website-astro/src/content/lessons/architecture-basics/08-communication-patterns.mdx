@@ -5,8 +5,8 @@ order: 8
 section: architecture-basics
 group: Core Principles
 summary: Sync, async, request/reply, pub/sub, streaming. Choosing the right shape for service-to-service traffic in a multi-tenant SaaS at scale.
-readingMinutes: 11
-lastUpdated: "2026-04-25"
+readingMinutes: 13
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -181,6 +181,18 @@ At-least-once + idempotent processing ≈ exactly-once for any practical purpose
 />
 
 **Global ordering** is expensive and usually unnecessary. Most "we need ordering" requirements are actually "we need ordering per entity" — which partition keys give you.
+
+### Durability, live updates, and outside calls
+
+Durability is whether a message still exists after a failure. An in-memory queue is fast and can lose data. A persistent queue survives failures, which only holds once you have chosen the storage and replication strategy.
+
+Real-time interaction uses two channels. WebSockets or Server-Sent Events push updates to clients. HTTP APIs carry the user actions that modify state. When several people act at the same time, operational transforms or conflict-free replicated data types (CRDTs) resolve the conflicts and keep the interaction responsive.
+
+Image processing, report generation, and data analysis should stay off the request path. A queue takes the work, the caller gets an immediate response, and status comes back through a WebSocket or by polling.
+
+Payment processors, email services, analytics platforms, and other third-party APIs need retry logic so an external failure stays outside the core request path. A webhook lets the partner notify you and removes the polling loop. Webhooks need careful security handling, and the handler must be idempotent, because the same delivery can arrive more than once.
+
+HTTP/2 adds server push. The protocol fits APIs that make many small requests or return large amounts of data, and most modern load balancers and API gateways already support HTTP/2. Messaging platforms such as Apache Kafka, Amazon SQS, and Google Pub/Sub hide the wire protocol and add message filtering and automatic scaling. AMQP suits reliable enterprise messaging; MQTT suits lightweight IoT. Delivery, ordering, and durability matter more than which of those protocols is on the wire.
 
 ## Choosing the Right Pattern
 

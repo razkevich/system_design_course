@@ -4,8 +4,8 @@ slug: securing
 order: 2
 section: security-and-data-protection
 summary: Application security in cloud-native environments. Defense in depth, common attacks (OWASP Top 10), supply chain, secrets management, and zero trust.
-readingMinutes: 10
-lastUpdated: "2026-04-25"
+readingMinutes: 12
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -38,6 +38,18 @@ The principle: **multiple layers of independent security**, so a single failure 
 ```
 
 Each layer catches what others miss. Strong identity doesn\'t help if SQL injection lets attackers bypass the app entirely. Encryption at rest doesn\'t help if logs leak plaintext PII. Apply security at every level.
+
+Capital One in 2019 exposed about 100 million customer records through a misconfigured web application firewall; fines and remediation were reported around $300 million. SolarWinds in 2020 was a build-pipeline compromise that reached about 18,000 customers, including government agencies. Repeated Okta incidents spread through every customer that trusted that identity plane. The failing control was edge configuration, the software supply chain, or the identity provider.
+
+## Kubernetes, subnet, and privilege defaults
+
+Pod Security Standards replace Pod Security Policies and ship three profiles. Privileged allows the full container API. Baseline blocks the sharpest defaults. Restricted is the production profile: no privilege escalation, a non-root user, and a limited set of volume types.
+
+Kubernetes otherwise allows every pod to talk to every other pod. A default-deny policy selects all pods and lists both Ingress and Egress, and explicit allow policies name the paths you intended. A service mesh (Istio or Linkerd) then adds mutual TLS on those paths. The mesh's operating cost is usually justified once a platform is past roughly 10-15 services.
+
+On AWS, a security group is stateful and can name another security group instead of a CIDR, so the rule survives when instances change address. Application servers and databases belong in private subnets. Public subnets hold load balancers and NAT gateways.
+
+Least privilege is an operating loop, not only a role name. Elevation is just-in-time and expires. Someone reviews who still holds each powerful role. Closing the account or the ticket removes the binding automatically. A change to a binding raises an alert. MFA strength follows the same ordering: SMS can be redirected by a SIM swap, a TOTP authenticator is stronger, and a FIDO2 or WebAuthn hardware key is the strongest of the three.
 
 ## OWASP Top 10
 

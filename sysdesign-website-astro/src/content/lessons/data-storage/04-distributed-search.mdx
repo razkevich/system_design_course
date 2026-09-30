@@ -5,8 +5,8 @@ order: 4
 section: data-storage
 group: Messaging & Processing
 summary: How distributed search engines work — inverted indexes, sharding, scoring, and the trade-offs of Elasticsearch, OpenSearch, and the modern alternatives.
-readingMinutes: 8
-lastUpdated: "2026-04-25"
+readingMinutes: 10
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -79,6 +79,22 @@ For datasets too big for one machine, search engines shard the index across node
 ```
 
 This **scatter-gather** pattern means every query touches every shard. Latency = slowest shard. Throughput = limited by per-shard capacity.
+
+Each primary shard is its own Lucene index. The coordinator places a document with:
+
+```
+shard = hash(routing_key) % number_of_primary_shards
+```
+
+That modulo is why a new primary-shard count is a reindex: every existing id would land on a different shard. Replicas are promoted when a primary fails, and they add read capacity. Text fields run through the analyzer; keyword fields stay exact and are the fields aggregations should count. Numeric, date, boolean, and geo_point fields exist so range and distance filters skip the text analyzer. Nested types keep arrays of objects from being flattened into a single bag of values.
+
+Before either side hits that index, an analyzer tokenizes, lowercases, drops stop words, and stems or lemmatizes. A custom analyzer decides that "iPhone-15" and "iPhone 15" are one token, while a legal corpus keeps the punctuation. Intent is a separate pass: "Apple" may be the company or the fruit, and named-entity recognition marks people, places, and organizations before scoring runs.
+
+BM25 adds term-frequency saturation on top of TF-IDF: the tenth "shoes" adds less weight than the first. Boolean, range, fuzzy, wildcard, and phrase queries sit on that score. Aggregations then count terms, compute percentiles, or bucket by date or geo on the rows the query already selected.
+
+A three-node cluster in this shape can index on the order of 60,000 events per second while serving 1,000 or more searches per second. Indexing does more work than a database insert, and a search can lag the latest write.
+
+PostgreSQL's `tsvector` / `tsquery` plus a GIN index covers ranking and phrases inside the database you already run. `pgvector` adds HNSW and IVFFlat and embeddings up to 16,000 dimensions. MongoDB Atlas Search builds a Lucene index from the change stream and runs HNSW up to 8,192 dimensions in a `$vectorSearch` stage, so the same API filters and retrieves the document. Algolia's distributed network publishes about 6.7 ms average server time, with 90% of queries under 15 ms, from a three-server consensus copy across 25 or more regions.
 
 ## Major Search Engines
 

@@ -4,8 +4,8 @@ slug: network-components
 order: 3
 section: networks-and-communication
 summary: Load balancers, API gateways, proxies, CDNs — the building blocks that turn a single application into a distributed, resilient platform.
-readingMinutes: 10
-lastUpdated: "2026-04-25"
+readingMinutes: 12
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -44,6 +44,17 @@ Load balancers distribute incoming traffic across multiple backend servers, prov
     accent: 'emerald',
   }}
 />
+
+### How each algorithm picks
+
+| Algorithm | Selection rule | Where it goes wrong |
+| --- | --- | --- |
+| Round-robin | Cycle server 1, server 2, server 3, then back to 1 | Fair only when servers have similar capacity and requests cost about the same |
+| Weighted round-robin | A weight of 3 receives three times the requests of a weight of 1 | The weight is static. A large server that is already saturated still receives its share |
+| Hash of client IP or session id | The same key maps to the same server | A hot key pins one server. Adding or removing a server remaps keys unless the hash is consistent |
+| Least connections | Choose the server with the fewest active connections | Right when request duration varies. Few connections can still mean a slow server |
+| Least response time | Fewest connections, biased by recent response speed | The latency sample lags. Traffic keeps arriving at a server that just got worse |
+| Least loaded | CPU and memory, not connection count | The metric lags a burst. The sample you route on is already stale |
 
 ### Sticky sessions
 
@@ -120,6 +131,12 @@ A **proxy** is any service that sits between clients and servers and forwards re
 
 The line between reverse proxy and load balancer is blurry — most reverse proxies (NGINX, HAProxy) can do load balancing, and most load balancers proxy. The distinction is mostly historical.
 
+Debugging proxies such as Charles and Burp, and a hosted filter such as Zscaler, are forward proxies too. To the origin, every user is the proxy. Without a second instance that hop is a single point of failure.
+
+A reverse proxy can also compress responses, hide backend addresses, and write one access log for the whole front door. Every byte passes through it, so an undersized proxy caps the application behind it.
+
+AWS splits the managed balancer into ALB for Layer 7 HTTP, NLB for Layer 4 at high packet rates, and Classic Load Balancer, which new designs should leave. Kubernetes uses a Service for balance inside the cluster and an Ingress controller for external HTTP, often provisioning the cloud load balancer from the manifest.
+
 ## CDN (Content Delivery Networks)
 
 A CDN is a globally distributed network of servers that cache content close to users. Foundational for any application with a global user base.
@@ -140,6 +157,8 @@ A CDN is a globally distributed network of servers that cache content close to u
 - **Purge / invalidation** — push-based or TTL-based. Most production systems combine both: short TTL as a safety net, explicit purge on writes.
 
 For SaaS apps, the practical answer is: serve all static assets through a CDN, cache aggressively, and use short cache lifetimes (or signed URLs) for tenant-specific assets.
+
+A Tokyo client fetching an image from a New York origin adds hundreds of milliseconds of fiber. An edge in Japan serves the object or pulls it from a regional cache, typically a 50 to 80 percent latency cut on media-heavy pages. Static files can stay cached a long time; personalized responses get a short lifetime or none. The CDN bill grows with traffic, and the origin still has to absorb a burst of simultaneous misses.
 
 ## Auxiliary Infrastructure
 

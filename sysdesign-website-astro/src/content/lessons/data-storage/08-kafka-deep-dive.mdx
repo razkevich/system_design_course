@@ -5,8 +5,8 @@ order: 8
 section: data-storage
 group: Messaging & Processing
 summary: How Kafka actually works — partitions, replication, producers, consumers, transactions. The mental model for using it well in production SaaS.
-readingMinutes: 12
-lastUpdated: "2026-04-25"
+readingMinutes: 14
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -141,6 +141,14 @@ A follower is "in-sync" if it has caught up with the leader within a configurabl
 ### Leader election
 
 When a leader fails, a follower from ISR is promoted. With `unclean.leader.election.enable=false` (recommended), only ISRs can be elected — preventing data loss at the cost of availability.
+
+### High water mark
+
+The high water mark is the highest offset replicated to every in-sync replica. The leader advances it only after the slowest member of the ISR has that record. Consumers may read only up to the high water mark, so a fetch never returns a record that could vanish if the leader fails before the ISR has it. On failover the controller promotes an in-sync replica, preferring the one whose committed offset is furthest ahead, which is why a record below the high water mark (the record `acks=all` waited for) is still present on the new leader.
+
+A follower whose lag passes the configured threshold leaves the ISR. It can no longer be elected, and it no longer holds the high water mark back. The partition keeps accepting writes against a smaller quorum.
+
+Brokers store each partition as segment files. A segment is closed and a new one opened when it reaches a size or age limit, so retention deletes whole files. One broker is the cluster controller: historically it won by creating the lowest ephemeral sequential ZooKeeper node under the broker registry, and a session timeout starts a new election. KRaft stores that same metadata as a log. The per-partition ISR and high water mark rules stay as they are.
 
 ## Storage
 

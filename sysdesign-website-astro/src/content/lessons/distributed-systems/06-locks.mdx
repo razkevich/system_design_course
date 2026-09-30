@@ -5,8 +5,8 @@ order: 6
 section: distributed-systems
 group: Coordination & Infrastructure
 summary: Mutual exclusion across machines that don't share memory. The pitfalls, the safe patterns, and the trade-offs of Redis, Redlock, ZooKeeper, and etcd locks.
-readingMinutes: 9
-lastUpdated: "2026-04-25"
+readingMinutes: 11
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -102,6 +102,8 @@ Redis's multi-master lock algorithm. Uses N independent Redis nodes (typically 5
 Martin Kleppmann's well-known critique argues Redlock can violate mutual exclusion in genuinely asynchronous conditions, because it has no fencing tokens and relies on timing assumptions. The Redis docs themselves link to the critique. **Don't use Redlock for correctness-critical scenarios** unless you can enforce tight clock sync and low network jitter.
 </Callout>
 
+The validity window in step 3 is the TTL minus the time spent acquiring the majority. That remainder matches reality only when clock drift between the client and each Redis master is small relative to the TTL, and when the acquire itself is not delayed for long. A clock step makes the remainder a lie: the keys may already be gone, or still alive, while the client believes the opposite, so two clients can both claim the majority. The algorithm also assumes those masters fail independently. A partition that hides a majority does not hand the lock to someone else; the client waits until the keys expire. Liveness is given up for the length of the lease. The random value is only an ownership check on delete. It does not increase, so a later holder cannot be ordered ahead of an earlier one.
+
 ### ZooKeeper locks
 
 ZooKeeper's classic lock recipe uses **ephemeral sequential znodes**:
@@ -159,6 +161,28 @@ This protects against the "paused holder" problem. Even if your client paused fo
 <Callout type="info" title="Fencing requires storage cooperation">
 The protected resource must check the token. If your downstream system doesn't support fencing checks, your lock is only as strong as the timing assumptions — i.e., not actually safe under adversarial conditions.
 </Callout>
+
+The check on the resource is ordered. A stale token must not move the high-water mark:
+
+```
+if fencingToken <= lastToken:
+    reject the caller as a stale holder
+apply the write
+lastToken = fencingToken
+```
+
+Token 34, once accepted, makes a later write carrying 33 fail. The lock service cannot apply that rule on a store that ignores the number.
+
+| System | What you send as the token | Ordered? |
+| --- | --- | --- |
+| etcd | Creation revision of the lock key | Yes. The revision increases on every successful create. |
+| ZooKeeper | zxid, or the znode version | Yes. The sequential suffix only orders who waits; the zxid orders the writes. |
+| Consul session | LockIndex on the KV pair, with the session id | Yes. LockIndex increments on each acquire. The session TTL or health check releases the key if the holder dies. |
+| DynamoDB conditional write | A version attribute on the item | Yes, if the write is conditional on the version. A mismatch fails with ConditionalCheckFailedException. |
+| Redis `SET NX` | The random value stored in the key | No. It only stops one client from deleting another's key. |
+| Hazelcast FencedLock | The token returned by the CP lock | Yes. The ordinary map lock in the same product does not return one. |
+
+Firestore and Cloud Spanner do not hand the application a token. A read-write transaction locks the cells (Spanner at the row-and-column level) until commit, so the database itself is the mutex.
 
 ## Choosing the Right Tool
 

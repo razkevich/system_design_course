@@ -5,8 +5,8 @@ order: 8
 section: distributed-systems
 group: Coordination & Infrastructure
 summary: The data lifecycle in modern SaaS — ingestion, storage, processing, security, ML. Lakes, warehouses, lakehouses, and the pipelines that connect them.
-readingMinutes: 10
-lastUpdated: "2026-04-25"
+readingMinutes: 12
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -151,6 +151,27 @@ Three architectural styles for transformation:
   { icon: '🟢', title: 'Modern unified', body: 'Apache Beam, Dataflow, Flink. One codebase that runs in batch or streaming mode. Best of both worlds; tooling still maturing.' },
   { icon: '🟡', title: 'ELT vs. ETL', body: 'Modern warehouses prefer Extract → Load → Transform — load raw data, transform in-warehouse with SQL. Cheaper to iterate than traditional ETL.' },
 ]} />
+
+### What the stream engine is actually doing
+
+A stream processor is not a batch job on a shorter timer. It runs continuously, keeps state across events, and has to accept late and out-of-order records. Aggregations are windows: tumbling windows do not overlap, sliding windows do, and session windows close after a gap. Fault tolerance is a checkpoint of that state, not "start the file over." When a sink slows down, the engine applies backpressure instead of buffering without a bound. Flink, Kafka Streams, and the managed stream-analytics services are built around those properties. A batch engine such as Spark or a warehouse load sees the whole dataset, runs on a schedule, and restarts a failed stage from a checkpoint. Minutes of latency are acceptable; throughput is the point.
+
+| | Lambda | Kappa |
+| --- | --- | --- |
+| Paths | A batch layer (Spark or Hadoop) recomputes history. A speed layer (Flink or Storm) serves the recent tail. A serving layer merges the two answers. | One stream processor. What looks like batch is a replay of the append-only log through that same job. |
+| When it hurts | The serving merge hides disagreement between the two paths until the numbers diverge. | Reprocessing has to fit in the streaming system, including state that is larger than a single window. |
+
+ELT wins because storing raw files is cheap and transforming bytes on the way in is not. A later question can use the raw set instead of a new extract. dbt is the usual SQL layer, with tests in version control; Spark and Flink still cover jobs that are too large or too streaming for warehouse SQL.
+
+### Medallion layers
+
+Lakehouse pipelines usually persist three copies instead of one transform:
+
+1. **Bronze** stores the raw records, audit trail included, and tolerates schema change.
+2. **Silver** is cleaned, validated, and enriched. Quality checks live here.
+3. **Gold** is shaped for one business question, often pre-aggregated.
+
+Retention applies the same layering to time. Transaction logs may be kept for years; debug logs for about thirty days. Tiering moves bytes from hot to warm, cold, and archive. Archive classes such as Glacier are cited around 80 to 90 percent cheaper, paid for in restore time. A deletion has to follow one user id through the lake, the warehouse, caches, and every gold table. A copy the job does not know about is still there.
 
 ## ML and AI Considerations
 

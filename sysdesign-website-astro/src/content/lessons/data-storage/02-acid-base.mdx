@@ -5,8 +5,8 @@ order: 2
 section: data-storage
 group: Database Design
 summary: Two paradigms for data consistency. What ACID and BASE actually guarantee, when each applies, and how modern systems blend them.
-readingMinutes: 7
-lastUpdated: "2026-04-25"
+readingMinutes: 9
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -41,6 +41,8 @@ Strong guarantees come at a price:
 
 For some workloads, this is a fair price. For others, it's the wrong trade-off.
 
+Those costs show up as concrete ceilings on a single primary. Trouble often starts somewhere between 100 GB and 1 TB, above roughly 10,000 requests per second, on tables of 10-100 million rows, or past a few hundred to a thousand concurrent connections. Buying the next machine size is a weak answer: doubling cores from 32 to 64 can about double the bill, on the order of $10,000 per month in a typical cloud shape, for about 1.4x more throughput. That is the wall BASE was built to walk around.
+
 ## BASE: The Distributed-System Alternative
 
 BASE emerged as the alternative for systems that prioritize availability and scale over strict transactional integrity.
@@ -52,6 +54,19 @@ BASE emerged as the alternative for systems that prioritize availability and sca
 ]} />
 
 BASE accepts temporary inconsistency in exchange for availability and horizontal scalability. It's the natural model for distributed systems where strict ACID would require painful coordination.
+
+BASE can loosen any of the four ACID properties. Atomicity becomes best-effort: eight of ten writes land and the caller reconciles the rest. Consistency allows a short broken invariant, such as balances that do not yet sum. Isolation allows concurrent operations to observe each other. Durability can accept loss, which is what an in-memory cache already does. The philosophy showed up around 2008 from systems at Amazon and eBay: during a partition, CAP says you give up either a consistent answer or an available one, and BASE keeps the available one.
+
+ACID's "consistent" and a distributed system's "consistent" are different claims. The ACID word means invariants: the database enforces explicit constraints, and implicit business rules hold only if the transaction was written to preserve them. The distributed word means how soon a write is visible on other nodes.
+
+That second axis is a spectrum:
+
+1. **Linearizability.** One logical copy. Once a write completes, a later read returns that value or a newer one. It is a recency guarantee plus an atomic order.
+2. **Sequential consistency.** Every node sees one order, and each client's own calls stay in program order. There is no real-time bound, so a node may observe that order late.
+3. **Causal consistency.** If A happens-before B, every node that sees B has already seen A. Operations with no causal link may appear in different orders on different nodes.
+4. **Eventual consistency.** If updates stop, every read eventually returns the last value. The model states neither a deadline nor which older value you may see meanwhile.
+
+DynamoDB and Spanner sit on this spectrum per call: a strongly consistent read when the invariant needs it, an eventual read when it does not.
 
 ## ACID vs. BASE Side by Side
 

@@ -5,8 +5,8 @@ order: 3
 section: architecture-basics
 group: Core Principles
 summary: Coupling, cohesion, bounded contexts, and the forces that decide where to draw the lines in a multi-tenant SaaS system.
-readingMinutes: 14
-lastUpdated: "2026-04-25"
+readingMinutes: 15
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -125,6 +125,19 @@ This principle, first articulated by Larry Constantine in the 1970s, is still th
 <Callout type="tip" title="Not all coupling is bad">
 Coupling is fine when it serves architectural goals — between components that change together, belong to the same business capability, or require strong consistency. Coupling becomes bad when it crosses team boundaries, mismatched scaling needs, or different change cadences.
 </Callout>
+
+### Architecture quantums
+
+Neal Ford and Mark Richards define an **architecture quantum** as an independently deployable artifact with high functional cohesion, high static coupling, and synchronous dynamic coupling. Quantum boundaries tend to line up with a domain boundary, a team, and a deployment unit at the same time.
+
+The callout above says which coupling serves a goal. A quantum says where that coupling is allowed to be high:
+
+| Kind | Inside one quantum | Across quantums |
+| --- | --- | --- |
+| Static — shared databases, frameworks, operational dependencies | Acceptable. These parts ship as one artifact. | Problematic. Sharing here ties two releases together. |
+| Dynamic — runtime communication | Synchronous, where the operation needs consistency. | Asynchronous, so each side can fail and deploy on its own. |
+
+Two components that share a database, or that call each other synchronously, already have the static or dynamic coupling of a single quantum.
 
 ### The dependency rule
 

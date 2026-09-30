@@ -4,8 +4,8 @@ slug: service-meshes
 order: 4
 section: networks-and-communication
 summary: The service mesh pattern moves cross-cutting service-to-service concerns out of application code and into infrastructure. Sidecars, control planes, and the trade-offs.
-readingMinutes: 8
-lastUpdated: "2026-04-25"
+readingMinutes: 10
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -81,6 +81,16 @@ The mesh pattern came out of years of pain with library-based approaches.
 
 Libraries still have their place — Google's proxyless gRPC approach shows continuing evolution. For ultra-high-performance scenarios, library-based solutions can win.
 
+### Three places the mesh can run
+
+| Pattern | Where the logic runs | What you give up |
+| --- | --- | --- |
+| Sidecar proxy | A separate process beside each instance, usually Envoy | A second container per pod. The proxy is one implementation for every language. |
+| Proxyless | A library the mesh team maintains, linked into the service. Google's gRPC path is the reference | Lower latency and less memory on gRPC. There is no longer one binary that covers every language. |
+| Kernel (eBPF) | Programs on the node, as in Cilium, instead of a per-pod proxy | Less CPU and less added latency. The kernel is now part of the release, and the approach is younger than Envoy. |
+
+Sidecars stay the default because one well-tested proxy process is easier to reason about than N language libraries. Proxyless wins when the fleet is already gRPC and the mesh team owns that library. eBPF wins when the per-pod proxy itself is the cost you cannot carry.
+
 ## What a Mesh Gives You
 
 ### Routing
@@ -145,6 +155,14 @@ A mesh isn't free. The costs to know:
 />
 
 Plus the operational complexity: control-plane upgrades, policy management, debugging through sidecars when things break. Like any infrastructure, the mesh shifts complexity rather than eliminating it.
+
+### Ways the mesh gets misused
+
+**Business logic in the proxy.** Routing is a mesh job. Payload transforms, workflow orchestration, and domain rules are not. Putting them in mesh config recreates the Enterprise Service Bus: logic that is hard to test, owned by the platform team, and coupled to every caller.
+
+**Using the mesh as the public API gateway.** East-west policy does not grow rate limits, API keys, or a developer portal. Customer-facing traffic still wants a gateway that has those. The mesh gateway is for traffic that is already inside the platform.
+
+**Every policy on day one.** Ship routing and the golden metrics first. Certificate rules and per-route authorization can wait until the on-call rotation already knows how to upgrade the control plane. A mesh is infrastructure: someone has to monitor it, upgrade it, and debug through the proxy when a call fails.
 
 <Callout type="pitfall" title="Don't adopt service mesh until you need it">
 A 10-service system with one team probably doesn't need a mesh. The library approach + clean observability is fine. By the time you have 50+ services, multiple teams, and polyglot tech, the mesh starts paying for itself. Premature mesh adoption is a known anti-pattern.

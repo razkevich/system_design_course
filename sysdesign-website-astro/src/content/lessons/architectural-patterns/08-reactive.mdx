@@ -5,8 +5,8 @@ order: 8
 section: architectural-patterns
 group: Architectural Styles
 summary: Responsive, resilient, elastic, message-driven systems. The four principles of the Reactive Manifesto and how they apply to multi-tenant SaaS at scale.
-readingMinutes: 8
-lastUpdated: "2026-04-25"
+readingMinutes: 10
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -59,6 +59,18 @@ A reactive application has a few key components that work together to produce a 
   { icon: '🔄', title: 'Transformations', body: 'Map, filter, combine, buffer, throttle. Powerful operators for composing data flows.' },
 ]} />
 
+### What each operator does
+
+| Operator | Effect on the stream |
+| --- | --- |
+| map | One output element for each input element |
+| filter | Drops elements that fail a predicate |
+| merge | Interleaves several streams into one |
+| buffer | Turns a burst into a single batch before downstream work |
+| throttle | Caps how fast elements leave the operator |
+
+Back-pressure under those operators is a credit protocol. The subscriber requests N further elements, and the publisher must not emit past that credit.
+
 ### Back-pressure
 
 The most important property: **back-pressure** lets downstream components signal upstream when they're overloaded. This prevents cascading failures and keeps the system stable even under extreme load. Without back-pressure, a slow consumer can buffer infinitely until it OOMs — taking the system with it.
@@ -99,6 +111,26 @@ public Flux<OrderDTO> getUserOrders(@PathVariable Long id) {
 ```
 
 That endpoint can handle thousands of concurrent requests on a single thread. The traditional thread-per-request model would need a thread per concurrent request.
+
+### The same three calls, timed
+
+A blocking handler waits in series. With the usual three downstream calls:
+
+```
+T_blocking = T_user + T_orders + T_profile
+           = 100 ms + 150 ms + 80 ms
+           = 330 ms
+```
+
+`Mono.zip` starts all three and finishes with the slowest:
+
+```
+T_reactive = max(T_user, T_orders, T_profile) = 150 ms
+```
+
+A timeout of 500 ms caps the wait, and `onErrorReturn` substitutes an empty result instead of failing the request. The calling thread is released while the calls are in flight, so one instance holds many of these fan-outs. Service boundaries decide the split. Reactive I/O decides how the caller behaves when one callee is the slow one.
+
+Rx.NET is where this operator set was designed. Go already has the flow in channels and goroutines; RxGo adds the operators. Python's GIL caps CPU parallelism, so RxPY helps on I/O-bound handlers, which is what most web requests are.
 
 ### Other ecosystems
 

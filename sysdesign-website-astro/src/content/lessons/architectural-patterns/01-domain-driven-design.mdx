@@ -5,8 +5,8 @@ order: 1
 section: architectural-patterns
 group: Domain-Driven Design
 summary: The strategic + tactical framework for turning business reality into software. Bounded contexts, ubiquitous language, and the bridge between problem and solution space.
-readingMinutes: 9
-lastUpdated: "2026-04-25"
+readingMinutes: 11
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -76,6 +76,12 @@ Each context's model is right *for that context*. Forcing one universal "Custome
 
 The model is what spans both spaces. Multiple bounded contexts can reference the same sub-domain; one sub-domain can be touched by multiple bounded contexts. The relationships are many-to-many.
 
+### Dependencies in the problem space pick the integration pattern
+
+Natural dependencies between subdomains decide which integration pattern the matching bounded contexts use. A supporting subdomain that must accept a payment vendor's payload becomes a Conformist, or it hides that payload behind an anti-corruption layer. A core subdomain that must keep its own vocabulary gets the translation, not the raw vendor model.
+
+The same word can change type, not only meaning. In Sales, Customer is an entity: identity persists across a qualification lifecycle. In Billing, Customer may be a value object — an account identifier plus payment attributes, with no lifecycle of its own. One class shape for both contexts is the same mistake as one universal model.
+
 ## Tactical Building Blocks
 
 Inside a bounded context, tactical DDD gives you the patterns to express the model in code.
@@ -90,6 +96,14 @@ Inside a bounded context, tactical DDD gives you the patterns to express the mod
   { icon: '🏭', title: 'Factories', body: 'Encapsulate the logic for constructing complex aggregates.' },
   { icon: '⚡', title: 'Domain events', body: 'Significant occurrences in the domain that other parts of the system care about.' },
 ]} />
+
+### Application services, specifications, and invariants
+
+**Application services** coordinate a use case. They open the transaction, load aggregates through repositories, call intent-revealing methods, and save the result. They do not contain business rules. A rule that shows up there has leaked out of the model.
+
+**Specifications** turn a rule into a predicate other rules can combine with. "Eligible for free shipping" and "ships inside the EU" compose without either rule being copied into every caller.
+
+**Domain invariants** are conditions that must always hold inside a boundary. The aggregate enforces them. A controller that remembers to check is not an invariant; it is a hope. Strategic design spans the problem space and the solution space. Tactical design works mostly in the solution space: it is how those invariants become structure in code.
 
 ## A Concrete Walkthrough
 

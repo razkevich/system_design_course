@@ -5,8 +5,8 @@ order: 6
 section: architecture-basics
 group: Core Principles
 summary: Functional, quality, and constraint requirements — and the techniques (Event Storming, QAW, SRE) that surface them before they hurt you.
-readingMinutes: 10
-lastUpdated: "2026-04-25"
+readingMinutes: 11
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -155,6 +155,22 @@ SRE provides a framework for measuring and managing quality in production:
 ]} />
 
 We go much deeper on SRE in Section 6. For now: SRE turns "we want it reliable" into something measurable.
+
+### From a quality word to a number
+
+**Goal-Question-Metric** keeps the metric attached to the business. Start from a business objective, write the questions that would show the objective is met, and only then pick a metric that answers one of those questions. That order aligns the quality attribute with the business need.
+
+**QAW refinement** is the step after the workshop has a short list. Prioritization often surfaces conflicts between stakeholders, and those conflicts need an explicit resolution. Refinement then writes each high-priority scenario in the six-part form above, so it can be tested. It is much easier to design for a specific target than to retrofit that quality into a system that already exists.
+
+During brainstorming, business stakeholders contribute scenarios from user expectations and business needs. Technical participants add scenarios from operational concerns and system constraints.
+
+**Error-budget arithmetic.** A 99.9% availability SLO means a 0.1% error budget: roughly 43 minutes of downtime per month. The budget is how the organization balances reliability against feature-development velocity.
+
+```text
+99.9% availability SLO
+error budget = 0.1%
+0.001 * 30 * 24 * 60 = 43.2 minutes per 30-day month
+```
 
 ### Discovery techniques for quality requirements
 

@@ -5,8 +5,8 @@ order: 4
 section: architecture-basics
 group: Core Principles
 summary: Every architectural decision is a trade-off. The named tensions, the failure modes, and how to make the choice consciously instead of accidentally.
-readingMinutes: 11
-lastUpdated: "2026-04-25"
+readingMinutes: 12
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -212,6 +212,18 @@ A useful heuristic for when to introduce abstraction at all:
 - **Real duplication.** Identical logic that must change together. Safe to extract.
 
 When you're not sure which kind of duplication you have, leave it duplicated for now. The wrong abstraction is harder to remove than the right duplication.
+
+## Flexibility vs. Performance
+
+A generic, flexible solution almost always performs worse than a specialized one. An ORM trades query optimization for development convenience. A configuration-driven system trades runtime efficiency for flexibility at deployment.
+
+Web frameworks make the same exchange. Express.js can host essentially any HTTP application, and that freedom is paid for in middleware chains and generic request handling. Fastify optimizes for performance by assuming the common cases. Game engines repeat it at higher stakes: Unity can build many kinds of games, while a custom engine aimed at one kind of game is what teams use when they need to hold 60 frames per second on limited hardware. The ability to build any game type is a performance cost.
+
+| Choose flexibility when | Choose performance when |
+| --- | --- |
+| Requirements are uncertain or changing rapidly | Requirements are well understood and stable |
+| Several teams build different solutions on the same platform | Performance is a competitive advantage |
+| Development speed matters more than runtime performance | The cost of a specialized solution is justified by the performance gains |
 
 ## How to Make the Decision
 

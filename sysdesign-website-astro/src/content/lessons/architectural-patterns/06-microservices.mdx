@@ -5,8 +5,8 @@ order: 6
 section: architectural-patterns
 group: Architectural Styles
 summary: Independent services aligned to business capabilities. The benefits, the costs, the boundary problem, and what the industry has learned after a decade of doing this.
-readingMinutes: 12
-lastUpdated: "2026-04-25"
+readingMinutes: 15
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -99,6 +99,16 @@ In a monolith, method calls are cheap and reliable. In microservices, communicat
   }}
 />
 
+### Protocols inside the synchronous card
+
+REST over HTTP is the usual default: every stack speaks it, and ordinary HTTP tools debug it. Contracts are informal, and JSON is large on the wire.
+
+gRPC is the internal alternative. Protocol Buffers are the schema, serialization is binary, and generated stubs are type-checked. The contract is stronger, and the payload is smaller, than JSON over HTTP. That is why internal calls at Netflix and Uber moved to gRPC while many public edges stayed on REST.
+
+GraphQL is a third shape. The client names the fields it needs. A gateway fans out to the services that own those fields, so the client never learns that profiles and order history live apart. Caching gets harder, because each query is its own shape.
+
+Asynchronous delivery changes the request from "process this payment and wait" into "a payment was requested." Kafka, RabbitMQ, and SQS/SNS carry that message. The step then needs eventual consistency and a designed user experience, not a lock held across services.
+
 Most production systems mix patterns. We covered communication patterns in detail in [the previous section](/lesson/architecture-basics/communication-patterns).
 
 ## Boundary Problem
@@ -140,6 +150,32 @@ Most organizations don't *start* with microservices — they evolve toward them.
 ]} />
 
 This reduces risk and lets you adjust as you go. Read-only services (search, recommendations) make easier first targets than transactional ones.
+
+### Branch by abstraction
+
+Branch by abstraction moves call sites without a flag-day rewrite.
+
+1. Call sites depend on an interface, not on the monolith class.
+2. The first adapter still delegates to the monolith. Observable behavior does not change.
+3. A second adapter delegates to the new service. A router picks the adapter by request, by tenant, or by feature flag.
+4. When the new path is trusted, delete the monolith adapter and the code only it called.
+
+```
+before:  orderService.processOrder(order)
+during:  orderProcessor.processOrder(order)   // monolith or service
+after:   orderMicroservice.processOrder(order)
+```
+
+Until step 4, rollback is switching the router.
+
+### Pulling the database apart
+
+| Stage | Shape | What you accept |
+| --- | --- | --- |
+| Shared database | Two services, one schema | Temporary. A migration couples both teams |
+| Views | One schema, a view shaped for each service | A stepping stone, not a destination |
+| Event copy | The monolith publishes changes; the new service builds its own rows | A migration window and eventual consistency |
+| Database per service | The service is the only writer of its data | Denormalized copies and no cross-service joins |
 
 ## The Tech Stack That Made This Practical
 
