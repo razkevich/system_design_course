@@ -5,8 +5,8 @@ order: 6
 section: data-storage
 group: Messaging & Processing
 summary: The myth, the reality, and the patterns that approximate "exactly-once" in production. Idempotency, deduplication, and the practical tools.
-readingMinutes: 8
-lastUpdated: "2026-04-25"
+readingMinutes: 11
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -156,6 +156,38 @@ The producer either commits all messages atomically or none. Combined with `isol
 <Callout type="warning" title="Kafka exactly-once is end-to-end-ish, not magic">
 Kafka transactions give exactly-once for "consume from Kafka, process, produce to Kafka" pipelines. They don't give exactly-once if you also write to a database during processing — that requires application-level patterns (outbox, idempotency).
 </Callout>
+
+### Producer sequence numbers
+
+Idempotent produce is the per-partition mechanism transactions sit on.
+
+1. On startup the broker assigns the producer a Producer ID (PID).
+2. Every batch for a partition carries a sequence number. The counter starts at 0 and steps once per batch on that partition. The number is fixed when the batch is built, so a timeout retry sends the same sequence.
+3. Partition 0 and partition 1 keep independent counters.
+
+The broker remembers the last accepted sequence for each PID and partition:
+
+```
+sequence below the expected value: duplicate, discard
+sequence equal to the expected value: already appended, discard
+sequence equal to expected + 1: append and advance
+sequence above expected + 1: gap, reject the batch
+```
+
+With a configured `transactional.id`, the PID is kept across process restarts and a separate 16-bit epoch increments. A crashed producer that is still sending is fenced: the broker accepts the new epoch and rejects the old one. Without `transactional.id`, a restart receives a new PID and the idempotent streak ends.
+
+### Transactional flow
+
+A transaction covers partitions and topics inside one Kafka cluster. The coordinator is a broker, and its log is the internal `__transaction_state` topic.
+
+1. Begin. The producer obtains a transaction id. State moves from Empty to Ongoing.
+2. Send. Batches go to each partition under the sequence rules above, tagged with the transaction.
+3. Commit. Two-phase commit: the coordinator writes PrepareCommit, writes a commit marker on every participating partition, then writes CompleteCommit. Abort is PrepareAbort then CompleteAbort.
+4. If the commit response was lost and the producer retries, the coordinator finds that this PID and epoch already committed that transaction and returns success. The markers are not written again.
+
+Consumers set to `isolation.level=read_committed` read only up to the Last Stable Offset, the first offset that still belongs to an open transaction. The broker drops aborted records and the commit or abort control records before the application sees them.
+
+Idempotent produce typically costs about 2-5% of throughput. Full transactions typically cost about 10-20%, because of the coordinator round trips. Ordering under idempotence also requires `max.in.flight.requests.per.connection` at 5 or below, and the durable setting remains `acks=all`. A short transaction timeout aborts healthy work. A long one leaves an open transaction whose Last Stable Offset stalls every read_committed consumer.
 
 ## Pattern 5: AWS SQS FIFO + Exactly-Once
 

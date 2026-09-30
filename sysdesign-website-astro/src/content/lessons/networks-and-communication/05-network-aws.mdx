@@ -4,8 +4,8 @@ slug: network-aws
 order: 5
 section: networks-and-communication
 summary: How AWS networking actually works — accounts, regions, AZs, VPCs, subnets, security groups, and the connectivity options for hybrid and multi-account setups.
-readingMinutes: 11
-lastUpdated: "2026-04-25"
+readingMinutes: 13
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -171,6 +171,18 @@ Allow SSH from one IP, HTTP/HTTPS from anywhere:
 
 Most production setups use security groups heavily and NACLs sparingly (default-allow NACLs as a safety net rather than primary control).
 
+### The order a packet is judged
+
+Route tables, NACLs, and security groups are stacked, not interchangeable.
+
+1. The subnet route table only picks a next hop. It never accepts or denies.
+2. The NACL on that subnet filters next. Rules run in rule-number order, first match wins, and a final catch-all denies the rest. Because the list is stateless, return packets need their own allow entry.
+3. The security group on the elastic network interface is last, at the instance rather than the subnet.
+
+Drop a bad source range on the NACL when the packet should die at the subnet boundary. Restrict a database to the application security group when the decision is which interface may connect.
+
+Each account starts with one default VPC per region and can add more, up to five additional VPCs per region before a quota increase. EC2, RDS, VPCs, and S3 buckets are regional. IAM, Route 53, and CloudFront are global.
+
 ![How an AWS VPC nests subnets, route tables, security groups, and NACLs](/images/aws/aws_networking_hierarchy.svg)
 
 ## Connecting VPCs and Networks
@@ -183,6 +195,18 @@ Most production setups use security groups heavily and NACLs sparingly (default-
   { icon: '🔌', title: 'VPC Endpoints', body: 'Private connectivity to AWS services without going through the internet. Two flavors: Gateway endpoints (S3, DynamoDB), Interface endpoints (most other services).' },
   { icon: '☁️', title: 'PrivateLink', body: 'Expose a service in your VPC to other VPCs (yours or your customers\') without VPC peering or internet exposure.' },
 ]} />
+
+**Client VPN** is Site-to-Site for one device. The office network uses a Site-to-Site IPsec tunnel; a laptop uses Client VPN to reach private addresses that must stay off the public internet. Both land in the VPC route tables and security groups.
+
+**VPC Lattice** connects services rather than CIDRs. Peering and Transit Gateway join networks. Lattice adds discovery, load balancing, and an access policy across VPCs and accounts while the IP spaces stay separate.
+
+| Service | What it adds outside the VPC |
+| --- | --- |
+| Route 53 | Geolocation, weighted records, health-checked failover, and private DNS that resolves only inside the VPC |
+| CloudFront | Edge cache, TLS at the PoP, and a shorter path for dynamic requests that still reach the origin |
+| Global Accelerator | An anycast entry that moves packets onto the AWS backbone at the nearest edge |
+| Gateway Load Balancer | A Layer 3 insert for third-party firewalls and intrusion-detection appliances |
+| API Gateway | REST, HTTP, and WebSocket front doors. HTTP APIs are the narrower, cheaper option |
 
 ![VPC connectivity: peering, Transit Gateway, PrivateLink, and VPC Lattice](/images/aws/vpc_connectivity.svg)
 

@@ -5,8 +5,8 @@ order: 9
 section: distributed-systems
 group: Kubernetes & Orchestration
 summary: How Kubernetes actually works under the hood. Control plane, data plane, the reconciliation loop, scheduling, and the distributed-systems patterns that make it tick.
-readingMinutes: 11
-lastUpdated: "2026-04-25"
+readingMinutes: 13
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -49,6 +49,14 @@ This split enables horizontal scaling, fault tolerance, and clear separation of 
   { icon: '☁️', title: 'cloud-controller-manager', body: 'Cloud-specific controllers (Load balancers, persistent volumes, node lifecycle). Lets the rest of K8s stay cloud-agnostic.' },
 ]} />
 
+## What etcd's Raft commit actually means
+
+A write commits only after a majority of etcd members accept it. Three members tolerate one failure; five tolerate two. After the commit, a later read through the API server has to observe that write. Linearizability is stricter: the write takes effect at a single point between its start and its completion, so two controllers cannot both conclude they created the same object.
+
+Lose the majority and etcd refuses further writes. Reads of the last committed state can continue, so you can still inspect the cluster. Containers that are already running stay running, because the kubelet does not need a new commit to leave them up. You cannot schedule, scale, or change a manifest until a majority is back.
+
+The scheduler and the controller manager use that same store as a lease, not as a second consensus algorithm. Several copies may be up. The copy that holds the lease object does the work and renews it. If renewal stops, another copy takes the lease. Split brain would mean two schedulers binding the same pod; the lease is what prevents that.
+
 ## Data Plane Components
 
 <IconGrid cols={2} items={[
@@ -85,6 +93,16 @@ When a Pod is created, the scheduler picks a node. The decision involves:
   { icon: '⚖️', title: 'Topology spread', body: 'Distribute pod replicas across zones for HA.' },
   { icon: '🔌', title: 'Custom plugins', body: 'Scheduler is pluggable. Custom scoring functions for specialized needs.' },
 ]} />
+
+### Filter, then score, then bind
+
+Those placement factors run as two phases, then a bind.
+
+1. **Filter (predicates).** Drop every node that cannot run the pod. NodeResourcesFit rejects a node whose free CPU or memory is short of the pod's requests. A missed node selector, a taint the pod does not tolerate, and a node marked unschedulable fail here too. A node that fails a predicate is never scored.
+2. **Score (priorities).** Each survivor accumulates points. Preferred affinity, topology spread, and a preference for nodes with more free resources are scoring plugins. The highest total wins.
+3. **Bind.** The scheduler writes the chosen node name through the API server into etcd. The kubelet watching that node observes the binding and starts containers. Until the bind is stored, the pod is still unscheduled.
+
+Only the lease holder runs this loop. A standby does not also bind pods. A custom scheduler replaces plugins inside the two phases; it does not insert a step between filter and bind.
 
 ## Workload Resources
 

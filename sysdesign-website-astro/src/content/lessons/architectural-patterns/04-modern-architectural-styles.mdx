@@ -5,8 +5,8 @@ order: 4
 section: architectural-patterns
 group: Architectural Styles
 summary: A tour of the architectural styles in modern use — traditional and modern — and how to combine them in a multi-tenant SaaS platform.
-readingMinutes: 7
-lastUpdated: "2026-04-25"
+readingMinutes: 9
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -32,6 +32,12 @@ These long-established styles remain the foundation of most software, often serv
   { icon: '🔌', title: 'Microkernel (plugin)', body: 'Small core providing minimal features, extensions via plugins. Used in: Eclipse, IntelliJ, Jenkins, WordPress, OSGi.' },
   { icon: '🏢', title: 'Service-Oriented Architecture (SOA)', body: 'Loosely coupled services with well-defined interfaces, often via SOAP. Predecessor to microservices. Used in: SOAP/WS-*, ESBs, IBM WebSphere.' },
 ]} />
+
+### Adjacent layers versus transformation steps
+
+Layered architecture lets a layer call only its neighbor. Presentation calls business logic. Business logic calls the data layer. Presentation does not open a database connection. The axis is concern: presentation, business, data.
+
+Pipes and filters use a different axis. Each filter is one transformation. A record enters, leaves with a new shape, and the next filter does not know the previous filter's internals. Unix pipelines, Kafka Streams, Camel, and RxJS are this shape. A layered service can still contain a pipe for a single workflow. The styles answer different questions, which is why one system uses both.
 
 ## Modern Styles
 
@@ -71,6 +77,19 @@ Components communicate asynchronously through events. The publisher doesn't know
 Eliminates the central database as a bottleneck by using replicated in-memory data grids. Processing units contain both application logic and data. New units can be added or removed dynamically as load changes. Ideal for traffic patterns with extreme spikes.
 
 **Technologies.** Apache Ignite, Hazelcast, Oracle Coherence, GridGain, Redis Cluster.
+
+### How a processing unit stays in sync
+
+Each processing unit holds the code that serves a request and a replica of the data that request needs. The request path has no central database. Units stay aligned by two mechanisms used together: messaging, and replication inside the in-memory grid.
+
+```
+add a unit    -> capacity grows
+remove a unit -> capacity shrinks
+request path does not read a shared database
+sync = messaging + in-memory grid replication
+```
+
+The trade-off is replication lag. A read on one unit can miss a write another unit has already accepted. The style fits extreme, spiky traffic, where removing the shared database as a bottleneck is worth that weaker consistency.
 
 ### Serverless
 

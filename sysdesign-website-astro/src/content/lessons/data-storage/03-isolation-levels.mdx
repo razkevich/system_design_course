@@ -5,8 +5,8 @@ order: 3
 section: data-storage
 group: Database Design
 summary: The four standard isolation levels, the anomalies each one allows, and how to pick the right level for each operation.
-readingMinutes: 8
-lastUpdated: "2026-04-25"
+readingMinutes: 10
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -71,10 +71,22 @@ Defined by SQL standard, but with implementation-specific quirks.
 | --- | :---: | :---: | :---: | :---: | :---: |
 | Read Uncommitted | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Read Committed | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Repeatable Read | ✅ | ✅ | partial* | ✅ | ❌ |
-| Serializable | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Repeatable Read | ✅ | ✅ | ❌ (1) | varies (2) | ❌ |
+| Serializable | ✅ | ✅ | ✅ (3) | ✅ (3) | ✅ (3) |
 
-*Postgres prevents phantoms at Repeatable Read via MVCC; MySQL InnoDB allows them.
+(1) The SQL name does not promise to stop phantoms. PostgreSQL does stop them at Repeatable Read. (2) Lost-update behavior is implementation-defined: PostgreSQL's Repeatable Read allows a lost update, MySQL's prevents it. (3) Oracle's SERIALIZABLE is snapshot isolation and still allows write skew. Some systems have no true serializable level at all.
+
+Read Committed and Repeatable Read are often the same MVCC engine with a different snapshot rule. Under Read Committed the snapshot refreshes on every statement, so a later statement sees rows committed since the previous one. Under Repeatable Read the snapshot is taken once and held for the transaction. The older lock protocol did the same split: write locks held until commit, read locks held only for the statement (Read Committed) or until commit (Repeatable Read).
+
+A lost update on PostgreSQL Repeatable Read looks like this. Two transactions read a balance of 1000. Each adds 200 and writes 1200. The second commit replaces the first, and one deposit is gone; 1400 was the right result. One statement does the arithmetic inside the engine, so the race does not arise:
+
+```sql
+UPDATE accounts SET balance = balance + 200 WHERE id = 1;
+```
+
+The hole opens when the read and the write are separate statements. `SELECT FOR UPDATE`, a dedicated lock row, or an advisory lock closes lost updates, phantoms, and write skew while you stay on Repeatable Read.
+
+On PostgreSQL 9.1+ the serializable level records read and write dependencies and aborts one transaction when that graph has no serial order. Workloads often land about 10-30% slower than Read Committed, and the application retries aborts, including false positives. SQL Server uses range locks for the same guarantee. CockroachDB and FoundationDB treat serializable as the ordinary level. Oracle's level of the same name still allows write skew.
 
 ## Implementation Differences
 

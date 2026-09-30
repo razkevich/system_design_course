@@ -5,8 +5,8 @@ order: 10
 section: distributed-systems
 group: Kubernetes & Orchestration
 summary: A working tour of the Kubernetes object model — what each resource type is for, how they compose, and the patterns you'll see in production.
-readingMinutes: 9
-lastUpdated: "2026-04-25"
+readingMinutes: 11
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -56,6 +56,19 @@ The "what is running" layer.
   }}
 />
 
+### Four ways a Job runs
+
+CronJob only creates a Job on the schedule. Concurrency is a field on the Job, not a different resource kind.
+
+| Pattern | Controller behavior |
+| --- | --- |
+| Sequential | One pod at a time until the completion count is met. Use it when the steps are ordered, or when you cannot afford concurrent pods. |
+| Parallel | At most `parallelism` pods at once. Three means up to three pods share the work. |
+| Work queue | Pods pull from a shared queue until it is empty. The Job does not know the task count ahead of time. |
+| Indexed | Each pod gets `JOB_COMPLETION_INDEX`, starting at 0. One pod handles one shard of a migration or one slice of a training set. |
+
+HPA changes the replica count on the Deployment or StatefulSet. VPA changes requests through that same controller. Neither one edits pod objects directly.
+
 ## Service and Networking
 
 Pods are ephemeral; their IPs change. Services provide stable endpoints.
@@ -68,6 +81,20 @@ Pods are ephemeral; their IPs change. Services provide stable endpoints.
   { icon: '🛡️', title: 'NetworkPolicy', body: 'Firewall rules between pods. Restricts pod-to-pod traffic. Without them, all pods can talk to all pods.' },
   { icon: '🕸️', title: 'Service mesh resources', body: 'Istio VirtualService, DestinationRule. Linkerd ServerAuthorization. CRDs that layer over the standard resources.' },
 ]} />
+
+### How the Service types stack
+
+1. **ClusterIP** allocates the virtual IP. EndpointSlice objects hold the ready pod IPs; the Service object does not.
+2. **NodePort** opens a port on every node and forwards it to that ClusterIP.
+3. **LoadBalancer** asks the cloud for a balancer whose target is the NodePort.
+4. **Ingress** is a rule, not a forwarder. A controller watches it and programs host, path, and TLS on a load balancer. Gateway and route objects split that rule so two teams do not edit one file.
+5. A **headless** Service sets no cluster IP. DNS returns pod IPs, so StatefulSet members can address each other by a stable name.
+
+### What a volume bind survives
+
+A PVC binds to one PV matching size, access mode, and StorageClass. If nothing matches, the class provisions a PV. The bind outlives the pod: a replacement on another node that mounts the same claim sees the same volume. Deleting the pod does not release it.
+
+VolumeSnapshotClass defines how snapshots are taken. A VolumeSnapshot is a point-in-time copy of a claim, and a restore is a new claim filled from that snapshot.
 
 ## Configuration and Secrets
 

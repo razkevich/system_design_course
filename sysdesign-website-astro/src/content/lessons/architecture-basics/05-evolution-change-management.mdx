@@ -5,8 +5,8 @@ order: 5
 section: architecture-basics
 group: Core Principles
 summary: Architectures that survive long enough to matter. Reversible vs. irreversible decisions, tech debt as a strategic concern, and shipping change without breaking everything.
-readingMinutes: 13
-lastUpdated: "2026-04-25"
+readingMinutes: 15
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -158,6 +158,26 @@ The **expand–contract** pattern is your friend for database evolution. Instead
 ]} />
 
 Each step is reversible; the system stays operational throughout.
+
+### Proven migration patterns
+
+Replacing a system that is already live is a different job from shipping a build of the same system. Three patterns cover the usual risk levels.
+
+**Strangler Fig.** Build the new behavior around the old system.
+
+1. Route new features to the new implementation, and leave existing behavior on the old path.
+2. Move one existing feature at a time, and validate that piece before the next.
+3. Retire the old system only when nothing important still depends on it.
+
+Each piece can be checked on its own, which keeps a large replacement from becoming a single cutover.
+
+**Parallel run.** Where a wrong result would be serious — financial systems and data pipelines in particular — run the old and new implementations on the same inputs and compare outputs. You pay for both until the outputs match. That cost is what makes the cutover a measured decision.
+
+**Feature toggles.** Treat the toggle as risk control, not only as a switch in code. Start with a small percentage of traffic, watch real user feedback and system behavior, monitor the key metrics, and widen exposure as confidence grows.
+
+The tests should match that risk. Unit tests check that business logic stays correct. Integration tests check that service boundaries still behave as expected. End-to-end tests check that critical user journeys still complete. Each layer catches a different kind of failure, so an architectural move needs all three.
+
+The path that carries the change is build, then test, then deploy to staging, then automated acceptance tests, then production with monitoring. Each stage needs a clear success criterion and an automatic rollback trigger.
 
 ## Preserving Knowledge
 

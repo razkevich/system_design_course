@@ -4,8 +4,8 @@ slug: auth
 order: 1
 section: security-and-data-protection
 summary: How users prove who they are (authN) and what they can do (authZ). OAuth, OIDC, JWT, RBAC, ABAC, and the patterns for SaaS at scale.
-readingMinutes: 11
-lastUpdated: "2026-04-25"
+readingMinutes: 13
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -71,6 +71,10 @@ The standard protocols underneath modern SaaS authentication.
   { icon: '🚫', title: 'Implicit (deprecated)', body: 'Old single-page-app pattern. Don\'t use it for new apps. Authorization Code with PKCE replaces it.' },
 ]} />
 
+The Resource Owner Password Credentials grant sends the user's password through your application so you can trade it for a token. Leave that grant unused on new clients. PKCE adds a code verifier on public clients: the authorization server binds the code to a hash the client created, so a stolen code fails without the verifier.
+
+LDAP holds the directory record, Active Directory is the Microsoft directory, and Kerberos issues tickets so later services skip another password prompt. SAML carries that directory's assertion into the SaaS app. Scopes on the access token name the API rights the app asked for.
+
 ## JSON Web Tokens (JWT)
 
 JWTs are the standard format for tokens in modern web auth.
@@ -96,6 +100,18 @@ The payload contains **claims** like `sub` (subject = user ID), `exp` (expiratio
 - **HTTPOnly cookies** for browser apps — prevents JavaScript from reading the token (XSS protection).
 - **Asymmetric signing** (RS256, ES256) — server signs with private key, services verify with public key.
 - **Validate every claim** — `iss`, `aud`, `exp`, custom claims you depend on.
+
+An opaque access token is a random string with nothing readable inside it. The API learns who it is by calling the authorization server (token introspection) on each use. That round trip is the cost of immediate revocation: you delete the token server-side and the next call fails. OIDC identity tokens are JWTs and are checked locally. OAuth access tokens are often opaque even when the identity token is a JWT. A hybrid keeps local signature checks and refreshes revocation state on an interval.
+
+## Password hashing
+
+**bcrypt** is an adaptive password hash. A work factor raises the CPU cost as hardware gets faster, so a stolen hash file stays expensive to search.
+
+**Argon2** won the Password Hashing Competition. It has three variants. Argon2d uses data-dependent memory access and resists time-memory trade-off attacks, with more exposure to side channels. Argon2i uses data-independent access and is built against side channels. Argon2id mixes them: a data-dependent start, then data-independent passes. Memory cost is a parameter beside CPU cost. Argon2id is the variant to pick for a new password store.
+
+**PBKDF2** iterates a pseudorandom function and is what many older standards still name. It has no memory hardness, so GPUs and ASICs narrow its advantage, and it remains a compatibility choice.
+
+Store the hash, a unique salt, and the parameters that produced them. Verification repeats those parameters. When you raise the work factor or move from bcrypt to Argon2id, recompute the hash on the next successful login.
 
 ## Authorization Models
 

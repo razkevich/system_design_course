@@ -5,8 +5,8 @@ order: 7
 section: architectural-patterns
 group: Architectural Styles
 summary: From request/response to events. EDA, CQRS, event sourcing, and saga patterns for distributed transactions in multi-tenant SaaS.
-readingMinutes: 10
-lastUpdated: "2026-04-25"
+readingMinutes: 12
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -93,6 +93,19 @@ Event sourcing goes further: store **events** as the source of truth, rather tha
 
 Event sourcing naturally generates events that drive cross-service communication. CQRS lets each service build its own optimized read view from the events of others. One business transaction generates events consumed by many services, each maintaining its own optimized data — eliminating cross-service joins while keeping data consistent through eventual-consistency patterns.
 
+### The fold that replaces the stored balance
+
+One history ("deposited, then withdrew") is a special case. Any earlier state is a fold of the events up to that time:
+
+```
+state(t) = fold(apply, initial, events at or before t)
+
+apply(balance, Deposited(amount)) = balance + amount
+apply(balance, Withdrawn(amount)) = balance - amount
+```
+
+`state(now)` is what a query shows. `state(t)` is the balance at an earlier moment: replay until the bug, then stop. A CQRS read model is the same fold, written ahead of time into the shape one query wants, so the query does not recompute it.
+
 ## Sagas: Distributed Transactions Without 2PC
 
 In a monolith, you can use database transactions for consistency. In microservices, data is distributed across multiple databases owned by different services. Two-phase commit doesn't work at scale. **Sagas** are the pattern.
@@ -129,6 +142,23 @@ If the payment fails: the saga triggers compensation. Order Service un-reserves 
 <Callout type="info" title="Sagas don't give you ACID">
 The point of sagas isn't to provide cross-service ACID. It's to achieve **business consistency** through carefully designed compensation flows. Instead of preventing all failure scenarios, design systems that recover gracefully from them.
 </Callout>
+
+### Compensation is a new transaction
+
+Reserve, charge, and ship each commit in their own database. If the charge fails, nothing automatically undoes the reservation.
+
+1. Payment reports failure.
+2. The order service runs a compensating transaction that releases the reservation. That is a new local commit, not a rollback of the reserve step.
+3. If shipping already scheduled delivery, shipping runs its own compensation and cancels it.
+4. A failed compensation is retried. The original charge is not retried by the saga.
+
+### Adoption order
+
+1. Publish and consume a small set of business events, even inside one deployable.
+2. Add CQRS when one model cannot serve write invariants and read shapes at the same time.
+3. Add a saga only when one business outcome spans services that must not share a database.
+
+A complex-event processor can sit on the same stream. It watches a sequence — repeated payment failures, a cart left after a charge — and emits a new event. Detection is another consumer. The service that placed the order does not change.
 
 ## Event Streaming as Architecture
 

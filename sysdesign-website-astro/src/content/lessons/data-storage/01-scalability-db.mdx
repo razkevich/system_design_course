@@ -5,8 +5,8 @@ order: 1
 section: data-storage
 group: Database Design
 summary: How to think about database scalability — workload patterns, data models, and the trade-offs between relational, document, wide-column, and NoSQL choices.
-readingMinutes: 10
-lastUpdated: "2026-04-25"
+readingMinutes: 12
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -52,6 +52,10 @@ Single-master is the constraint. Options:
 - **Sharding** — Citus, Vitess, or app-level. Significantly more complex; reach for it when you've genuinely outgrown a single Postgres.
 - **NewSQL** — CockroachDB, Spanner, YugabyteDB. SQL with horizontal write scale, at operational cost.
 
+If a synchronous replica is down or lagging, the commit waits for that replica. Most deployments replicate asynchronously and, when a caller must see its own write, send that read to the primary.
+
+Multi-leader writes (MySQL Group Replication, Oracle, SQL Server, YugabyteDB, or add-ons such as EDB Postgres Distributed and pglogical) push conflicts into the application. Autoincrement keys, triggers, and integrity constraints collide when two leaders accept overlapping updates, and every overlap needs an explicit resolution rule. Large MySQL estates instead route by user id across many single-leader shards.
+
 ## Document Databases (MongoDB)
 
 Designed for horizontal scaling from day one. Sharded clusters distribute writes across multiple primaries.
@@ -71,6 +75,8 @@ Designed for horizontal scaling from day one. Sharded clusters distribute writes
   }}
 />
 
+Each shard is its own replica set, and one node can be primary for one shard while secondary for another. mongos is a stateless router: it reads the shard key, forwards the write to that shard's primary, and scatter-gathers when a query spans shards. Write throughput tracks the number of shard primaries. A hot user, a monotonic timestamp, or a low-cardinality tenant as the shard key piles writes onto one primary. Tuned clusters in this shape commonly sustain thousands of writes per second at roughly 10-100 ms.
+
 ## Wide-Column Stores (Cassandra, ScyllaDB)
 
 Peer-to-peer architecture, no master. Optimized for **massive write throughput** and multi-DC.
@@ -83,6 +89,8 @@ Peer-to-peer architecture, no master. Optimized for **massive write throughput**
 ]} />
 
 The cost: limited query flexibility (must design table layout per query pattern), no joins, eventual consistency by default.
+
+Any node can coordinate. Consistent hashing names the owners, and that node writes locally or forwards. Adding a node adds both read and write capacity. Netflix has described Cassandra clusters above 200,000 writes per second with median latency around 1-2 ms. Acknowledge one replica on the ingest path, or a majority when that read cannot be stale.
 
 ## Key-Value Stores
 
@@ -111,6 +119,8 @@ Specialized for high-volume time-stamped data — IoT sensors, monitoring metric
   { icon: '⏰', title: 'Amazon Timestream', body: 'AWS-managed time-series. Tiered storage (hot in memory, cold in S3-like).' },
 ]} />
 
+A TimescaleDB hypertable looks like one table and is stored as time chunks: recent chunks stay uncompressed, older chunks are compressed, and queries stay ordinary SQL. Cloudflare has ingested about 100,000 aggregated metrics per second this way.
+
 ## Search Databases
 
 For full-text search, complex filtering, log analysis.
@@ -131,6 +141,10 @@ OLTP databases optimize for many small transactions. **OLAP** databases optimize
   { icon: '⚡', title: 'ClickHouse', body: 'Open-source columnar DB. Extremely fast for analytical queries on huge datasets.' },
   { icon: '🐦', title: 'DuckDB', body: 'Embedded analytical DB (think SQLite for OLAP). Great for in-process analytics.' },
 ]} />
+
+Columnar layout stores one column together, so a sum over revenue reads that column and skips the rest, often about a tenfold I/O cut versus full rows. A single ClickHouse server can process on the order of 2 billion rows per second for a simple aggregation, and log scans of hundreds of millions of rows are reported under 200 ms. Ingest is append-only, often from Kafka.
+
+Druid rolls data up at ingest. Real-time nodes take the stream, historical nodes serve sealed segments, and brokers cache the merged answer, so a declared rollup can return in under 100 ms. A materialized view is the relational version of that trade: store the aggregate and turn a multi-second query into a 10-100 ms lookup.
 
 ## Graph Databases
 

@@ -5,8 +5,8 @@ order: 5
 section: data-storage
 group: Messaging & Processing
 summary: The major message broker categories and when each fits. Queues vs. streams, RabbitMQ vs. Kafka vs. SQS, and the architectural patterns they support.
-readingMinutes: 9
-lastUpdated: "2026-04-25"
+readingMinutes: 11
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -52,6 +52,17 @@ The choice between queue and stream isn't about technology — it's about whethe
   { icon: '⚖️', title: 'Trade-off', body: 'Rich features at cost of operational complexity. Cluster failover semantics are subtle.' },
 ]} />
 
+AMQP 0-9-1 routing is an exchange plus a binding plus a queue. The exchange type is the program:
+
+| Exchange | Rule |
+| --- | --- |
+| Direct | Exact routing-key match |
+| Topic | Wildcard on a dotted key |
+| Fanout | A copy to every bound queue |
+| Headers | Match on headers, ignoring the key |
+
+Each queue and exchange is an Erlang process under a supervisor. The supervisor restarts a crashed process, which is the "let it crash" model, so one queue's failure stays in that process.
+
 ### Apache Kafka — The Streaming Standard
 
 <IconGrid cols={2} items={[
@@ -72,6 +83,8 @@ We have an entire deep-dive lesson coming on Kafka.
   { icon: '🎯', title: 'Best fit', body: 'When you want messaging without operational overhead. Sufficient for most SaaS use cases.' },
 ]} />
 
+SQS Standard hides a delivered message for a visibility timeout. If the consumer has not deleted it when the timer fires, another worker can receive it. FIFO queues add ordering and a deduplication window on that API. SNS fan-out reaches about 12.5 million subscriptions per topic, and a filter on attributes or on the body drops events before a subscriber sees them. Kinesis is the log in the same family: each shard admits about 1 MB/s of writes and 2 MB/s of reads, and capacity grows by splitting shards. EventBridge adds pattern rules, a schema registry, and targets across AWS services.
+
 ### Apache Pulsar — The Modern Hybrid
 
 <IconGrid cols={2} items={[
@@ -80,6 +93,8 @@ We have an entire deep-dive lesson coming on Kafka.
   { icon: '🏘️', title: 'Multi-tenancy', body: 'Native multi-tenant — tenant/namespace as first-class concepts. Strong fit for SaaS platforms.' },
   { icon: '🎯', title: 'Best fit', body: 'When you want Kafka-like throughput, RabbitMQ-like flexibility, native geo and multi-tenancy. The newer alternative for greenfield deployments.' },
 ]} />
+
+Pulsar splits the broker. Stateless brokers only route; Apache BookKeeper stores the log as segments. A new broker can serve traffic immediately because it was not holding partition files that now have to move. Geo-replication and tenant isolation come from that split. The operating cost is three moving parts: brokers, bookies, and a metadata store.
 
 ## Push vs. Pull
 
@@ -115,6 +130,8 @@ What guarantees does the broker provide about message delivery?
 <Callout type="info" title="Idempotency is the practical answer">
 At-least-once + idempotent consumers ≈ exactly-once for practical purposes. Idempotency keys (Stripe-style), deduplication caches, or just "this operation is naturally idempotent" — pick whichever fits.
 </Callout>
+
+Exactly-once inside a log has a measured cost. Kafka's implementation commonly gives up about 20-30% of at-least-once throughput, so the weakest guarantee the business can accept is the one to run. The coordination under that guarantee is a consensus log: Raft for KRaft and for NATS JetStream, ZooKeeper's Zab for the older Kafka controller. Hash partitioning spreads keys evenly and then makes a reshard move almost every key. Consistent hashing moves only the keys that lived on a node which joined or left. Pulsar's segment storage skips that reshuffle: a new bookie serves new segments immediately.
 
 ## Ordering
 

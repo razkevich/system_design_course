@@ -5,8 +5,8 @@ order: 7
 section: data-storage
 group: Messaging & Processing
 summary: Batch and streaming at scale — Spark, Flink, Beam, and the modern data stack. The architectural patterns that move TB-scale data through pipelines.
-readingMinutes: 8
-lastUpdated: "2026-04-25"
+readingMinutes: 10
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -38,6 +38,22 @@ This lesson surveys the patterns and tools for processing data at scale — TB t
 <KeyIdea>
 The line between batch and streaming is blurring. Modern unified frameworks (Apache Beam, Flink, Spark Structured Streaming) treat batch as a special case of streaming — same code, different runtime configuration.
 </KeyIdea>
+
+## When the volume is actually "big"
+
+Three properties decide whether a warehouse or a cluster is warranted. Volume is size: queries that were fine at 10 GB start to time out around 100 GB and need another architecture at terabytes. Velocity is arrival rate, such as clickstream or a fraud check that must finish in milliseconds. Variety is mixed shape in one product: JSON logs, CSV, binary, metrics, ticket text, images. Veracity, whether the data is trustworthy, is a problem at every scale; a small error rate becomes a large incident once the pipeline holds petabytes.
+
+For a dataset that still fits in memory, a single process is often faster than Spark or Hadoop. Scheduling and shuffle overhead dominate the actual work. The cluster earns its place when the data does not fit, and when a failed worker must be retried automatically.
+
+## MapReduce, including inside a SQL warehouse
+
+The engines under Athena, BigQuery, and Snowflake still split work into a map, a shuffle, and a reduce.
+
+1. Map. Each worker reads its own slice, talks to no other mapper, and emits key-value pairs. A session log can emit country and duration.
+2. Shuffle and sort. Keys are partitioned onto reducers, each reducer's input is sorted, and the bytes cross the network. This stage is usually most of the runtime and most of the bandwidth. A combiner pre-aggregates on the mapper so fewer bytes move.
+3. Reduce. All values for a key arrive together, in order, and the reducer emits the aggregate, such as average duration per country. A failed task is run again on another node.
+
+Spark keeps map and reduce and schedules them as a DAG, chaining stages in memory so intermediate boundaries stay off HDFS. That is the change that makes iterative algorithms practical. Tez is the DAG engine under Hive and Pig. Catalyst rewrites a DataFrame plan with both rule-based and cost-based choices, and Adaptive Query Execution in Spark 3+ revises the plan from runtime statistics when a key is skewed. Flink and Storm run the same distributed transform on an unbounded stream, using watermarks to decide when a window can close.
 
 ## Major Frameworks
 

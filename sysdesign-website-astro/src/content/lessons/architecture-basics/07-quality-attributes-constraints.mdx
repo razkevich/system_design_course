@@ -5,8 +5,8 @@ order: 7
 section: architecture-basics
 group: Core Principles
 summary: Performance, availability, scalability, security, reliability — naming the things you actually care about, plus the constraints that bound the design.
-readingMinutes: 11
-lastUpdated: "2026-04-25"
+readingMinutes: 12
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -194,6 +194,16 @@ Constraints are the limits inside which architecture has to operate. Not obstacl
   { icon: '🌐', title: 'Network constraints', body: 'Bandwidth limits drive payload optimization, compression, batching, edge caching.' },
   { icon: '⚙️', title: 'Platform constraints', body: 'Whatever the chosen stack rules out (language ecosystems, cloud-specific services).' },
 ]} />
+
+### Hardware, platform, latency, and legacy
+
+Hardware capacity changes the performance design you can afford. With ample CPU, memory, and storage, a straightforward but resource-intensive approach is viable.
+
+Platform limits are specific. Container limits change how a service is packaged and how it is deployed. Operating-system capabilities decide which networking protocols and which security features exist. Cloud-platform specifics decide storage options, the networking model, and which scalability patterns are available.
+
+High latency calls for asynchronous patterns and careful state management. Bandwidth limits and latency together also force a data-locality decision: keep the computation near the data it reads.
+
+Legacy integration often chooses the protocol for you. When the existing system only accepts certain data formats or communication patterns, those constraints dictate the interface, and the architecture takes on compromises it would not otherwise need.
 
 ### Regulatory constraints
 

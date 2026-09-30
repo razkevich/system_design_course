@@ -5,8 +5,8 @@ order: 2
 section: architectural-patterns
 group: Domain-Driven Design
 summary: The building blocks inside a bounded context — entities with behavior, value objects, aggregates, domain services. Trading anemic models for rich ones.
-readingMinutes: 10
-lastUpdated: "2026-04-25"
+readingMinutes: 12
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -120,6 +120,10 @@ Use value objects to:
 - Group fields that travel together (address components, coordinates).
 - Encapsulate domain-specific behavior (calculations, validations, formatting).
 
+### What the value object actually computes
+
+Grouping fields is the small win. A `Money` value owns addition, multiplication, and comparison, and it refuses to add amounts in different currencies. An `Address` owns format validation and distance, work that otherwise lands in a utility class. The shipping method then takes `Money` and `Address`. A street string cannot be passed where a currency belongs, and the arithmetic stays next to the amount.
+
 ## Domain Services: Logic That Doesn't Belong on an Entity
 
 Some business logic doesn't naturally sit on a single entity. **Domain services** hold the operations that span multiple entities or represent concepts that aren't a single object.
@@ -155,6 +159,18 @@ When does logic belong on an entity vs. a domain service?
     accent: 'amber',
   }}
 />
+
+### Jobs that stay off the entity
+
+| Job | Concrete service | Why it is not a method on one entity |
+| --- | --- | --- |
+| Several aggregates | `InventoryTransferService` moves stock between two `Warehouse` aggregates | One entity method must not reach into a second consistency boundary |
+| External data | `CreditCheckService` calls a bureau before a large order | The decision needs facts the `Customer` aggregate does not own |
+| Many policies at once | `PricingService` combines tier, category, seasonal discount, and regional tax | No single entity is the natural owner |
+| A policy that changes often | `ShippingPolicyService` chooses carriers from rules that change by season | The policy moves faster than the order lifecycle |
+| A heavy algorithm | `RecommendationService` runs a cached model over many products | Too expensive, and too unstable, to live on `Product` |
+
+Entities keep identity and the invariants of one aggregate. Services keep coordination, integration, and rules that cross aggregates or change on a different cadence.
 
 ## Aggregates: Consistency Boundaries
 

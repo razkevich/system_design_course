@@ -5,8 +5,8 @@ order: 10
 section: architectural-patterns
 group: Architectural Styles
 summary: One application instance, many tenants. Isolation models, tier-based service levels, noisy-neighbor mitigation, and the operations of a SaaS platform.
-readingMinutes: 11
-lastUpdated: "2026-04-25"
+readingMinutes: 13
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -88,6 +88,10 @@ Not all tenants are equal. Successful SaaS platforms implement **tiering strateg
   }}
 />
 
+### Deployment-focused tiering
+
+Consumption tiering and value tiering decide who has priority. Deployment-focused tiering enforces the priority in infrastructure. Premium tenants get a dedicated database or a dedicated pool. Standard tenants share a pool. The guarantee still holds if application code forgets a priority flag. The cost is stranded capacity: a quiet premium database cannot be lent to a busy standard tenant.
+
 ### API and compute tiering
 
 - **Rate limiting and throttling.** Beyond simple requests-per-minute. Sophisticated systems implement multi-dimensional throttling considering request complexity, resource requirements, and tenant priority. Different limits for reads vs. writes, bulk exports vs. individual queries, admin functions vs. end-user actions.
@@ -119,6 +123,20 @@ A tenant runs a misbehaving query that holds DB locks for minutes. Every other t
 - **Query complexity limits.** Prevent individual tenants from running expensive operations that could affect platform performance. Analyze query plans in real time; reject or throttle queries exceeding complexity thresholds.
 - **Bulk operation queues.** Heavy operations go to a separate queue with controlled concurrency, so they can't starve interactive traffic.
 - **Cross-tenant rate limiting.** Aggregate per-tenant limits at the platform level too, so a coordinated attack from many tenants can't take the platform down.
+
+### Request budgets that are not a rate
+
+**Size and processing time.** Cap the bytes of one call, and cap how long that call may hold a worker or a connection. Count downstream work, not only time inside the first service, so a cheap-looking call that fans out into a heavy report is still limited.
+
+**Feature budgets.** Reports and exports get a stricter cap than ordinary reads. A tenant inside the global request budget can still monopolize the expensive features. Separate budgets reject that work and leave normal reads alone.
+
+### Runbooks that change because tenants share a platform
+
+Onboarding is a template with branches: dedicated infrastructure for an enterprise contract, a region pin when regulation fixes residency at provision time, and extra API configuration for an integration.
+
+A blue-green cutover can move low-risk tenants first and hold tenants on a stricter agreement until the new color is proven. Incident rank follows business impact. A fault on one enterprise tenant with a tight latency target can outrank a wider fault that only hits best-effort tenants. Status notices go to the tenants actually affected, not to the whole customer list.
+
+Forecasts are per segment. Adding tenants is a different curve from adding usage per tenant. Optimize the change that helps the most tenants, or the most valuable segment, rather than the change that moves the platform-wide average.
 
 ## Database Patterns
 

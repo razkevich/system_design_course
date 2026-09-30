@@ -5,8 +5,8 @@ order: 2
 section: architecture-basics
 group: Foundation Concepts
 summary: Software architecture is multi-dimensional. The 4+1 model, the C4 model, and quality views give you the lenses to describe a system without drowning in one diagram.
-readingMinutes: 9
-lastUpdated: "2026-04-25"
+readingMinutes: 10
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -70,6 +70,16 @@ How software maps onto infrastructure: where things actually run, how they're ne
 ### Scenarios — the +1
 
 Use-case walkthroughs that exercise all four structural views together. The consistency check — that logical, process, development, and physical describe the same system, not four different ones.
+
+### Level, notation, and audience
+
+The process view is also called the **Components and Connectors (C&C)** view, and it is drawn coarser than the logical view. One element often stands for several deployable units and infrastructure pieces. It is the diagram system integrators use. Fault tolerance is specified here along with the runtime behavior, and the connector is usually one of three shapes: client-server, publish-subscribe, or a pipeline.
+
+The development view is more concrete than a traditional module view. A module view is an abstract functional decomposition. The development view is the layout the build actually uses, including development tools, so a team can manage build dependencies and enforce architectural constraints at module boundaries.
+
+The physical view records hardware specifications. Those specs are the input to performance optimization and to infrastructure management.
+
+The logical view is drawn with object diagrams as well as class diagrams and state machines. Its subject is the abstraction hierarchy that supports the business logic.
 
 ## Documenting Behavior
 

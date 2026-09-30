@@ -5,8 +5,8 @@ order: 5
 section: architectural-patterns
 group: Architectural Styles
 summary: The pragmatic middle ground — clean module boundaries inside a single deployable unit. The architecture Shopify, GitHub, and Basecamp run at scale.
-readingMinutes: 9
-lastUpdated: "2026-04-25"
+readingMinutes: 11
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -74,6 +74,25 @@ This pattern shines in modular monoliths because boundaries become explicit. Oth
 Even in a single process, modules can communicate through **events** rather than direct calls. When an order completes, the Orders module publishes an `OrderCompleted` event. Inventory, Notifications, and Analytics modules consume it independently.
 
 This produces the same loose-coupling benefits as microservices, while keeping the simplicity of in-process communication. Events can be processed synchronously for immediate consistency or asynchronously for performance.
+
+### Shared kernel and anti-corruption layer
+
+Some types legitimately cross modules: a user identity, a `Money` value, a stable event envelope. A shared kernel lets those modules depend on that small set and still keep their own business rules. Both sides own the kernel, so a change is a joint change. If the kernel grows one module's rules, it has become hidden coupling. Keep it small and stable.
+
+An anti-corruption layer is the other edge. A module that must call a legacy system or an external API translates the foreign model into its own types at the boundary. Callers inside the module never see the foreign shape. The cost is a translator to maintain. The gain is that a vendor payload does not leak into orders, inventory, and shipping together.
+
+### Synchronous or asynchronous, in one process
+
+| Delivery | What the caller observes | What you pay |
+| --- | --- | --- |
+| Synchronous, inside the publisher's transaction | Subscriber work commits or rolls back with the publisher | A slow or failing subscriber fails the publisher |
+| Asynchronous, after the publisher commits | The publisher returns; subscribers catch up | A visible delay, and subscribers must tolerate redelivery |
+
+Use the synchronous path when two modules share an invariant that must not be seen half-done. Use the asynchronous path for notifications, projections, and analytics.
+
+### Coordination a single deploy does not remove
+
+A schema change inside a module stays with that module. A change to a module's public interface, or to a shared-kernel type, still ships in the same release as every caller. That is less coordination than a distributed rollout, and it is not zero.
 
 ### Database patterns
 

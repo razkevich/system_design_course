@@ -5,8 +5,8 @@ order: 9
 section: architectural-patterns
 group: Architectural Styles
 summary: Functions-as-a-Service. Pay-per-execution, autoscaling, no infrastructure to manage. Where it shines, where it bites, and the cold-start trade-off.
-readingMinutes: 8
-lastUpdated: "2026-04-25"
+readingMinutes: 10
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -104,6 +104,26 @@ Distributed serverless environments need new approaches. Traditional debugging b
 
 Serverless functions have **execution time limits** (15 minutes on Lambda, 9 on Cloud Functions). Stateful workloads need to externalize state to managed services (DynamoDB, Redis, Cloud Firestore). This forces some architectural patterns that wouldn't otherwise be necessary.
 
+### How small a function should be, and how it retries
+
+Single-purpose is the starting rule. The failure mode is the opposite cut: a step split so finely that one request pays several cold starts and several network hops. If two steps always run together and fail together, they belong in one function.
+
+The platform may invoke a failed function again. The function still needs its own policy:
+
+1. Set the function timeout below the platform cap.
+2. Retry with exponential backoff, so a dependency outage does not become a stampede.
+3. When the retry budget is spent, publish the event to a dead-letter queue. Do not retry without a bound, and do not drop the event.
+
+### Where state goes once the process is gone
+
+| Need | Where it lives |
+| --- | --- |
+| Durable records | DynamoDB or Aurora Serverless |
+| Sessions and hot keys | Redis or ElastiCache |
+| A multi-step business process | A workflow service such as Step Functions, not a chain of functions waiting on each other |
+| A history you must replay | An event stream; consumers derive the current state |
+| Settings that differ by environment | An external configuration service, not constants in the bundle |
+
 ## When Serverless Is the Right Choice
 
 <Compare2
@@ -120,6 +140,8 @@ Serverless functions have **execution time limits** (15 minutes on Lambda, 9 on 
     accent: 'rose',
   }}
 />
+
+Two cases sit outside that card. GPUs, a custom network, and a required operating-system image are not on offer. A monolith whose parts share in-memory state and need a long initialization is a redesign, not a move onto functions.
 
 ## Serverless and Multi-Tenant SaaS
 

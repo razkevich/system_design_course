@@ -5,8 +5,8 @@ order: 3
 section: architectural-patterns
 group: Domain-Driven Design
 summary: The boundaries between contexts and the patterns for integrating them. Domains, sub-domains, bounded contexts, context maps, and the seven integration patterns.
-readingMinutes: 12
-lastUpdated: "2026-04-25"
+readingMinutes: 14
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -63,6 +63,16 @@ Sub-domains aren't all equal. They classify into three buckets, and the classifi
   { icon: '⚙️', title: 'Supporting sub-domain', body: 'Business-essential, but not differentiating. Custom-built but simpler. (e.g., order processing for most e-commerce.)' },
   { icon: '📦', title: 'Generic sub-domain', body: 'Necessary, not unique. Buy off-the-shelf. (e.g., authentication, payment processing, email delivery.)' },
 ]} />
+
+### How fast each class is allowed to move
+
+| Class | Who changes it | Rate of change |
+| --- | --- | --- |
+| Core | Senior engineers on a custom model | Fast. This is where the product competes |
+| Supporting | A mixed team, on a simpler custom model | With day-to-day operations, not with strategy |
+| Generic | Whoever integrates the vendor | Slow. You absorb the vendor's releases |
+
+When a core capability stops differentiating, reclassify it. A generic problem left on the senior roadmap is core work that never gets staffed.
 
 ### Practical heuristics for finding sub-domains
 
@@ -190,6 +200,17 @@ Contexts are not connected and duplicate functionality rather than integrate. So
   { title: 'Anemic context', body: 'Just CRUD services with no business logic. Move rules into domain models. Focus on behavior, not just storage.' },
   { title: 'Premature splitting', body: 'Too-fine-grained contexts before understanding the domain. Start coarse; split as you learn.' },
 ]} />
+
+### Warning signs, separate from the remedy
+
+| Pitfall | You are already there when |
+| --- | --- |
+| Distributed monolith | A routine change edits several contexts, most calls between them are synchronous, or they share a database |
+| God context | One model holds unrelated concerns, teams conflict on the same changes, and a newcomer cannot explain the model |
+| Anemic context | Types are getters and setters, rules sit in service layers, and the context behaves like a wrapper over tables |
+| Premature split | A simple operation is orchestrated across many contexts, integration code outweighs domain code, and most team time goes to the seams |
+
+Splitting a coarse context later is easier than merging two that were cut too soon. Split when a row above is true, not because an integration pattern is available to name.
 
 ## Boundaries Evolve
 

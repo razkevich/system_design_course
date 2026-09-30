@@ -5,8 +5,8 @@ order: 2
 section: resilience-and-observability
 group: Resilience Patterns
 summary: How to protect SaaS platforms from abuse and noisy neighbors. Algorithms, where to enforce, and the multi-dimensional approach for tenant-aware limits.
-readingMinutes: 8
-lastUpdated: "2026-04-25"
+readingMinutes: 10
+lastUpdated: "2026-09-30"
 ---
 
 import Callout from '../../../components/Callout.astro';
@@ -119,6 +119,10 @@ if current_count < limit: allow
 
 The pragmatic choice. Approximate but uses constant memory; avoids boundary issues.
 
+### GCRA
+
+Redis Cell implements the Generic Cell Rate Algorithm. GCRA stores one timestamp per key: the theoretical arrival time of the next request that should be allowed, stepped forward by a fixed emission interval. There is no token counter and no queue of waiting requests. Memory stays at that single timestamp, and the output stays smooth in the same sense as a leaky bucket. It is harder to explain to API consumers than a token bucket, which is why public docs often still describe a bucket while the edge implementation is GCRA.
+
 ## Comparison
 
 | Algorithm | Burst | Smooth output | Memory | Common use |
@@ -128,6 +132,21 @@ The pragmatic choice. Approximate but uses constant memory; avoids boundary issu
 | Fixed window | ✅ | ❌ | O(1) | Simple, accept the boundary issue |
 | Sliding log | ❌ | ❌ | O(N) | Precise limits where memory is cheap |
 | Sliding counter | ✅ | ❌ | O(1) | Production default for most APIs |
+
+GCRA belongs in the smooth-output column with leaky bucket, at O(1) memory. It is the algorithm behind Redis Cell when you want that shape in a shared store.
+
+A capacity limit starts from a load test, then sits at about 70-80% of the throughput you can hold, including the database behind the handler. A business limit sits above the 99th percentile of real clients, with a separate ceiling per pricing tier. Calling someone else's API, stay near 70-80% of their published limit so your other jobs and their other tenants still fit.
+
+Once more than one process decides, clocks have to agree. NTP plus a small tolerance window absorbs skew. During a partition, pick the consistency on purpose: eventual consistency is enough for most APIs and allows a brief over-allowance; strong consistency is for a billed request where every call is money; best-effort minimizes latency and has the weakest count.
+
+| Implementation | Fits | Ceiling |
+| --- | --- | --- |
+| Nginx `limit_req` | One web server, request or connection rate | Almost no per-tenant policy |
+| Redis Cell | Many instances sharing one count | You operate Redis |
+| AWS API Gateway | Serverless workloads already on AWS | Coarse rules, usage-based price |
+| Kong | Plugin policies across services | Operational weight |
+| Cloudflare | Public edge and volumetric abuse | Thin support for deep business rules |
+| Custom | A quota none of the rows above can express | You own the failure modes |
 
 ## Where to Enforce
 
