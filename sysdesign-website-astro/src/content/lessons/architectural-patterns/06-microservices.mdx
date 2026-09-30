@@ -156,6 +156,8 @@ This reduces risk and lets you adjust as you go. Read-only services (search, rec
 
 Microservices break the classic test pyramid in interesting ways.
 
+![Test pyramid: many unit tests, fewer service tests, very few end-to-end tests](/images/patterns/test_pyramid.png)
+
 <Callout type="info" title="The pyramid still applies, but the layers shift">
 Unit tests stay roughly the same. **Service tests** (one service in isolation, dependencies stubbed) gain importance. **End-to-end tests across services** become problematic — slow, flaky, and a coordination bottleneck. The fix is **consumer-driven contracts** (Pact) — consumer teams write tests expressing their expectations of producers; tests run isolated; breaking changes surface immediately without full-system orchestration.
 </Callout>

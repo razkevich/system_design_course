@@ -1,0 +1,143 @@
+---
+title: Cloud Cost Optimization
+slug: cost-optimization
+order: 7
+section: resilience-and-observability
+group: Resilience Patterns
+summary: Where cloud bills actually come from, and the rightsizing, storage, and service-selection moves that cut spend without making the system fragile.
+readingMinutes: 12
+lastUpdated: "2026-09-30"
+---
+
+import Callout from '../../../components/Callout.astro';
+import Compare2 from '../../../components/Compare2.astro';
+import KeyIdea from '../../../components/KeyIdea.astro';
+import IconGrid from '../../../components/IconGrid.astro';
+import NumberCards from '../../../components/NumberCards.astro';
+
+Most cloud overspend is not a mysterious tax. It is oversized instances, idle resources, chatty cross-AZ traffic, and a managed service you picked because it was easy. Cost optimization is an architecture skill: the same trade-offs as reliability and latency, with a monthly bill attached.
+
+<KeyIdea>
+Optimize the line items that dominate the bill. A week spent tuning a service that costs tens of dollars a month, while a database costs thousands, is the expensive kind of thrift.
+</KeyIdea>
+
+## Three Places the Money Goes
+
+<IconGrid cols={3} items={[
+  { icon: '⚙️', title: 'Application efficiency', body: 'Heap, threads, connection pools, and startup cost. Waste here forces you to buy bigger instances than the workload needs.' },
+  { icon: '💾', title: 'Data and storage', body: 'Disk class, replicas, snapshots, and lifecycle. Data is often the largest line and the one nobody revisits.' },
+  { icon: '🧰', title: 'Service selection', body: 'Managed vs. self-run, spot vs. on-demand, Lambda vs. containers. The architecture choice is the price.' },
+]} />
+
+## Application-Level Rightsizing
+
+A single-threaded service on a large multi-core instance is a common shape: you pay for CPU you never schedule. The same pattern shows up as oversized heaps, default connection pools, and frameworks that allocate everything at startup.
+
+<IconGrid cols={2} items={[
+  { icon: '☕', title: 'JVM and heap', body: 'G1GC is the default. Cap pause time (MaxGCPauseMillis) so GC spikes do not look like load and trigger scale-out. Size the heap from observed usage, not from a nervous default — many Spring Boot services run fine on a fraction of the heap they were given. Smaller G1 regions (8–16 MB) suit 1–2 GB microservice heaps better than the default.' },
+  { icon: '🚀', title: 'Startup and idle work', body: 'Lazy bean initialization defers work until first use and can cut startup memory roughly in half. GraalVM native images trade build complexity for fast cold start and a smaller footprint — the right trade when you pay per start, as in serverless.' },
+  { icon: '🔌', title: 'Connection pools', body: 'Oversized pools time out the database, which tempts an instance upgrade, which allows an even bigger pool. Most apps need on the order of 5–15 connections. Measure concurrent queries for a week before you buy more database.' },
+  { icon: '📈', title: 'Profile in production', body: 'One bad query can be the compute budget. Continuous profiling belongs in the pipeline, not in the incident. The same idea holds outside Java: async runtimes, leak hunting, and container-aware CPU limits.' },
+]} />
+
+<Callout type="tip" title="Language changes the knobs, not the question">
+Python (async I/O), Node (cluster mode and leak hunting), Go (goroutine pools and container-aware GOMAXPROCS), and modern .NET all have their own tunables. The decision is still: what did this process actually use?
+</Callout>
+
+## Data and Storage
+
+### Disk class and database shape
+
+<Compare2
+  left={{
+    label: 'gp2',
+    title: 'Burst credits you may not need',
+    body: 'Still the RDS default in many consoles. You pay for a baseline whether you use the burst or not.',
+    accent: 'amber',
+  }}
+  right={{
+    label: 'gp3',
+    title: 'Cheaper, and you set IOPS',
+    body: 'Often about 20% cheaper with independent IOPS and throughput. Existing volumes can switch with no downtime. This is the first dropdown to change.',
+    accent: 'emerald',
+  }}
+/>
+
+Multi-AZ roughly doubles the database bill. That is the right insurance for the primary that serves customer traffic. It is a poor default for an analytics database queried twice a week — snapshots and a short restore window are cheaper. Read replicas that scale out and never scale in are the same mistake in another costume. Aurora Serverless v2 (and equivalents) scale both directions; a fixed replica fleet does not.
+
+### Lifecycle, or storage that quietly compounds
+
+<NumberCards items={[
+  { title: 'Tier by access', body: 'S3 Intelligent-Tiering moves untouched objects to cheaper classes for a small monitoring fee. Typical savings are large relative to that fee. A hand-written lifecycle (Standard, then Infrequent Access, then Glacier, then Deep Archive) works when you know the access curve.' },
+  { title: 'Expire snapshots and logs', body: 'EBS snapshots and old application logs accumulate forever unless a policy says otherwise. A common retention shape: daily for a week, weekly for a month, monthly for a year. Logs from six months ago do not belong in Standard.' },
+  { title: 'Prefer object storage', body: 'S3 wins for backups, logs, static assets, and lakes. EBS when one instance needs low-latency block storage. EFS only when many instances truly need a shared filesystem — it costs several times EBS.' },
+]} />
+
+### The network line items people miss
+
+Cross-AZ traffic is about a cent per GB. Health checks and chatty service discovery between zones add up. Keep a service and its database in the same AZ when the availability requirement allows it, and pay the cross-AZ tax only for the tier that actually needs multi-AZ.
+
+NAT Gateway charges per GB on top of an hourly fee. A VPC gateway endpoint to S3 or DynamoDB skips that path. Interface endpoints have their own hourly cost; they pay for themselves once data processing is heavy enough that NAT per-GB dominates (on the order of a terabyte a month).
+
+## Choosing the Service Is Choosing the Price
+
+<Compare2
+  left={{
+    label: 'Spiky, short work',
+    title: 'Serverless usually wins',
+    body: 'Lambda (or a similar function) for irregular, short requests. You stop paying when you stop calling it. Steady high-QPS APIs flip the math: you pay for convenience you are not using.',
+    accent: 'indigo',
+  }}
+  right={{
+    label: 'Steady traffic',
+    title: 'Containers usually win',
+    body: 'A long-running container on reserved or savings-plan capacity beats per-invocation pricing once the load is smooth. Run the break-even on your own traffic shape, not a blog post\'s.',
+    accent: 'emerald',
+  }}
+/>
+
+<IconGrid cols={2} items={[
+  { icon: '💸', title: 'Commit to the baseline', body: 'Savings Plans and Reserved Instances discount the part of the bill you can predict. Leave the spiky remainder on demand or on spot.' },
+  { icon: '🎯', title: 'Spot where interruption is fine', body: 'Spot is no longer only for batch, but the workload has to survive being killed. Stateless workers and mixed node pools qualify. Databases and strict-SLA state do not. Design for interruption first.' },
+  { icon: '☸️', title: 'Orchestrator tax', body: 'EKS and GKE charge for the control plane before you run a pod. A handful of services is often cheaper on ECS, or even Compose on one instance, than on managed Kubernetes.' },
+  { icon: '📨', title: 'Queues', body: 'SQS is the cheap default at low volume and gets expensive at high throughput. Self-managed RabbitMQ can win on price if you will operate it. Managed Kafka is the premium option for real event streams, not for a single work queue.' },
+]} />
+
+<Callout type="info" title="Managed is not laziness or virtue">
+RDS and ElastiCache cost more than a VM because they do backups, failover, and patching. That is usually cheaper than a database specialist you do not have. A managed control plane for three services is the opposite trade.
+</Callout>
+
+Batch processing has the same shape. EMR Serverless fits infrequent Spark jobs and pays for a cold start. EMR on EKS fits a cluster you already pay for. Self-managed Spark on EC2 is the lowest cost per job when the jobs are large, frequent, and you can staff the ops.
+
+## Kubernetes, Once You Are Already On It
+
+<IconGrid cols={2} items={[
+  { icon: '📉', title: 'Scale down on purpose', body: 'The default cluster autoscaler is shy about removing nodes. Short scale-down delays and a least-waste expander stop you paying for empty capacity. Karpenter-style provisioners are the same idea with fewer node-group knobs.' },
+  { icon: '🧱', title: 'Pools that match the work', body: 'CPU-optimized for compute, memory-optimized for caches, burstable for low traffic, spot for anything that can die. One general-purpose pool for everything is how you buy the wrong shape twice.' },
+  { icon: '📏', title: 'Scale on the queue, not the CPU', body: 'KEDA (and similar) scales workers from queue depth, request rate, or lag. CPU is a lagging, often misleading signal for background jobs.' },
+  { icon: '🔬', title: 'Rightsize pods from data', body: 'Vertical Pod Autoscaler in recommendation mode for a week, then apply. Requests copied from a tutorial are how clusters look full while doing little.' },
+  { icon: '🦾', title: 'ARM where images allow it', body: 'Graviton-class instances are often 20–40% better on price for the same work. Java, Node, Python, and Go are fine. The blocker is an old native dependency without an ARM build — multi-arch images surface that early.' },
+]} />
+
+## A Cost Review You Will Actually Hold
+
+<NumberCards items={[
+  { title: 'What went up?', body: 'Planned growth, or a surprise? Name the service. Ignore the twelve-dollar CloudWatch blip while a database jumped by hundreds.' },
+  { title: 'What went down?', body: 'A real optimization, or traffic that disappeared? A cheaper bill is not automatically healthier.' },
+  { title: 'What is new?', body: 'New resource types that were not on last month\'s bill. Catch them before they become the baseline.' },
+]} />
+
+Start with the free tools: Cost Explorer, Budgets, Compute Optimizer, Trusted Advisor, `kubectl top`, and an open-source allocator such as Kubecost. Paid platforms (CloudHealth, Datadog Cloud Cost, Spot, Cloudability) earn their fee when you need multi-cloud chargeback or executive reporting — not on day one.
+
+<Callout type="warning" title="Stop optimizing when it costs more than it saves">
+Developer time is usually the expensive resource. Saving a few hundred dollars a month by making deploys slower or incidents harder to debug is a false economy. Stop when the effort will not pay back in about half a year, when reliability or productivity drops, or when the service is a rounding error on the bill.
+</Callout>
+
+## Recap
+
+- The bill concentrates in application waste, storage, and service choice. Work the large lines first.
+- Rightsize from production profiles: heap, pools, disk class, and replica count.
+- Tier storage, expire snapshots, and treat cross-AZ and NAT traffic as line items.
+- Match the runtime to the traffic shape: serverless for spikes, containers and commitments for steady load, spot only where interruption is safe.
+- On Kubernetes, scale down, split node pools, and size requests from observed usage — including ARM when your images allow it.
+- Review monthly with three questions, and stop when optimization starts costing reliability or engineering time.

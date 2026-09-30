@@ -24,6 +24,8 @@ Sharding and replication are the two foundational approaches to building distrib
 
 Everything happens on one node. Strong consistency, simple reasoning, but no horizontal scalability. Examples: single-instance Postgres, Redis without clustering, monolithic app servers.
 
+![Single database instance serving every read and write](/images/sharding/sharding_replication_1.png)
+
 The only option for handling more load is **vertical scaling** — bigger CPU, more memory, more storage. Has physical and economic limits.
 
 ## Replication
@@ -31,6 +33,8 @@ The only option for handling more load is **vertical scaling** — bigger CPU, m
 ### Single-leader replication
 
 The simplest replication setup: one **leader** (a.k.a. primary, master, write replica) accepts all writes. **Followers** (read replicas, hot standbys) receive a stream of changes from the leader and serve reads.
+
+![Single-leader replication: writes to the primary, reads from replicas](/images/sharding/sharding_replication_2.png)
 
 <IconGrid cols={2} items={[
   { icon: '✍️', title: 'Writes go to leader', body: 'Single point of write coordination. Easy to reason about ordering — natural linearizability.' },
@@ -60,6 +64,8 @@ The simplest replication setup: one **leader** (a.k.a. primary, master, write re
 
 Multiple nodes accept writes simultaneously. Each leader replicates to others; each leader can also have its own followers.
 
+![Multi-leader replication across regions](/images/sharding/sharding_replication_3.png)
+
 **When you need it:**
 
 - **Geographic distribution.** Each region has a local leader for low-latency writes.
@@ -81,6 +87,8 @@ Multi-leader systems generally **cannot guarantee linearizability**. Google Span
 
 Every node accepts both reads and writes. No special coordinator. Used by Cassandra, DynamoDB, Riak.
 
+![Leaderless replication: any node accepts reads and writes](/images/sharding/sharding_replication_4.png)
+
 **Quorum consistency.** With N replicas, if you read from R replicas and write to W replicas where R + W > N, you're guaranteed to read the latest value.
 
 ```
@@ -100,6 +108,8 @@ W + R = 4 > N = 3  ✓ guaranteed consistent reads
 ## Sharding
 
 Sharding (also called horizontal partitioning) splits data across nodes. Each node holds only a slice. Writes scale horizontally because different shards can accept writes in parallel.
+
+![Data split across shards by key](/images/sharding/sharding_replication_5.png)
 
 ### Sharding strategies
 
@@ -152,6 +162,8 @@ Adding or removing shards is operationally expensive. Strategies:
 ## Combining Sharding and Replication
 
 Most production systems use both:
+
+![Each shard is its own replicated set](/images/sharding/sharding_replication_6.png)
 
 - **Each shard is replicated** for fault tolerance and read scaling.
 - **Different shards live on different nodes** for write scaling.

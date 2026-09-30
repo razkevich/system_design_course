@@ -50,7 +50,11 @@ Caches live at every layer of a modern application.
 
 The cache hierarchy is layered — a request might hit CDN, miss, hit reverse proxy, miss, hit Redis, miss, hit DB. Each layer multiplies the protective effect.
 
+![Caching layers from the browser through the CDN, the application, and the database](/images/cache/caching_layers.png)
+
 ## Caching Patterns
+
+![When each caching strategy reads and writes the cache versus the database](/images/cache/caching_strategies.png)
 
 ### Cache-aside (lazy loading)
 

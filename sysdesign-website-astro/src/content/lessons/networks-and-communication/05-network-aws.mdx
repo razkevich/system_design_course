@@ -127,6 +127,8 @@ Lets resources in **private** subnets access the internet (for software updates,
   }}
 />
 
+![Public subnets through an internet gateway, private subnets out through NAT](/images/aws/internet_routing.svg)
+
 ### Route Tables
 
 A route table specifies where traffic from a subnet goes. Each subnet associates with exactly one route table. Common entries:
@@ -169,6 +171,8 @@ Allow SSH from one IP, HTTP/HTTPS from anywhere:
 
 Most production setups use security groups heavily and NACLs sparingly (default-allow NACLs as a safety net rather than primary control).
 
+![How an AWS VPC nests subnets, route tables, security groups, and NACLs](/images/aws/aws_networking_hierarchy.svg)
+
 ## Connecting VPCs and Networks
 
 <IconGrid cols={2} items={[
@@ -179,6 +183,10 @@ Most production setups use security groups heavily and NACLs sparingly (default-
   { icon: '🔌', title: 'VPC Endpoints', body: 'Private connectivity to AWS services without going through the internet. Two flavors: Gateway endpoints (S3, DynamoDB), Interface endpoints (most other services).' },
   { icon: '☁️', title: 'PrivateLink', body: 'Expose a service in your VPC to other VPCs (yours or your customers\') without VPC peering or internet exposure.' },
 ]} />
+
+![VPC connectivity: peering, Transit Gateway, PrivateLink, and VPC Lattice](/images/aws/vpc_connectivity.svg)
+
+![Site-to-site VPN and client VPN into a VPC](/images/aws/vpn_connectivity.svg)
 
 ## A Realistic Topology
 

@@ -86,7 +86,6 @@ Welcome to your journey through the intricate world of system design! This cours
 - [Bulkheads](6_fault_tolerance/bulkheads.md)
 - [Outbox Pattern](6_fault_tolerance/outbox_pattern.md)
 - [Caching](6_fault_tolerance/cache.md)
-// Removed temporarily due to build issues: Cost optimization
 
 **Monitoring & Operations**
 - [Observability and SRE](6_fault_tolerance/observability_and_sre.md)

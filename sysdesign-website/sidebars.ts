@@ -102,7 +102,6 @@ const sidebars: SidebarsConfig = {
           label: 'Координация и инфраструктура',
           items: [
             'distributed_systems/consensus_ru',
-            // 'distributed_systems/Locks_ru',
             'distributed_systems/aws_resource_hierarchy_guide_ru',
             'data_storage/data_architecture_ru',
           ],
@@ -159,7 +158,6 @@ const sidebars: SidebarsConfig = {
             'fault_tolerance/circuit_breakers_ru',
             'fault_tolerance/bulkheads_ru',
             'fault_tolerance/outbox_pattern_ru',
-            // 'fault_tolerance/cache_ru',
             'fault_tolerance/cost_optimization_ru',
           ],
         },

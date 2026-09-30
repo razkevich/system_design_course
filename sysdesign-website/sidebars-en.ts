@@ -144,7 +144,6 @@ const sidebars: SidebarsConfig = {
             'fault_tolerance/bulkheads',
             'fault_tolerance/outbox_pattern',
             'fault_tolerance/cache',
-            // 'fault_tolerance/cost_optimization',
           ],
         },
         {

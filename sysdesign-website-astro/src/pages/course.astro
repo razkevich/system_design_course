@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
+import { withBase } from '../lib/withBase';
 
 const sections = (await getCollection('sections')).sort((a, b) => a.data.order - b.data.order);
 const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b.data.order);
@@ -32,7 +33,7 @@ function groupLessons(items: typeof lessons): Group[] {
   <Navbar />
   <main class="mx-auto max-w-3xl px-4 py-12">
     <h1 class="text-3xl sm:text-4xl font-bold text-[color:var(--color-text)] mb-2 tracking-tight">Course outline</h1>
-    <p class="text-[color:var(--color-text-muted)] mb-10">Seven sections, ~40 lessons, free forever.</p>
+    <p class="text-[color:var(--color-text-muted)] mb-10">Seven sections. Free forever.</p>
 
     {sections.map((s) => {
       const ready = s.data.status === 'ready';
@@ -50,7 +51,7 @@ function groupLessons(items: typeof lessons): Group[] {
               {g.name && <div class="text-xs uppercase tracking-wider text-[color:var(--color-text-faint)] mt-3 mb-1">{g.name}</div>}
               <ul class="space-y-1">
                 {g.items.map((l) => {
-                  const href = `/lesson/${l.data.section}/${l.data.slug}`;
+                  const href = withBase(`/lesson/${l.data.section}/${l.data.slug}`);
                   return (
                     <li>
                       <a href={href} class="text-sm text-[color:var(--color-text)] hover:text-[color:var(--color-accent)]">

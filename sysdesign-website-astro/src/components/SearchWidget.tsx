@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Fuse from 'fuse.js';
 import type { SearchRecord } from '../lib/searchIndex';
+import { withBase } from '../lib/withBase';
 
 export default function SearchWidget() {
   const [open, setOpen] = useState(false);
@@ -10,7 +11,7 @@ export default function SearchWidget() {
 
   useEffect(() => {
     if (!open || records.length > 0) return;
-    fetch('/search-index.json').then((r) => r.json()).then(setRecords).catch(() => {});
+    fetch(withBase('/search-index.json')).then((r) => r.json()).then(setRecords).catch(() => {});
   }, [open, records.length]);
 
   useEffect(() => {

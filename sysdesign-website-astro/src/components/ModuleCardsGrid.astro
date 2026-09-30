@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import { withBase } from '../lib/withBase';
 
 interface Props {
   sections: CollectionEntry<'sections'>[];
@@ -14,7 +15,7 @@ const { sections, lessonCounts } = Astro.props;
     {sections.map((s) => {
       const ready = s.data.status === 'ready';
       const count = lessonCounts[s.data.slug] ?? 0;
-      const href = ready ? `/section/${s.data.slug}` : '#';
+      const href = ready ? withBase(`/section/${s.data.slug}`) : '#';
       return (
         <a
           href={href}
